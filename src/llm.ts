@@ -50,14 +50,18 @@ export async function generateMessage(
             };
         }),
     );
+    // Get the username from the last human message (not from the bot)
+    const lastHumanMessage = history.slice().reverse().find(msg => !msg.fromSystem);
+    const username = lastHumanMessage?.user || "user";
+    
     const engine = new TextEngine();
-    const chatHistory = engine.buildPrompt(history);
+    const chatHistory = engine.buildPrompt(history, username);
     return {
         completion: await engine.client.chat({
             stream: false, // <- required!
             //@ts-expect-error Any model name may be provided
             model: getModel(),
-            max_tokens: 256,
+            max_tokens: 128,
             messages: await chatHistory,
         }),
     };

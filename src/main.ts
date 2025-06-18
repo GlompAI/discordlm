@@ -10,11 +10,9 @@ import {
 
 import { Queue } from "./queue.ts";
 
-export const selfId = "1346480896609353769";
-
 import adze, { setup } from "npm:adze";
 import { generateMessage } from "./llm.ts";
-import { getBotToken } from "./env.ts";
+import { getBotToken, getBotSelfId } from "./env.ts";
 setup();
 const logger = adze.withEmoji.timestamp.seal();
 
@@ -31,9 +29,10 @@ const client = new Client({
 client.once(Events.ClientReady, (readyClient) => {
     logger.log(`Ready! Logged in as ${readyClient.user.tag}`);
 });
-client.on(Events.MessageCreate, onMessageCreate(selfId));
-
+const BOT_SELF_ID = getBotSelfId();
 const BOT_TOKEN = getBotToken();
+
+client.on(Events.MessageCreate, onMessageCreate(BOT_SELF_ID));
 
 const shutdown = async () => {
     try {
@@ -98,6 +97,23 @@ export function trimToEndSentence(input: string) {
     return characters.slice(0, last + 1).join("").trimEnd();
 }
 
+export function trimForDiscord(input: string, maxLength: number = 2000): string {
+    if (!input) {
+        return "";
+    }
+
+    // If already under the limit, return as-is
+    if (input.length <= maxLength) {
+        return input;
+    }
+
+    // Truncate to max length first
+    const truncated = input.substring(0, maxLength);
+    
+    // Then trim to the last complete sentence
+    return trimToEndSentence(truncated);
+}
+
 function onMessageCreate(botId: string) {
     return async (message: OmitPartialGroupDMChannel<Message>) => {
         // If the message is from a bot simply ignore
@@ -115,19 +131,16 @@ function onMessageCreate(botId: string) {
 
         let keepTyping = true;
         logger.info("Replying to message...");
-        // Send typing event to users
+        
+        // Send initial typing event
         message.channel.sendTyping();
-        // Hold a queue for the next typing message
-        const queue = new Queue();
-        // Chain typing event follow-ups forever until the queue is stopped through continuations
-        function reSendTyping(): Promise<void> {
-            message.channel.sendTyping();
-            if (!keepTyping) return Promise.resolve();
-            return queue.push(reSendTyping, 5000);
-        }
-        // Queue up the first typing event re-trigger
-        queue.start();
-        const task = queue.push(() => keepTyping && reSendTyping, 5000);
+        
+        // Set up recurring typing events every 5 seconds
+        const typingInterval = setInterval(() => {
+            if (keepTyping) {
+                message.channel.sendTyping();
+            }
+        }, 5000);
         let reply = "";
         try {
             logger.info("Generating response...");
@@ -140,18 +153,20 @@ function onMessageCreate(botId: string) {
         } catch (exception) {
             logger.error("Failed to generate response: " + exception);
             console.log(exception);
-            queue.stop();
             keepTyping = false;
-            return task;
+            clearInterval(typingInterval);
+            return;
         }
-        queue.stop();
+        
+        // Stop typing events
+        keepTyping = false;
+        clearInterval(typingInterval);
         try {
             logger.info("Replying...");
-            await message.reply(trimToEndSentence(reply));
+await message.reply(trimForDiscord(reply));
             logger.info("Reply sent!");
         } catch (exception) {
             logger.error("Failed to reply to message: " + exception);
         }
-        return task;
     };
 }

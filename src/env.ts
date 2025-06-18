@@ -43,3 +43,12 @@ export function getTokenLimit() {
     }
     return parseInt(limitString, 10);
 }
+
+export function getBotSelfId() {
+    const id = Deno.env.get("BOT_SELF_ID");
+    if (!id) {
+        adze.error("No bot self ID provided");
+        Deno.exit(1);
+    }
+    return id;
+}
