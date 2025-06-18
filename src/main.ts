@@ -53,10 +53,16 @@ export function trimToEndSentence(input: string) {
         return "";
     }
 
-    const punctuation = new Set([
+    const sentenceEnders = new Set([
         ".",
         "!",
         "?",
+        "。",
+        "！",
+        "？",
+    ]);
+    
+    const otherPunctuation = new Set([
         "*",
         '"',
         ")",
@@ -64,23 +70,22 @@ export function trimToEndSentence(input: string) {
         "`",
         "]",
         "$",
-        "。",
-        "！",
-        "？",
         "”",
         "）",
         "】",
         "’",
         "」",
         "_",
-    ]); // extend this as you see fit
+    ]);
+    
+    const allPunctuation = new Set([...sentenceEnders, ...otherPunctuation]);
     let last = -1;
 
     const characters = Array.from(input);
     for (let i = characters.length - 1; i >= 0; i--) {
         const char = characters[i];
 
-        if (punctuation.has(char)) {
+        if (allPunctuation.has(char)) {
             if (i > 0 && /[\s\n]/.test(characters[i - 1])) {
                 last = i - 1;
             } else {
@@ -94,7 +99,22 @@ export function trimToEndSentence(input: string) {
         return input.trimEnd();
     }
 
-    return characters.slice(0, last + 1).join("").trimEnd();
+    let result = characters.slice(0, last + 1).join("").trimEnd();
+    
+    const cutChar = characters[last];
+    if (sentenceEnders.has(cutChar)) {
+        const remainingText = characters.slice(last + 1).join("");
+        const nextAsterisk = remainingText.indexOf("*");
+        
+        if (nextAsterisk !== -1 && nextAsterisk <= 3) {
+            const textBeforeAsterisk = remainingText.substring(0, nextAsterisk).trim();
+            if (textBeforeAsterisk === "") {
+                result += remainingText.substring(0, nextAsterisk + 1);
+            }
+        }
+    }
+    
+    return result;
 }
 
 export function trimForDiscord(input: string, maxLength: number = 2000): string {
