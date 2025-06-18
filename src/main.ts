@@ -12,7 +12,7 @@ import { Queue } from "./queue.ts";
 
 import adze, { setup } from "npm:adze";
 import { generateMessage } from "./llm.ts";
-import { getBotToken, getBotSelfId } from "./env.ts";
+import { getBotSelfId, getBotToken } from "./env.ts";
 setup();
 const logger = adze.withEmoji.timestamp.seal();
 
@@ -109,7 +109,7 @@ export function trimForDiscord(input: string, maxLength: number = 2000): string 
 
     // Truncate to max length first
     const truncated = input.substring(0, maxLength);
-    
+
     // Then trim to the last complete sentence
     return trimToEndSentence(truncated);
 }
@@ -131,10 +131,10 @@ function onMessageCreate(botId: string) {
 
         let keepTyping = true;
         logger.info("Replying to message...");
-        
+
         // Send initial typing event
         message.channel.sendTyping();
-        
+
         // Set up recurring typing events every 5 seconds
         const typingInterval = setInterval(() => {
             if (keepTyping) {
@@ -157,13 +157,13 @@ function onMessageCreate(botId: string) {
             clearInterval(typingInterval);
             return;
         }
-        
+
         // Stop typing events
         keepTyping = false;
         clearInterval(typingInterval);
         try {
             logger.info("Replying...");
-await message.reply(trimForDiscord(reply));
+            await message.reply(trimForDiscord(reply));
             logger.info("Reply sent!");
         } catch (exception) {
             logger.error("Failed to reply to message: " + exception);

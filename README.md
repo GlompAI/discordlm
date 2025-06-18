@@ -2,6 +2,8 @@
 
 A Discord bot that integrates with OpenAI-compatible language model endpoints to provide AI responses in Discord channels and direct messages.
 
+> **Recent Updates**: Added development tasks (`prepare`, `dev`, `check`, `lint`, `fmt`) and cleaned up deno.json configuration for better DX.
+
 ## Features
 
 - Responds to mentions and direct messages
@@ -25,8 +27,52 @@ A Discord bot that integrates with OpenAI-compatible language model endpoints to
 3. Run the bot
 
 ```bash
+# Development mode (with file watching)
+deno task dev
+
+# Or run directly
+deno task start
+
+# Or with all permissions (less secure)
 deno run -A src/main.ts
 ```
+
+### Development Tasks
+
+The project includes several useful development tasks:
+
+```bash
+# Start the bot
+deno task start
+
+# Start in development mode with file watching
+deno task dev
+
+# Compile to a standalone binary
+deno task prepare
+
+# Type check the code
+deno task check
+
+# Lint the code
+deno task lint
+
+# Format the code
+deno task fmt
+
+# Check if code is properly formatted
+deno task fmt:check
+```
+
+### Building for Production
+
+To create a standalone executable:
+
+```bash
+deno task prepare
+```
+
+This will create a binary at `dist/discordlm` that can be run without having Deno installed.
 
 ### Environment Variables
 

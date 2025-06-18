@@ -95,6 +95,7 @@ typings/
 .dynamodb/
 
 _dist
+dist/
 
 .idea
 

@@ -51,9 +51,9 @@ export async function generateMessage(
         }),
     );
     // Get the username from the last human message (not from the bot)
-    const lastHumanMessage = history.slice().reverse().find(msg => !msg.fromSystem);
+    const lastHumanMessage = history.slice().reverse().find((msg) => !msg.fromSystem);
     const username = lastHumanMessage?.user || "user";
-    
+
     const engine = new TextEngine();
     const chatHistory = engine.buildPrompt(history, username);
     return {
