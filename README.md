@@ -107,6 +107,49 @@ export OPENAI_KEY="your_api_key_here"
 export TOKEN_LIMIT="32000"
 ```
 
+### Docker
+
+You can also run the bot using Docker for easy deployment:
+
+```bash
+# Build the Docker image
+docker build -t discordlm .
+
+# Run the container with environment variables
+docker run -d \
+  -e BOT_TOKEN="your_discord_bot_token" \
+  -e BOT_SELF_ID="1234567890123456789" \
+  -e OPENAI_URL="https://api.openai.com/v1" \
+  -e MODEL_NAME="gpt-4" \
+  -e OPENAI_KEY="your_api_key" \
+  -e TOKEN_LIMIT="32000" \
+  --name discordlm-bot \
+  discordlm
+```
+
+Or using docker-compose, create a `docker-compose.yml` file:
+
+```yaml
+version: '3.8'
+services:
+  discordlm:
+    build: .
+    environment:
+      - BOT_TOKEN=your_discord_bot_token
+      - BOT_SELF_ID=1234567890123456789
+      - OPENAI_URL=https://api.openai.com/v1
+      - MODEL_NAME=gpt-4
+      - OPENAI_KEY=your_api_key
+      - TOKEN_LIMIT=32000
+    restart: unless-stopped
+```
+
+Then run with:
+
+```bash
+docker-compose up -d
+```
+
 ## Usage
 
 1. Invite the bot to your Discord server with appropriate permissions (Send Messages, Read Message History)
