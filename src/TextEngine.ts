@@ -90,6 +90,7 @@ export default class TextEngine {
                 chatHistory.push({
                     content: message.message,
                     role: "assistant",
+                    name: ownName,
                 });
             } else {
                 chatHistory.push({
