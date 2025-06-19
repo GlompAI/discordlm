@@ -1,7 +1,7 @@
 import * as OpenAI from "jsr:@agent/openai";
-import bella from "./Bella.json" with { type: "json" };
 import { countTokens } from "./llm.ts";
 import { getApiKey, getBaseUrl, getTokenLimit } from "./env.ts";
+import { CharacterCard } from "./CharacterCard.ts";
 
 export interface MessageView {
     message: string;
@@ -23,9 +23,12 @@ export default class TextEngine {
         },
     });
 
-    buildPrompt = async (messages: MessageView[], username: string = "user") => {
-        const card = bella;
-        const ownName = "Bella";
+    buildPrompt = async (messages: MessageView[], username: string = "user", character?: CharacterCard) => {
+        if (!character) {
+            throw new Error("No character provided to TextEngine.buildPrompt");
+        }
+        const card = character;
+        const ownName = character.name || character.char_name;
         for (const message of messages) {
             if (message.tokens == -1) {
                 const tokens = countTokens(message.message);

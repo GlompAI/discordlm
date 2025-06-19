@@ -52,3 +52,27 @@ export function getBotSelfId() {
     }
     return id;
 }
+
+/**
+ * Get the public base URL for avatar serving
+ * This should be a publicly accessible HTTPS URL with proper DNS
+ * that proxies back to the local avatar server
+ * Example: "https://avatars.yourdomain.com"
+ */
+export function getPublicAvatarBaseUrl(): string | undefined {
+    return Deno.env.get("PUBLIC_AVATAR_BASE_URL");
+}
+
+/**
+ * Get whether avatar server should be enabled
+ */
+export function isAvatarServerEnabled(): boolean {
+    return Deno.env.get("ENABLE_AVATAR_SERVER") === "true";
+}
+
+/**
+ * Get the local avatar server port
+ */
+export function getAvatarServerPort(): number {
+    return parseInt(Deno.env.get("AVATAR_PORT") || "8080", 10);
+}

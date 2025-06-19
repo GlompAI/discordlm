@@ -1,0 +1,40 @@
+# Git and development files
+.git
+.gitignore
+*.md
+README.md
+DOCKER.md
+CHARACTER_USAGE.md
+
+# Environment files (should be set via docker-compose)
+.env
+.env.*
+
+# Development and build artifacts
+node_modules/
+dist/
+.deno/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Character files (should be mounted, not copied)
+characters/
+
+# Docker files (not needed in the image)
+Dockerfile
+docker-compose.yml
+.dockerignore
+
