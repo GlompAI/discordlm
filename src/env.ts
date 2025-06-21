@@ -76,3 +76,7 @@ export function isAvatarServerEnabled(): boolean {
 export function getAvatarServerPort(): number {
     return parseInt(Deno.env.get("AVATAR_PORT") || "8080", 10);
 }
+
+export function getInferenceParallelism(): number {
+    return parseInt(Deno.env.get("INFERENCE_PARALLELISM") || "1", 10);
+}

@@ -22,6 +22,7 @@ import {
     getAvatarServerPort,
     getBotSelfId,
     getBotToken,
+    getInferenceParallelism,
     getPublicAvatarBaseUrl,
     isAvatarServerEnabled,
 } from "./env.ts";
@@ -54,6 +55,7 @@ console.log("Initializing character manager...");
 const characterManager = new CharacterManager();
 let webhookManager: WebhookManager;
 let avatarServer: AvatarServer | null = null;
+const inferenceQueue = new Queue(getInferenceParallelism());
 console.log("Character manager initialized");
 
 // Note: Avatar server configuration is now handled via environment functions
@@ -405,7 +407,8 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 messages.push(fakeMessage as any);
 
                 logger.info("Generating response for slash command...");
-                const result = (await generateMessage(
+                const result = (await inferenceQueue.push(
+                    generateMessage,
                     interaction.client,
                     messages as Message[],
                     interaction.client.user!.id,
@@ -558,8 +561,8 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
         let reply = "";
         try {
             logger.info("Generating response...");
-            const result = (await generateMessage(client, messages, botId, character.card)).completion.choices[0]
-                .message.content;
+            const result = (await inferenceQueue.push(generateMessage, client, messages, botId, character.card))
+                .completion.choices[0].message.content;
             if (!result) {
                 adze.error("Empty response from API");
                 return Promise.resolve();
