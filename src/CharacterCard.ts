@@ -1,3 +1,49 @@
+import { unzlibSync } from "fflate";
+
+export interface CharacterCardV2 {
+    spec: "chara_card_v2";
+    spec_version: "2.0";
+    data: {
+        name: string;
+        description: string;
+        personality: string;
+        scenario: string;
+        first_mes: string;
+        mes_example: string;
+        creator_notes: string;
+        system_prompt: string;
+        post_history_instructions: string;
+        alternate_greetings: string[];
+        character_book?: {
+            name: string;
+            description: string;
+            scan_depth: number;
+            token_budget: number;
+            recursive_scanning: boolean;
+            extensions: Record<string, unknown>;
+            entries: {
+                keys: string[];
+                content: string;
+                extensions: Record<string, unknown>;
+                enabled: boolean;
+                insertion_order: number;
+                case_sensitive: boolean;
+                name: string;
+                priority: number;
+                id: string;
+                comment: string;
+                selective: boolean;
+                secondary_keys: string[];
+                constant: boolean;
+            }[];
+        };
+        tags: string[];
+        creator: string;
+        character_version: string;
+        extensions: Record<string, unknown>;
+    };
+}
+
 export interface CharacterCard {
     char_name: string;
     char_persona: string;
@@ -68,6 +114,47 @@ export async function parseCharacterCardFromPNG(filePath: string): Promise<Chara
                             return JSON.parse(decodedData) as CharacterCard;
                         } catch (e) {
                             console.warn(`Failed to parse character data from ${filePath}:`, e);
+                        }
+                    }
+                }
+            } else if (chunkType === "zTXt") {
+                // Read chunk data
+                const chunkData = fileData.slice(offset, offset + chunkLength);
+
+                // Find null separator for keyword
+                const nullIndex = chunkData.indexOf(0);
+                if (nullIndex > -1) {
+                    const keyword = new TextDecoder().decode(chunkData.slice(0, nullIndex));
+
+                    if (keyword === "chara") {
+                        try {
+                            // Skip keyword, null separator, and compression method byte
+                            const compressedData = chunkData.slice(nullIndex + 2);
+                            const decompressedData = unzlibSync(compressedData);
+                            const text = new TextDecoder().decode(decompressedData);
+                            const card = JSON.parse(text);
+
+                            // Check if it's a V2 card and adapt it
+                            if (card.spec === "chara_card_v2") {
+                                const v2Card = card as CharacterCardV2;
+                                return {
+                                    name: v2Card.data.name,
+                                    description: v2Card.data.description,
+                                    personality: v2Card.data.personality,
+                                    scenario: v2Card.data.scenario,
+                                    first_mes: v2Card.data.first_mes,
+                                    mes_example: v2Card.data.mes_example,
+                                    // Populate old fields from new fields for compatibility
+                                    char_name: v2Card.data.name,
+                                    char_persona: v2Card.data.personality,
+                                    world_scenario: v2Card.data.scenario,
+                                    char_greeting: v2Card.data.first_mes,
+                                    example_dialogue: v2Card.data.mes_example,
+                                };
+                            }
+                            return card as CharacterCard;
+                        } catch (e) {
+                            console.warn(`Failed to parse compressed character data from ${filePath}:`, e);
                         }
                     }
                 }

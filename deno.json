@@ -1,12 +1,19 @@
 {
     "compilerOptions": {
-        "lib": ["deno.ns", "deno.window"],
+        "lib": [
+            "deno.ns",
+            "deno.window"
+        ],
         "strict": true
     },
     "lint": {
-        "include": ["src/"],
+        "include": [
+            "src/"
+        ],
         "rules": {
-            "tags": ["recommended"]
+            "tags": [
+                "recommended"
+            ]
         }
     },
     "fmt": {
@@ -16,12 +23,16 @@
         "semiColons": true,
         "singleQuote": false,
         "proseWrap": "preserve",
-        "include": ["src/"]
+        "include": [
+            "src/"
+        ]
     },
     "lock": false,
     "nodeModulesDir": "auto",
     "test": {
-        "include": ["src/"]
+        "include": [
+            "src/"
+        ]
     },
     "tasks": {
         "start": "deno run --allow-net --allow-env --allow-read --allow-write src/main.ts",
@@ -32,7 +43,9 @@
         "fmt": "deno fmt",
         "fmt:check": "deno fmt --check"
     },
-    "imports": {},
+    "imports": {
+        "fflate": "npm:fflate"
+    },
     "exclude": [
         "dist/",
         "node_modules/"
