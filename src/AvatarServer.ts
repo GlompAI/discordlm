@@ -49,7 +49,7 @@ export class AvatarServer {
         }
 
         // Extract filename
-        const filename = url.pathname.substring("/avatars/".length);
+        const filename = decodeURIComponent(url.pathname.substring("/avatars/".length));
 
         // Security: prevent directory traversal
         if (filename.includes("..") || filename.includes("/") || filename.includes("\\")) {
