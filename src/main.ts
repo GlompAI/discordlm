@@ -118,7 +118,7 @@ client.once(Events.ClientReady, async (readyClient) => {
 
     // Register slash commands
     logger.log(`Registering slash commands...`);
-    await registerSlashCommands(readyClient, characterManager);
+    await registerSlashCommands(readyClient);
     logger.log(`Slash commands registered`);
 
     logger.log(`Character system ready with ${characterManager.getCharacters().length} characters`);
@@ -257,7 +257,7 @@ export function trimForDiscord(input: string, maxLength: number = 1000): string 
     return trimToEndSentence(truncated);
 }
 
-async function registerSlashCommands(client: Client, characterManager: CharacterManager) {
+async function registerSlashCommands(client: Client) {
     const commands = [
         new SlashCommandBuilder()
             .setName("switch")

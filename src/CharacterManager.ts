@@ -63,13 +63,6 @@ export class CharacterManager {
     }
 
     /**
-     * Get the default character
-     */
-    getDefaultCharacter(): CharacterConfig | null {
-        return this.defaultCharacter;
-    }
-
-    /**
      * Set the default character
      */
     setDefaultCharacter(characterName: string): boolean {

@@ -49,5 +49,3 @@ export class Queue {
         })();
     }
 }
-
-export default Queue;
