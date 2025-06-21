@@ -258,7 +258,7 @@ export async function loadCharacterCards(
                 if (entry.name.toLowerCase().endsWith(".png")) {
                     card = await parseCharacterCardFromPNG(filePath);
                     // For PNG files, use the PNG file itself as the avatar
-                    avatarUrl = avatarBaseUrl ? `${avatarBaseUrl}/avatars/${entry.name}` : filePath;
+                    avatarUrl = avatarBaseUrl ? `${avatarBaseUrl}/avatars/${encodeURIComponent(entry.name)}` : filePath;
                 } else if (entry.name.toLowerCase().endsWith(".json")) {
                     card = await parseCharacterCardFromJSON(filePath);
                     // For JSON files, look for a corresponding PNG file with the same base name
@@ -266,7 +266,7 @@ export async function loadCharacterCards(
                     const pngPath = `${resolvedDir}/${baseName}.png`;
                     try {
                         await Deno.stat(pngPath);
-                        avatarUrl = avatarBaseUrl ? `${avatarBaseUrl}/avatars/${baseName}.png` : pngPath;
+                        avatarUrl = avatarBaseUrl ? `${avatarBaseUrl}/avatars/${encodeURIComponent(baseName)}.png` : pngPath;
                     } catch {
                         // No corresponding PNG file found, that's okay
                     }

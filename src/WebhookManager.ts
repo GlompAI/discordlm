@@ -59,7 +59,7 @@ export class WebhookManager {
                             if (publicBaseUrl) {
                                 // Convert file path to public URL
                                 const fileName = character.avatarUrl.replace(/^\.\//, "").replace(/^\//, "");
-                                avatar = `${publicBaseUrl.replace(/\/$/, "")}/${encodeURIComponent(fileName)}`;
+                                avatar = `${publicBaseUrl.replace(/\/$/, "")}/${fileName}`;
                             } else {
                                 // No public URL configured, skip avatar
                             }
@@ -128,7 +128,7 @@ export class WebhookManager {
                     const publicBaseUrl = getPublicAvatarBaseUrl();
                     if (publicBaseUrl) {
                         const fileName = character.avatarUrl.replace(/^\.\//, "").replace(/^\//, "");
-                        sendOptions.avatarURL = `${publicBaseUrl.replace(/\/$/, "")}/${encodeURIComponent(fileName)}`;
+                        sendOptions.avatarURL = `${publicBaseUrl.replace(/\/$/, "")}/${fileName}`;
                     }
                 } else {
                     // Assume it's already a URL
