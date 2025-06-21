@@ -176,90 +176,70 @@ try {
     Deno.exit(1);
 }
 
-export function trimToEndSentence(input: string) {
-    if (!input) {
-        return "";
+export function smartSplit(text: string, maxLength = 1980) {
+    if (text.length <= maxLength) {
+        return [text];
     }
 
-    const sentenceEnders = new Set([
-        ".",
-        "!",
-        "?",
-        "。",
-        "！",
-        "？",
-    ]);
+    const parts: string[] = [];
+    let currentPart = "";
 
-    const otherPunctuation = new Set([
-        "*",
-        '"',
-        ")",
-        "}",
-        "`",
-        "]",
-        "$",
-        "”",
-        "）",
-        "】",
-        "’",
-        "」",
-        "_",
-    ]);
+    // Split by lines to respect paragraphs
+    const lines = text.split("\n");
+    let codeBlockFence: string | null = null;
 
-    const allPunctuation = new Set([...sentenceEnders, ...otherPunctuation]);
-    let last = -1;
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
 
-    const characters = Array.from(input);
-    for (let i = characters.length - 1; i >= 0; i--) {
-        const char = characters[i];
-
-        if (allPunctuation.has(char)) {
-            if (i > 0 && /[\s\n]/.test(characters[i - 1])) {
-                last = i - 1;
+        // Handle code blocks
+        if (line.startsWith("```")) {
+            if (codeBlockFence) {
+                // End of code block
+                codeBlockFence = null;
             } else {
-                last = i;
+                // Start of code block
+                codeBlockFence = line.trim();
             }
-            break;
+        }
+
+        // If adding the next line exceeds maxLength, push the current part
+        if (currentPart.length + line.length + 1 > maxLength) {
+            // If we are in a code block, we must close it
+            if (codeBlockFence) {
+                currentPart += "\n```";
+            }
+            parts.push(currentPart);
+            currentPart = "";
+            // If we were in a code block, we must re-open it
+            if (codeBlockFence) {
+                currentPart = codeBlockFence + "\n";
+            }
+        }
+
+        // Add the line to the current part
+        if (currentPart.length > 0) {
+            currentPart += "\n";
+        }
+        currentPart += line;
+    }
+
+    // Add the last part
+    parts.push(currentPart);
+
+    // Further split any parts that are still too long (e.g., single long lines)
+    const finalParts: string[] = [];
+    for (const part of parts) {
+        if (part.length > maxLength) {
+            // Simple character-based split for oversized parts
+            for (let i = 0; i < part.length; i += maxLength) {
+                finalParts.push(part.substring(i, i + maxLength));
+            }
+        } else {
+            finalParts.push(part);
         }
     }
 
-    if (last === -1) {
-        return input.trimEnd();
-    }
-
-    let result = characters.slice(0, last + 1).join("").trimEnd();
-
-    const cutChar = characters[last];
-    if (sentenceEnders.has(cutChar)) {
-        const remainingText = characters.slice(last + 1).join("");
-        const nextAsterisk = remainingText.indexOf("*");
-
-        if (nextAsterisk !== -1 && nextAsterisk <= 3) {
-            const textBeforeAsterisk = remainingText.substring(0, nextAsterisk).trim();
-            if (textBeforeAsterisk === "") {
-                result += remainingText.substring(0, nextAsterisk + 1);
-            }
-        }
-    }
-
-    return result;
-}
-
-export function trimForDiscord(input: string, maxLength: number = 1000): string {
-    if (!input) {
-        return "";
-    }
-
-    // If already under the limit, return as-is
-    if (input.length <= maxLength) {
-        return input;
-    }
-
-    // Truncate to max length first
-    const truncated = input.substring(0, maxLength);
-
-    // Then trim to the last complete sentence
-    return trimToEndSentence(truncated);
+    return finalParts;
 }
 
 async function registerSlashCommands(client: Client) {
@@ -428,17 +408,27 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                     webhookManager && interaction.channel instanceof TextChannel &&
                     interaction.channel.type === ChannelType.GuildText
                 ) {
-                    const success = await webhookManager.sendAsCharacter(
-                        interaction.channel,
-                        character,
-                        trimForDiscord(result),
-                    );
-                    useWebhook = success;
+                    const messageParts = smartSplit(result);
+                    for (const part of messageParts) {
+                        const success = await webhookManager.sendAsCharacter(
+                            interaction.channel,
+                            character,
+                            part,
+                        );
+                        useWebhook = success;
+                        if (!success) {
+                            // If one part fails, stop sending
+                            break;
+                        }
+                    }
                 }
 
                 if (!useWebhook) {
                     // Fallback to follow-up message
-                    await interaction.followUp(trimForDiscord(result));
+                    const messageParts = smartSplit(result);
+                    for (const part of messageParts) {
+                        await interaction.followUp(part);
+                    }
                 }
 
                 logger.info("Slash command response sent!");
@@ -591,17 +581,27 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
                 webhookManager && message.channel instanceof TextChannel &&
                 message.channel.type === ChannelType.GuildText
             ) {
-                const success = await webhookManager.sendAsCharacter(
-                    message.channel,
-                    character,
-                    trimForDiscord(reply),
-                );
-                useWebhook = success;
+                const messageParts = smartSplit(reply);
+                for (const part of messageParts) {
+                    const success = await webhookManager.sendAsCharacter(
+                        message.channel,
+                        character,
+                        part,
+                    );
+                    useWebhook = success;
+                    if (!success) {
+                        // If one part fails, stop sending
+                        break;
+                    }
+                }
             }
 
             if (!useWebhook) {
                 // Fallback to regular reply (for DMs, failed webhooks, or non-guild channels)
-                await message.reply(trimForDiscord(reply));
+                const messageParts = smartSplit(reply);
+                for (const part of messageParts) {
+                    await message.reply(part);
+                }
             }
 
             logger.info("Reply sent!");
