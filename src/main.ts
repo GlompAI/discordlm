@@ -502,13 +502,21 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
         }
 
         // Get the current character for this channel
-        const character = characterManager.getChannelCharacter(message.channel.id);
+        let character = characterManager.getChannelCharacter(message.channel.id);
 
         // If this message is specifically targeted at a character, only respond if it's the active character
-        if ((repliesToWebhookCharacter || mentionsCharacterByName) && !mentionsBot && character) {
-            if (targetCharacterName !== character.card.name) {
+        if ((repliesToWebhookCharacter || mentionsCharacterByName) && !mentionsBot) {
+            if (targetCharacterName !== character?.card.name) {
                 // This message is for a different character, not the active one
-                return;
+                // Switch to the new character
+                const newCharacter = characterManager.getCharacter(targetCharacterName);
+                if (newCharacter) {
+                    characterManager.setChannelCharacter(message.channel.id, targetCharacterName);
+                    character = newCharacter;
+                    logger.info(`Switched character to ${targetCharacterName} in channel ${message.channel.id}`);
+                } else {
+                    return;
+                }
             }
         }
 
