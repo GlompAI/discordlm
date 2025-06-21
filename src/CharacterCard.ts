@@ -44,6 +44,17 @@ export interface CharacterCardV2 {
     };
 }
 
+export interface CharacterCardV3 {
+    spec: "chara_card_v3";
+    spec_version: "3.0";
+    name: string;
+    description: string;
+    personality: string;
+    scenario: string;
+    first_mes: string;
+    mes_example: string;
+}
+
 export interface CharacterCard {
     char_name: string;
     char_persona: string;
@@ -75,8 +86,30 @@ export interface CharacterConfig {
     filename: string;
 }
 
-function normalizeCard(card: Partial<CharacterCard>): CharacterCard {
-    const normalized = { ...card };
+function normalizeCard(card: Partial<CharacterCard | CharacterCardV2 | CharacterCardV3>): CharacterCard {
+    const normalized: Partial<CharacterCard> = {};
+
+    if ("spec" in card) {
+        if (card.spec === "chara_card_v2") {
+            const v2 = card as CharacterCardV2;
+            normalized.name = v2.data.name;
+            normalized.description = v2.data.description;
+            normalized.personality = v2.data.personality;
+            normalized.scenario = v2.data.scenario;
+            normalized.first_mes = v2.data.first_mes;
+            normalized.mes_example = v2.data.mes_example;
+        } else if (card.spec === "chara_card_v3") {
+            const v3 = card as CharacterCardV3;
+            normalized.name = v3.name;
+            normalized.description = v3.description;
+            normalized.personality = v3.personality;
+            normalized.scenario = v3.scenario;
+            normalized.first_mes = v3.first_mes;
+            normalized.mes_example = v3.mes_example;
+        }
+    } else {
+        Object.assign(normalized, card);
+    }
 
     // Ensure both name and char_name are present
     if (normalized.name && !normalized.char_name) {
@@ -91,10 +124,10 @@ function normalizeCard(card: Partial<CharacterCard>): CharacterCard {
     normalized.scenario ??= "";
     normalized.first_mes ??= "";
     normalized.mes_example ??= "";
-    normalized.char_persona ??= "";
-    normalized.world_scenario ??= "";
-    normalized.char_greeting ??= "";
-    normalized.example_dialogue ??= "";
+    normalized.char_persona ??= normalized.personality;
+    normalized.world_scenario ??= normalized.scenario;
+    normalized.char_greeting ??= normalized.first_mes;
+    normalized.example_dialogue ??= normalized.mes_example;
 
     return normalized as CharacterCard;
 }
@@ -159,22 +192,8 @@ export async function parseCharacterCardFromPNG(filePath: string): Promise<Chara
                             const card = JSON.parse(text);
 
                             // Check if it's a V2 card and adapt it
-                            if (card.spec === "chara_card_v2") {
-                                const v2Card = card as CharacterCardV2;
-                                return {
-                                    name: v2Card.data.name,
-                                    description: v2Card.data.description,
-                                    personality: v2Card.data.personality,
-                                    scenario: v2Card.data.scenario,
-                                    first_mes: v2Card.data.first_mes,
-                                    mes_example: v2Card.data.mes_example,
-                                    // Populate old fields from new fields for compatibility
-                                    char_name: v2Card.data.name,
-                                    char_persona: v2Card.data.personality,
-                                    world_scenario: v2Card.data.scenario,
-                                    char_greeting: v2Card.data.first_mes,
-                                    example_dialogue: v2Card.data.mes_example,
-                                };
+                            if (card.spec === "chara_card_v2" || card.spec === "chara_card_v3") {
+                                return card;
                             }
                             return card as CharacterCard;
                         } catch (e) {

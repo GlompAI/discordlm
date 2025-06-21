@@ -12,6 +12,7 @@ import {
     SlashCommandBuilder,
     TextChannel,
 } from "npm:discord.js";
+import { load } from "dotenv";
 
 import { Queue } from "./queue.ts";
 
@@ -27,6 +28,8 @@ import {
 import { CharacterManager } from "./CharacterManager.ts";
 import { WebhookManager } from "./WebhookManager.ts";
 import { AvatarServer } from "./AvatarServer.ts";
+
+await load({ export: true });
 
 console.log("=== DISCORD BOT STARTING ===");
 console.log("Setting up adze logging...");
