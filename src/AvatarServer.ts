@@ -38,13 +38,6 @@ export class AvatarServer {
     }
 
     /**
-     * Get the URL for a character's avatar
-     */
-    getAvatarUrl(filename: string): string {
-        return `http://localhost:${this.port}/avatars/${filename}`;
-    }
-
-    /**
      * Handle HTTP requests
      */
     private async handleRequest(request: Request): Promise<Response> {
