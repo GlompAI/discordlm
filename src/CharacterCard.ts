@@ -75,6 +75,30 @@ export interface CharacterConfig {
     filename: string;
 }
 
+function normalizeCard(card: Partial<CharacterCard>): CharacterCard {
+    const normalized = { ...card };
+
+    // Ensure both name and char_name are present
+    if (normalized.name && !normalized.char_name) {
+        normalized.char_name = normalized.name;
+    } else if (normalized.char_name && !normalized.name) {
+        normalized.name = normalized.char_name;
+    }
+
+    // Ensure other fields are at least empty strings
+    normalized.description ??= "";
+    normalized.personality ??= "";
+    normalized.scenario ??= "";
+    normalized.first_mes ??= "";
+    normalized.mes_example ??= "";
+    normalized.char_persona ??= "";
+    normalized.world_scenario ??= "";
+    normalized.char_greeting ??= "";
+    normalized.example_dialogue ??= "";
+
+    return normalized as CharacterCard;
+}
+
 /**
  * Extract character card data from PNG metadata
  * Character cards are typically stored in PNG tEXt chunks with key "chara"
@@ -230,8 +254,9 @@ export async function loadCharacterCards(
                 }
 
                 if (card) {
+                    const normalizedCard = normalizeCard(card);
                     characters.push({
-                        card,
+                        card: normalizedCard,
                         filename: entry.name,
                         avatarUrl,
                     });
