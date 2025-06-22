@@ -13,16 +13,19 @@ export interface MessageView {
 }
 
 export default class TextEngine {
-    client = new OpenAI.Client({
-        //@ts-expect-error "URL format has no schema"
-        baseURL: getBaseUrl(),
-        apikey: getApiKey(),
-        headers: {
-            "x-api-key": getApiKey(),
-            "Authorization": `Bearer ${getApiKey()}`,
-            "content-type": "application/json",
-        },
-    });
+    client: OpenAI.Client;
+
+    constructor() {
+        this.client = new OpenAI.Client({
+            baseURL: getBaseUrl() as `https://${string}/`,
+            apikey: getApiKey(),
+            headers: {
+                "x-api-key": getApiKey(),
+                "Authorization": `Bearer ${getApiKey()}`,
+                "content-type": "application/json",
+            },
+        });
+    }
 
     buildPrompt = async (messages: MessageView[], username: string = "user", character?: CharacterCard) => {
         if (!character) {
