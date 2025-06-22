@@ -256,20 +256,6 @@ async function registerSlashCommands(client: Client) {
         new SlashCommandBuilder()
             .setName("list")
             .setDescription("List all available characters"),
-        new SlashCommandBuilder()
-            .setName("char")
-            .setDescription("Temporarily use a character for this message")
-            .addStringOption((option) =>
-                option.setName("character")
-                    .setDescription("The character to use")
-                    .setRequired(true)
-                    .setAutocomplete(true)
-            )
-            .addStringOption((option) =>
-                option.setName("message")
-                    .setDescription("The message for the character to respond to")
-                    .setRequired(true)
-            ),
     ];
 
     try {
@@ -284,7 +270,7 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
     return async (interaction: any) => {
         if (interaction.isAutocomplete()) {
             // Handle autocomplete for character names
-            if (interaction.commandName === "switch" || interaction.commandName === "char") {
+            if (interaction.commandName === "switch") {
                 const focusedValue = interaction.options.getFocused();
                 const characters = characterManager.getCharacters();
                 const filtered = characters.filter((char) =>
@@ -338,109 +324,6 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 content: `Available characters: ${charList}`,
                 ephemeral: true,
             });
-        } else if (commandName === "char") {
-            const characterName = interaction.options.getString("character");
-            const message = interaction.options.getString("message");
-            const channelId = interaction.channel?.id;
-
-            if (!channelId) {
-                await interaction.reply({ content: "Command can only be used in channels.", ephemeral: true });
-                return;
-            }
-
-            const character = characterManager.getCharacter(characterName!);
-
-            if (!character) {
-                const availableChars = characterManager.getCharacters().map((c) => c.card.name).join(", ");
-                await interaction.reply({
-                    content: `Character "${characterName}" not found. Available characters: ${availableChars}`,
-                    ephemeral: true,
-                });
-                return;
-            }
-
-            // Set the character for this channel temporarily
-            const oldCharacter = characterManager.getChannelCharacter(channelId);
-            characterManager.setChannelCharacter(channelId, characterName!);
-
-            // Reply publicly with the user's message, then follow up with character response
-            await interaction.reply(`**${interaction.user.displayName}:** ${message}`);
-
-            try {
-                logger.info(`Using character: ${character.card.name} for slash command`);
-                logger.info("Fetching message history for slash command...");
-
-                // Get message history
-                const messages = Array.from(
-                    (await interaction.channel?.messages.fetch({ limit: 100 }))?.values() || [],
-                );
-                messages.reverse();
-
-                // Create a fake message object for the user's input
-                const fakeMessage = {
-                    content: message!,
-                    author: interaction.user,
-                    id: "slash-command-" + Date.now(),
-                    channel: interaction.channel,
-                    createdTimestamp: Date.now(),
-                };
-                messages.push(fakeMessage as any);
-
-                logger.info("Generating response for slash command...");
-                const result = (await inferenceQueue.push(
-                    generateMessage,
-                    interaction.client,
-                    messages as Message[],
-                    interaction.client.user!.id,
-                    character.card,
-                )).completion.choices[0].message.content;
-
-                if (!result) {
-                    await interaction.followUp("Sorry, I couldn't generate a response.");
-                    return;
-                }
-
-                // Use webhook if possible, otherwise follow up with the reply
-                const webhookManager = getWebhookManager();
-                let useWebhook = false;
-
-                if (
-                    webhookManager && interaction.channel instanceof TextChannel &&
-                    interaction.channel.type === ChannelType.GuildText
-                ) {
-                    const messageParts = smartSplit(result);
-                    for (const part of messageParts) {
-                        const success = await webhookManager.sendAsCharacter(
-                            interaction.channel,
-                            character,
-                            part,
-                        );
-                        useWebhook = success;
-                        if (!success) {
-                            // If one part fails, stop sending
-                            break;
-                        }
-                    }
-                }
-
-                if (!useWebhook) {
-                    // Fallback to follow-up message
-                    const messageParts = smartSplit(result);
-                    for (const part of messageParts) {
-                        await interaction.followUp(part);
-                    }
-                }
-
-                logger.info("Slash command response sent!");
-            } catch (exception) {
-                logger.error("Failed to generate response for slash command: " + exception);
-                await interaction.editReply("Sorry, there was an error generating the response.");
-            } finally {
-                // Restore the old character if there was one
-                if (oldCharacter) {
-                    characterManager.setChannelCharacter(channelId, oldCharacter.card.name);
-                }
-            }
         }
     };
 }
