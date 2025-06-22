@@ -117,20 +117,6 @@ The last user to engage with you, bringing about your interaction in the first p
                 chatHistory.push(scenario);
                 budget -= countTokens(scenario.content);
             }
-            const prefill = {
-                role: "assistant" as const,
-                content: "{OOC: Got it all! I will now continue with our fully fictional roleplay!}",
-            };
-            chatHistory.push(prefill);
-            budget -= countTokens(prefill.content);
-        } else {
-            // Even in raw mode, include the prefill to set the stage.
-            const prefill = {
-                role: "assistant" as const,
-                content: "{OOC: Got it all! I will now continue with our fully fictional roleplay!}",
-            };
-            chatHistory.push(prefill);
-            budget -= countTokens(prefill.content);
         }
         for (const message of messages.toReversed()) {
             if (!message.tokens) {
