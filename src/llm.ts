@@ -72,31 +72,26 @@ export async function generateMessage(
 
             const characterName = getCharacterName(message); // Gets name from webhook or embed title
 
-            if (characterName) {
-                // Message is from a character via webhook/embed
+            // First, check if the message is a raw reply from the bot.
+            // This happens if the author is the bot AND it's not a character reply (no webhook/embed title).
+            if (message.author.id === charId && !characterName) {
+                fromSystem = true;
+                userName = "Assistant"; // Raw bot replies are always from "Assistant"
+                messageText = message.content;
+            } else if (characterName) {
+                // This is a character message (from a webhook or an embed with a title).
                 userName = characterName;
-                fromSystem = false; // Assume it's from another character by default
-                if (character && (characterName === character.name || characterName === character.char_name)) {
-                    // It's from the system (the bot's current identity) only if the name matches the active character
-                    fromSystem = true;
-                } else if (character === null && characterName === "Assistant") {
-                    // It's from the system (the bot's raw mode)
-                    fromSystem = true;
-                }
+                // It's from the "system" if the character name matches the currently active character.
+                fromSystem = (character?.name === characterName) || (character?.char_name === characterName);
 
-                // Content is from embed description if present, otherwise from message content
+                // Get message content from embed or raw content
                 if (message.embeds.length > 0 && message.embeds[0].description) {
                     messageText = message.embeds[0].description;
                 } else {
                     messageText = message.content;
                 }
-            } else if (message.author.id === charId) {
-                // Message is from the bot, but not a character reply (e.g. an error message)
-                fromSystem = true;
-                userName = character?.name || character?.char_name || "Assistant";
-                messageText = message.content;
             } else {
-                // Message is from a user
+                // It's a message from a human user.
                 fromSystem = false;
                 userName = await convertSnowflake(message.author.id, message.guild);
                 messageText = message.content;
