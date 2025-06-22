@@ -6,6 +6,7 @@ import { getModel } from "./env.ts";
 import { CharacterCard } from "./CharacterCard.ts";
 import adze from "npm:adze";
 import { dumpDebug } from "./debug.ts";
+import { RESET_MESSAGE_CONTENT } from "./main.ts";
 
 export function countTokens(message: string): number {
     if (message == "") return 0;
@@ -52,6 +53,15 @@ export async function generateMessage(
             }
         }
         return null;
+    }
+
+    // Find the last reset message and truncate history
+    const lastResetIndex = messages.map((m) => m.content).lastIndexOf(
+        RESET_MESSAGE_CONTENT,
+    );
+
+    if (lastResetIndex !== -1) {
+        messages = messages.slice(lastResetIndex + 1);
     }
 
     const history = await Promise.all(

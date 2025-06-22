@@ -31,6 +31,8 @@ import { CharacterManager } from "./CharacterManager.ts";
 import { WebhookManager } from "./WebhookManager.ts";
 import { AvatarServer } from "./AvatarServer.ts";
 
+export const RESET_MESSAGE_CONTENT = "--- Bot conversation history reset ---";
+
 console.log(`DEBUG environment variable is: ${Deno.env.get("DEBUG")}`);
 console.log("=== DISCORD BOT STARTING ===");
 console.log("Setting up adze logging...");
@@ -257,6 +259,9 @@ async function registerSlashCommands(client: Client) {
         new SlashCommandBuilder()
             .setName("list")
             .setDescription("List all available characters"),
+        new SlashCommandBuilder()
+            .setName("reset")
+            .setDescription("Reset the conversation history for the bot"),
     ];
 
     try {
@@ -324,6 +329,11 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
             await interaction.reply({
                 content: `Available characters: ${charList}`,
                 ephemeral: true,
+            });
+        } else if (commandName === "reset") {
+            await interaction.reply({
+                content: RESET_MESSAGE_CONTENT,
+                ephemeral: false,
             });
         }
     };
