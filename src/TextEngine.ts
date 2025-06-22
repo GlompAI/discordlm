@@ -30,11 +30,8 @@ export default class TextEngine {
         const card = character;
         const ownName = character.name || character.char_name;
         for (const message of messages) {
-            if (message.tokens == -1) {
-                const tokens = countTokens(message.message);
-                if (tokens) {
-                    message.tokens = tokens;
-                }
+            if (!message.tokens || message.tokens === -1) {
+                message.tokens = countTokens(message.message);
             }
         }
         const chatHistory: OpenAI.Chat.Request["messages"] = [];
@@ -122,7 +119,7 @@ The last user to engage with you, bringing about your interaction in the first p
             if (message.messageId) candidates.push(message.messageId);
         }
         const messagesToInject = messages.filter((m) =>
-            !(m.message && m.message == "") && (!m.messageId || candidates.includes(m.messageId))
+            (m.message || m.message === "") && (!m.messageId || candidates.includes(m.messageId))
         );
         for (const message of messagesToInject) {
             if (message.fromSystem) {

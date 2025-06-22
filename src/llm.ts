@@ -47,15 +47,15 @@ export async function generateMessage(
         // Check for embeds from the bot
         if (message.author.bot && message.embeds.length > 0) {
             const embed = message.embeds[0];
-            if (embed.author?.name) {
-                return embed.author.name;
+            if (embed.title) {
+                return embed.title;
             }
         }
         return null;
     }
 
     const history = await Promise.all(
-        messages.filter((m) => m.content).map(async (message) => {
+        messages.filter((m) => m.content || m.embeds.length > 0).map(async (message) => {
             const content = message.content
                 ? await replaceAllAsync(
                     message.content,
