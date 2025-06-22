@@ -262,12 +262,7 @@ async function registerSlashCommands(client: Client) {
             ),
         new SlashCommandBuilder()
             .setName("list")
-            .setDescription("List all available characters")
-            .addIntegerOption((option) =>
-                option.setName("page")
-                    .setDescription("The page number to display")
-                    .setRequired(false)
-            ),
+            .setDescription("List all available characters"),
         new SlashCommandBuilder()
             .setName("reset")
             .setDescription("Reset the conversation history for the bot"),
@@ -281,99 +276,6 @@ async function registerSlashCommands(client: Client) {
         logger.info("Successfully registered slash commands");
     } catch (error) {
         logger.error("Failed to register slash commands:", error);
-    }
-}
-
-async function handleListCommand(interaction: any, characterManager: CharacterManager) {
-    const channelId = interaction.channel?.id;
-    if (!channelId) {
-        await interaction.reply({ content: "Command can only be used in channels.", ephemeral: true });
-        return;
-    }
-
-    const page = interaction.isChatInputCommand()
-        ? interaction.options.getInteger("page") || 1
-        : parseInt(interaction.customId.split("-")[2], 10);
-
-    const currentChar = characterManager.getChannelCharacter(channelId);
-    const allCharacters = characterManager.getCharacters();
-
-    if (allCharacters.length === 0) {
-        await interaction.reply({
-            content: "There are no characters loaded.",
-            ephemeral: true,
-        });
-        return;
-    }
-
-    const itemsPerPage = 4; // 4 characters + 1 for "None"
-    const totalPages = Math.ceil(allCharacters.length / itemsPerPage);
-    const start = (page - 1) * itemsPerPage;
-    const end = start + itemsPerPage;
-
-    const characterSlice = allCharacters.slice(start, end);
-
-    const embeds = characterSlice.map((char) => {
-        dumpDebug("list-character", char);
-        let description = char.card.description || (char.card as any).data?.description;
-        const embed = new EmbedBuilder()
-            .setTitle(char.card.name)
-            .setColor(char === currentChar ? 0x00FF00 : 0x0099FF); // Green if current, blue otherwise
-
-        if (description && description.trim() !== "") {
-            if (description.length > 256) { // Keep descriptions short for list view
-                description = description.substring(0, 250) + "...";
-            }
-            embed.setDescription(description);
-        }
-
-        if (char.avatarUrl) {
-            embed.setThumbnail(char.avatarUrl);
-        }
-
-        if (char === currentChar) {
-            embed.setFooter({ text: "Current Character" });
-        }
-        dumpDebug("list-embed", embed.toJSON());
-        return embed;
-    });
-
-    // Handle "None" option
-    const noneEmbed = new EmbedBuilder()
-        .setTitle("None (Raw RP)")
-        .setDescription("Disables character-based roleplaying.")
-        .setColor(currentChar === null ? 0x00FF00 : 0x0099FF);
-
-    if (currentChar === null) {
-        noneEmbed.setFooter({ text: "Current Mode" });
-    }
-
-    const allEmbeds = [noneEmbed, ...embeds];
-
-    const row = new ActionRowBuilder<ButtonBuilder>()
-        .addComponents(
-            new ButtonBuilder()
-                .setCustomId(`list-prev-${page}`)
-                .setLabel("Previous")
-                .setStyle(ButtonStyle.Primary)
-                .setDisabled(page <= 1),
-            new ButtonBuilder()
-                .setCustomId(`list-next-${page}`)
-                .setLabel("Next")
-                .setStyle(ButtonStyle.Primary)
-                .setDisabled(page >= totalPages),
-        );
-
-    const replyOptions = {
-        embeds: allEmbeds,
-        components: [row],
-        ephemeral: true,
-    };
-
-    if (interaction.isChatInputCommand()) {
-        await interaction.reply(replyOptions);
-    } else if (interaction.isButton()) {
-        await interaction.update(replyOptions);
     }
 }
 
@@ -397,34 +299,6 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                         ); // Discord limits to 25 choices
 
                     await interaction.respond(filtered);
-                }
-                return;
-            }
-
-            if (interaction.isButton()) {
-                const [action, direction, pageStr] = interaction.customId.split("-");
-                if (action === "list") {
-                    const page = parseInt(pageStr, 10);
-                    const newPage = direction === "next" ? page + 1 : page - 1;
-
-                    // We need to pass the new page number to the handler.
-                    // We can't directly modify the interaction, so we'll create a new object
-                    // that looks like an interaction with the new page number.
-                    const newInteraction = {
-                        ...interaction,
-                        isChatInputCommand: () => false,
-                        isButton: () => true,
-                        customId: `list-${direction}-${newPage}`,
-                        options: {
-                            getInteger: (name: string) => {
-                                if (name === "page") {
-                                    return newPage;
-                                }
-                                return null;
-                            },
-                        },
-                    };
-                    await handleListCommand(newInteraction, characterManager);
                 }
                 return;
             }
@@ -462,7 +336,64 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                     );
                 }
             } else if (commandName === "list") {
-                await handleListCommand(interaction, characterManager);
+                const channelId = interaction.channel?.id;
+                if (!channelId) {
+                    await interaction.reply({ content: "Command can only be used in channels.", ephemeral: true });
+                    return;
+                }
+
+                const currentChar = characterManager.getChannelCharacter(channelId);
+                const allCharacters = characterManager.getCharacters();
+
+                if (allCharacters.length === 0) {
+                    await interaction.reply({
+                        content: "There are no characters loaded.",
+                        ephemeral: true,
+                    });
+                    return;
+                }
+
+                const embeds = allCharacters.slice(0, 5).map((char) => {
+                    dumpDebug("list-character", char);
+                    let description = char.card.description || (char.card as any).data?.description;
+                    const embed = new EmbedBuilder()
+                        .setTitle(char.card.name)
+                        .setColor(char === currentChar ? 0x00FF00 : 0x0099FF); // Green if current, blue otherwise
+
+                    if (description && description.trim() !== "") {
+                        if (description.length > 256) { // Keep descriptions short for list view
+                            description = description.substring(0, 250) + "...";
+                        }
+                        embed.setDescription(description);
+                    }
+
+                    if (char.avatarUrl) {
+                        embed.setThumbnail(char.avatarUrl);
+                    }
+
+                    if (char === currentChar) {
+                        embed.setFooter({ text: "Current Character" });
+                    }
+                    dumpDebug("list-embed", embed.toJSON());
+                    return embed;
+                });
+
+                // Handle "None" option
+                const noneEmbed = new EmbedBuilder()
+                    .setTitle("None (Raw RP)")
+                    .setDescription("Disables character-based roleplaying.")
+                    .setColor(currentChar === null ? 0x00FF00 : 0x0099FF);
+
+                if (currentChar === null) {
+                    noneEmbed.setFooter({ text: "Current Mode" });
+                }
+
+                const allEmbeds = [noneEmbed, ...embeds];
+
+                await interaction.reply({
+                    embeds: allEmbeds,
+                    ephemeral: true,
+                });
             } else if (commandName === "reset") {
                 await interaction.reply({
                     content: RESET_MESSAGE_CONTENT,
