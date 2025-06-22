@@ -287,6 +287,11 @@ async function registerSlashCommands(client: Client) {
 
 function onInteractionCreate(characterManager: CharacterManager, getWebhookManager: () => WebhookManager) {
     return async (interaction: any) => {
+        const logContext = interaction.guild
+            ? `[Guild: ${interaction.guild.name} | Channel: ${
+                (interaction.channel as TextChannel).name
+            } | User: ${interaction.user.tag}]`
+            : `[DM from ${interaction.user.tag}]`;
         try {
             if (interaction.isAutocomplete()) {
                 // Handle autocomplete for character names
@@ -368,7 +373,7 @@ Have fun!
             }
         } catch (error) {
             logger.error("Error in onInteractionCreate:", error);
-            await dumpDebug("interaction-error", error);
+            await dumpDebug(logContext, "interaction-error", error);
             if (interaction.replied || interaction.deferred) {
                 await interaction.followUp({
                     content: "There was an error while executing this command!",
@@ -385,6 +390,11 @@ Have fun!
 }
 
 async function handleListCommand(interaction: any, characterManager: CharacterManager, page: number) {
+    const logContext = interaction.guild
+        ? `[Guild: ${interaction.guild.name} | Channel: ${
+            (interaction.channel as TextChannel).name
+        } | User: ${interaction.user.tag}]`
+        : `[DM from ${interaction.user.tag}]`;
     const channelId = interaction.channel?.id;
     if (!channelId) {
         await interaction.reply({ content: "Command can only be used in channels.", ephemeral: true });
@@ -410,7 +420,7 @@ async function handleListCommand(interaction: any, characterManager: CharacterMa
     const characterSlice = allCharacters.slice(start, end);
 
     const embeds = characterSlice.map((char) => {
-        dumpDebug("list-character", char);
+        dumpDebug(logContext, "list-character", char);
         let description = char.card.description || (char.card as any).data?.description;
         const embed = new EmbedBuilder()
             .setTitle(char.card.name)
@@ -430,7 +440,7 @@ async function handleListCommand(interaction: any, characterManager: CharacterMa
         if (char === currentChar) {
             embed.setFooter({ text: "Current Character" });
         }
-        dumpDebug("list-embed", embed.toJSON());
+        dumpDebug(logContext, "list-embed", embed.toJSON());
         return embed;
     });
 
@@ -492,7 +502,7 @@ async function handleListCommand(interaction: any, characterManager: CharacterMa
         const characterSlice = allCharacters.slice(start, end);
 
         const embeds = characterSlice.map((char) => {
-            dumpDebug("list-character", char);
+            dumpDebug(logContext, "list-character", char);
             let description = char.card.description || (char.card as any).data?.description;
             const embed = new EmbedBuilder()
                 .setTitle(char.card.name)
@@ -512,7 +522,7 @@ async function handleListCommand(interaction: any, characterManager: CharacterMa
             if (char === currentChar) {
                 embed.setFooter({ text: "Current Character" });
             }
-            dumpDebug("list-embed", embed.toJSON());
+            dumpDebug(logContext, "list-embed", embed.toJSON());
             return embed;
         });
 
