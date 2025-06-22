@@ -262,6 +262,9 @@ async function registerSlashCommands(client: Client) {
         new SlashCommandBuilder()
             .setName("reset")
             .setDescription("Reset the conversation history for the bot"),
+        new SlashCommandBuilder()
+            .setName("help")
+            .setDescription("Shows the help message"),
     ];
 
     try {
@@ -338,6 +341,22 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 content: RESET_MESSAGE_CONTENT,
                 ephemeral: false,
             });
+        } else if (commandName === "help") {
+            const helpText = `
+Welcome to the bot! Here's a quick guide on how to interact:
+
+**Commands:**
+*   \`/switch <character>\`: Switch the active character for roleplaying.
+*   \`/reset\`: Resets the conversation history with the bot.
+*   \`/help\`: Shows this help message.
+
+**Roleplaying:**
+*   Use asterisks for actions, like \`*I walk into the room*\`.
+*   For out-of-character (OOC) messages, use the format: \`{OOC: your message here}\`.
+
+Have fun!
+            `;
+            await interaction.reply({ content: helpText.trim(), ephemeral: true });
         }
     };
 }
