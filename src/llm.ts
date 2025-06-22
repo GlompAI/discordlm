@@ -79,6 +79,9 @@ export async function generateMessage(
                 if (character && (characterName === character.name || characterName === character.char_name)) {
                     // It's from the system (the bot's current identity) only if the name matches the active character
                     fromSystem = true;
+                } else if (character === null && characterName === "Assistant") {
+                    // It's from the system (the bot's raw mode)
+                    fromSystem = true;
                 }
 
                 // Content is from embed description if present, otherwise from message content
