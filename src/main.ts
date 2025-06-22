@@ -344,6 +344,9 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
 
 function onMessageCreate(botId: string, characterManager: CharacterManager, getWebhookManager: () => WebhookManager) {
     return async (message: OmitPartialGroupDMChannel<Message>) => {
+        if (message.content === RESET_MESSAGE_CONTENT) {
+            return;
+        }
         // If the message is from a regular bot (not webhook), ignore it
         // But allow webhook messages to be processed
         if (message.author.bot && !message.webhookId) {
