@@ -106,12 +106,18 @@ export async function generateMessage(
                 async (_, snowflake) => `@${await convertSnowflake(snowflake, message.guild)}`,
             );
 
+            const imageContent = message.attachments.filter((a) => a.contentType?.startsWith("image/")).map((a) => ({
+                type: "image_url" as const,
+                image_url: { url: a.url },
+            }));
+
             return {
                 message: finalMessageText,
                 fromSystem,
                 messageId: message.id,
                 user: userName,
                 timestamp: message.createdAt.toISOString(),
+                imageContent: imageContent.length > 0 ? imageContent : undefined,
             };
         }),
     );

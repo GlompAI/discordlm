@@ -10,6 +10,7 @@ export interface MessageView {
     tokens?: number;
     messageId: string;
     timestamp: string;
+    imageContent?: any[];
 }
 
 export default class TextEngine {
@@ -40,7 +41,7 @@ export default class TextEngine {
                 message.tokens = countTokens(message.message);
             }
         }
-        const chatHistory: OpenAI.Chat.Request["messages"] = [];
+        const chatHistory: any[] = [];
         const candidates: string[] = [];
 
         let budget = getTokenLimit();
@@ -130,13 +131,22 @@ The last user to engage with you, bringing about your interaction in the first p
             (m.message || m.message === "") && (!m.messageId || candidates.includes(m.messageId))
         );
         for (const message of messagesToInject) {
+            const content: any[] = [{
+                type: "text",
+                text: message.message,
+            }];
+
+            if (message.imageContent) {
+                content.push(...message.imageContent);
+            }
+
             if (message.fromSystem) {
                 chatHistory.push({
                     role: "system",
                     content: `The following message was sent at ${message.timestamp}`,
                 });
                 chatHistory.push({
-                    content: message.message,
+                    content: content,
                     role: "assistant",
                     name: ownName,
                 });
@@ -146,7 +156,7 @@ The last user to engage with you, bringing about your interaction in the first p
                     content: `The following message was sent at ${message.timestamp}`,
                 });
                 chatHistory.push({
-                    content: message.message,
+                    content: content,
                     role: "user",
                     name: message.user,
                 });
