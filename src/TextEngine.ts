@@ -33,11 +33,8 @@ export default class TextEngine {
     }
 
     buildPrompt = async (messages: MessageView[], username: string = "user", character?: CharacterCard) => {
-        if (!character) {
-            throw new Error("No character provided to TextEngine.buildPrompt");
-        }
         const card = character;
-        const ownName = character.name || character.char_name;
+        const ownName = character?.name || character?.char_name || "Assistant";
         for (const message of messages) {
             if (!message.tokens || message.tokens === -1) {
                 message.tokens = countTokens(message.message);
@@ -95,24 +92,30 @@ The last user to engage with you, bringing about your interaction in the first p
         };
         chatHistory.push(formatting);
         budget -= countTokens(DISCORD_FORMATTING_GUIDE);
-        const personality = {
-            role: "system" as const,
-            content: `<personality>\n${card.personality}\n</personality>`,
-        };
-        chatHistory.push(personality);
-        budget -= countTokens(personality.content);
-        const description = {
-            role: "system" as const,
-            content: `<description>\n${card.description}\n</description>`,
-        };
-        chatHistory.push(description);
-        budget -= countTokens(description.content);
-        const scenario = {
-            role: "system" as const,
-            content: `<scenario>\n${card.scenario}\n</scenario>`,
-        };
-        chatHistory.push(scenario);
-        budget -= countTokens(scenario.content);
+        if (card && card.personality) {
+            const personality = {
+                role: "system" as const,
+                content: `<personality>\n${card.personality}\n</personality>`,
+            };
+            chatHistory.push(personality);
+            budget -= countTokens(personality.content);
+        }
+        if (card && card.description) {
+            const description = {
+                role: "system" as const,
+                content: `<description>\n${card.description}\n</description>`,
+            };
+            chatHistory.push(description);
+            budget -= countTokens(description.content);
+        }
+        if (card && card.scenario) {
+            const scenario = {
+                role: "system" as const,
+                content: `<scenario>\n${card.scenario}\n</scenario>`,
+            };
+            chatHistory.push(scenario);
+            budget -= countTokens(scenario.content);
+        }
         const prefill = {
             role: "assistant" as const,
             content: "{OOC: Got it all! I will now continue with our fully fictional roleplay!}",

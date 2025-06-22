@@ -6,7 +6,7 @@ const logger = adze.withEmoji.timestamp.seal();
 export class CharacterManager {
     private characters: CharacterConfig[] = [];
     private defaultCharacter: CharacterConfig | null = null;
-    private channelCharacters = new Map<string, CharacterConfig>(); // channelId -> character
+    private channelCharacters = new Map<string, CharacterConfig | null>(); // channelId -> character
 
     constructor() {}
 
@@ -46,6 +46,11 @@ export class CharacterManager {
      * Set the active character for a specific channel
      */
     setChannelCharacter(channelId: string, characterName: string): boolean {
+        if (characterName.toLowerCase() === "none" || characterName.toLowerCase() === "raw") {
+            this.channelCharacters.set(channelId, null);
+            logger.info(`Set channel ${channelId} to raw mode (no character).`);
+            return true;
+        }
         const character = this.getCharacter(characterName);
         if (character) {
             this.channelCharacters.set(channelId, character);
@@ -59,7 +64,10 @@ export class CharacterManager {
      * Get the active character for a channel (or default if not set)
      */
     getChannelCharacter(channelId: string): CharacterConfig | null {
-        return this.channelCharacters.get(channelId) || this.defaultCharacter;
+        if (this.channelCharacters.has(channelId)) {
+            return this.channelCharacters.get(channelId) as CharacterConfig | null;
+        }
+        return this.defaultCharacter;
     }
 
     /**
