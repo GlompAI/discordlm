@@ -647,52 +647,39 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
         // Context is reverse on discord for some reason
         messages.reverse();
 
-        let keepTyping = true;
-        logger.info("Replying to message...");
-
-        // Send initial typing event
-        message.channel.sendTyping();
-
-        // Set up recurring typing events every 5 seconds
+        // Send initial typing event and set up recurring typing
+        await message.channel.sendTyping();
         const typingInterval = setInterval(() => {
-            if (keepTyping) {
-                message.channel.sendTyping();
-            }
-        }, 5000);
+            message.channel.sendTyping();
+        }, 9000); // Discord stops typing after 10 seconds.
 
-        let reply = "";
         try {
             logger.info("Generating response...");
-            const result =
-                (await inferenceQueue.push(generateMessage, client, messages, botId, character ? character.card : null))
-                    .completion.choices[0].message.content;
+            const result = (await inferenceQueue.push(
+                generateMessage,
+                client,
+                messages,
+                botId,
+                character ? character.card : null,
+            ))
+                .completion.choices[0].message.content;
+
             if (!result) {
                 adze.error("Empty response from API");
-                return Promise.resolve();
+                return; // Exit early
             }
-            reply = result;
-        } catch (exception) {
-            logger.error("Failed to generate response: " + exception);
-            console.log(exception);
-            keepTyping = false;
-            clearInterval(typingInterval);
-            return;
-        }
 
-        // Stop typing events
-        keepTyping = false;
-        clearInterval(typingInterval);
-
-        try {
+            const reply = result;
             logger.info("Replying...");
 
             // Use webhook if possible (only in guild channels), otherwise fall back to regular reply
             const webhookManager = getWebhookManager();
-
             const messageParts = smartSplit(reply);
+
             for (const part of messageParts) {
                 if (
-                    webhookManager && message.channel instanceof TextChannel &&
+                    webhookManager &&
+                    message.channel instanceof TextChannel &&
                     message.channel.type === ChannelType.GuildText
                 ) {
                     if (character) {
@@ -722,10 +709,13 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
                     await message.reply({ embeds: [embed], allowedMentions: { repliedUser: true } });
                 }
             }
-
             logger.info("Reply sent!");
         } catch (exception) {
-            logger.error("Failed to reply to message: " + exception);
+            logger.error("Failed to generate or send response: " + exception);
+            console.log(exception);
+        } finally {
+            // Stop typing events
+            clearInterval(typingInterval);
         }
     };
 }
