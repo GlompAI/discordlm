@@ -476,10 +476,8 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
                     }
                 } else {
                     const embed = new EmbedBuilder()
-                        .setAuthor({
-                            name: character.card.name,
-                            iconURL: character.avatarUrl,
-                        })
+                        .setTitle(character.card.name)
+                        .setThumbnail(character.avatarUrl ?? null)
                         .setDescription(part);
                     await message.reply({ embeds: [embed], allowedMentions: { repliedUser: true } });
                 }
