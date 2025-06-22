@@ -18,7 +18,6 @@ export class CharacterManager {
             this.characters = await loadCharacterCards(charactersDir, avatarBaseUrl);
             logger.info(`Loaded ${this.characters.length} characters`);
 
-            // Default character is now null (raw mode) by default.
             // A default can be set later via the setDefaultCharacter method.
         } catch (error) {
             logger.error("Failed to load characters:", error);
