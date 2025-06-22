@@ -56,46 +56,46 @@ export async function generateMessage(
 
     const history = await Promise.all(
         messages.filter((m) => m.content || m.embeds.length > 0).map(async (message) => {
-            const content = message.content
-                ? await replaceAllAsync(
-                    message.content,
-                    /<@(\d+)/g,
-                    (_, snowflake) => convertSnowflake(snowflake, message.guild),
-                )
-                : "";
-
-            // Determine if this message is from the current character (system)
             let fromSystem = false;
             let userName = "";
-            let messageText = content;
+            let messageText = "";
 
-            const characterName = getCharacterName(message);
+            const characterName = getCharacterName(message); // Gets name from webhook or embed title
 
             if (characterName) {
-                // This is a message from a character (webhook or embed)
+                // Message is from a character
+                userName = characterName;
                 if (characterName === character.name || characterName === character.char_name) {
                     fromSystem = true;
-                    userName = characterName;
-                } else {
-                    fromSystem = false;
-                    userName = characterName;
                 }
-                // For embeds, the content is in the description
+
+                // Content is from embed description if present, otherwise from message content
                 if (message.embeds.length > 0 && message.embeds[0].description) {
                     messageText = message.embeds[0].description;
+                } else {
+                    messageText = message.content;
                 }
             } else if (message.author.id === charId) {
-                // This is from the bot itself (not webhook or embed) - treat as system
+                // Message is from the bot, but not a character reply (e.g. an error message)
                 fromSystem = true;
                 userName = character.name || character.char_name || "Assistant";
+                messageText = message.content;
             } else {
-                // Regular user message
+                // Message is from a user
                 fromSystem = false;
                 userName = await convertSnowflake(message.author.id, message.guild);
+                messageText = message.content;
             }
 
+            // Replace mentions in the final text
+            const finalMessageText = await replaceAllAsync(
+                messageText,
+                /<@(\d+)/g,
+                (_, snowflake) => convertSnowflake(snowflake, message.guild),
+            );
+
             return {
-                message: messageText,
+                message: finalMessageText,
                 fromSystem,
                 messageId: message.id,
                 user: userName,
