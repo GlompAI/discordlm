@@ -352,8 +352,11 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 dumpDebug("list-character", char);
                 const embed = new EmbedBuilder()
                     .setTitle(char.card.name)
-                    .setDescription(char.card.description || "No description available.")
                     .setColor(char === currentChar ? 0x00FF00 : 0x0099FF); // Green if current, blue otherwise
+
+                if (char.card.description) {
+                    embed.setDescription(char.card.description);
+                }
 
                 if (char.avatarUrl) {
                     embed.setThumbnail(char.avatarUrl);
