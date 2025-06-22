@@ -470,8 +470,6 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
                         message.channel,
                         character,
                         part,
-                        undefined,
-                        message,
                     );
                     useWebhook = success;
                     if (!success) {
@@ -485,7 +483,7 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
                 // Fallback to regular reply (for DMs, failed webhooks, or non-guild channels)
                 const messageParts = smartSplit(reply);
                 for (const part of messageParts) {
-                    await message.reply(part);
+                    await message.reply({ content: part, allowedMentions: { repliedUser: true } });
                 }
             }
 
