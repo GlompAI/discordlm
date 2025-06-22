@@ -17,6 +17,11 @@ export default class TextEngine {
 
     constructor() {
         this.client = new OpenAI.Client({
+            // The `@agent/openai` library has a strict TypeScript type for `baseURL`
+            // that doesn't account for URLs with existing paths, like the Gemini proxy URL.
+            // The `as` keyword here is a type assertion to bypass this strict check.
+            // It tells the compiler to trust that the provided URL is correct.
+            // The correct value for the .env file is the full proxy URL.
             baseURL: getBaseUrl() as `https://${string}/`,
             apikey: getApiKey(),
             headers: {
