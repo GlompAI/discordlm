@@ -266,7 +266,9 @@ export async function loadCharacterCards(
                     const pngPath = `${resolvedDir}/${baseName}.png`;
                     try {
                         await Deno.stat(pngPath);
-                        avatarUrl = avatarBaseUrl ? `${avatarBaseUrl}/avatars/${encodeURIComponent(baseName)}.png` : pngPath;
+                        avatarUrl = avatarBaseUrl
+                            ? `${avatarBaseUrl}/avatars/${encodeURIComponent(baseName)}.png`
+                            : pngPath;
                     } catch {
                         // No corresponding PNG file found, that's okay
                     }

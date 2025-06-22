@@ -44,8 +44,7 @@
         "fmt:check": "deno fmt --check"
     },
     "imports": {
-        "fflate": "npm:fflate",
-        "dotenv": "https://deno.land/std@0.224.0/dotenv/mod.ts"
+        "fflate": "npm:fflate"
     },
     "exclude": [
         "dist/",

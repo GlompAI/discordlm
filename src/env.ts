@@ -80,3 +80,7 @@ export function getAvatarServerPort(): number {
 export function getInferenceParallelism(): number {
     return parseInt(Deno.env.get("INFERENCE_PARALLELISM") || "1", 10);
 }
+
+export function isDebugEnabled(): boolean {
+    return Deno.env.get("DEBUG") === "true";
+}
