@@ -4,6 +4,7 @@ import {
     Client,
     Collection,
     CommandInteraction,
+    EmbedBuilder,
     Events,
     GatewayIntentBits,
     Message,
@@ -474,7 +475,13 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
                         await message.reply({ content: part, allowedMentions: { repliedUser: true } });
                     }
                 } else {
-                    await message.reply({ content: part, allowedMentions: { repliedUser: true } });
+                    const embed = new EmbedBuilder()
+                        .setAuthor({
+                            name: character.card.name,
+                            iconURL: character.avatarUrl,
+                        })
+                        .setDescription(part);
+                    await message.reply({ embeds: [embed], allowedMentions: { repliedUser: true } });
                 }
             }
 
