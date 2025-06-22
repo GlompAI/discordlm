@@ -470,6 +470,8 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
                         message.channel,
                         character,
                         part,
+                        undefined,
+                        message,
                     );
                     useWebhook = success;
                     if (!success) {
