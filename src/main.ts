@@ -458,31 +458,22 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
 
             // Use webhook if possible (only in guild channels), otherwise fall back to regular reply
             const webhookManager = getWebhookManager();
-            let useWebhook = false;
-
-            if (
-                webhookManager && message.channel instanceof TextChannel &&
-                message.channel.type === ChannelType.GuildText
-            ) {
-                const messageParts = smartSplit(reply);
-                for (const part of messageParts) {
+            
+            const messageParts = smartSplit(reply);
+            for (const part of messageParts) {
+                if (
+                    webhookManager && message.channel instanceof TextChannel &&
+                    message.channel.type === ChannelType.GuildText
+                ) {
                     const success = await webhookManager.sendAsCharacter(
                         message.channel,
                         character,
                         part,
                     );
-                    useWebhook = success;
                     if (!success) {
-                        // If one part fails, stop sending
-                        break;
+                        await message.reply({ content: part, allowedMentions: { repliedUser: true } });
                     }
-                }
-            }
-
-            if (!useWebhook) {
-                // Fallback to regular reply (for DMs, failed webhooks, or non-guild channels)
-                const messageParts = smartSplit(reply);
-                for (const part of messageParts) {
+                } else {
                     await message.reply({ content: part, allowedMentions: { repliedUser: true } });
                 }
             }
