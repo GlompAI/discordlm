@@ -13,7 +13,7 @@ import {
     SlashCommandBuilder,
     TextChannel,
 } from "npm:discord.js";
-import { load } from "dotenv";
+import "https://deno.land/std@0.224.0/dotenv/load.ts";
 
 import { Queue } from "./queue.ts";
 
@@ -31,8 +31,7 @@ import { CharacterManager } from "./CharacterManager.ts";
 import { WebhookManager } from "./WebhookManager.ts";
 import { AvatarServer } from "./AvatarServer.ts";
 
-await load({ export: true });
-
+console.log(`DEBUG environment variable is: ${Deno.env.get("DEBUG")}`);
 console.log("=== DISCORD BOT STARTING ===");
 console.log("Setting up adze logging...");
 setup();
@@ -70,6 +69,7 @@ logger.log(`- OPENAI_KEY: ${Deno.env.get("OPENAI_KEY") ? "[SET]" : "[NOT SET]"}`
 logger.log(`- ENABLE_AVATAR_SERVER: ${isAvatarServerEnabled()}`);
 logger.log(`- AVATAR_PORT: ${getAvatarServerPort()}`);
 logger.log(`- PUBLIC_AVATAR_BASE_URL: ${getPublicAvatarBaseUrl() || "[NOT SET]"}`);
+logger.log(`- DEBUG: ${Deno.env.get("DEBUG") || "[NOT SET]"}`);
 logger.log(`Working directory: ${Deno.cwd()}`);
 
 try {
@@ -459,7 +459,7 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
 
             // Use webhook if possible (only in guild channels), otherwise fall back to regular reply
             const webhookManager = getWebhookManager();
-            
+
             const messageParts = smartSplit(reply);
             for (const part of messageParts) {
                 if (
@@ -472,7 +472,11 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
                         part,
                     );
                     if (!success) {
-                        await message.reply({ content: part, allowedMentions: { repliedUser: true } });
+                        const embed = new EmbedBuilder()
+                            .setTitle(character.card.name)
+                            .setThumbnail(character.avatarUrl ?? null)
+                            .setDescription(part);
+                        await message.reply({ embeds: [embed], allowedMentions: { repliedUser: true } });
                     }
                 } else {
                     const embed = new EmbedBuilder()

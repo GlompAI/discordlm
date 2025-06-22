@@ -5,6 +5,7 @@ import { replaceAllAsync } from "./replace.ts";
 import { getModel } from "./env.ts";
 import { CharacterCard } from "./CharacterCard.ts";
 import adze from "npm:adze";
+import { dumpDebug } from "./debug.ts";
 
 export function countTokens(message: string): number {
     if (message == "") return 0;
@@ -38,7 +39,6 @@ export async function generateMessage(
         return returnString;
     }
 
-    // Helper function to get the character name from a message
     function getCharacterName(message: Message): string | null {
         // If it's a webhook message, the character name is in the webhook's username
         if (message.webhookId && (message as any).author?.username) {
@@ -107,13 +107,14 @@ export async function generateMessage(
     const username = lastHumanMessage?.user || "user";
 
     const engine = new TextEngine();
-    const chatHistory = engine.buildPrompt(history, username, character);
+    const chatHistory = await engine.buildPrompt(history, username, character);
+    await dumpDebug("prompt", chatHistory);
     return {
         completion: await engine.client.chat({
             stream: false, // <- required!
             //@ts-expect-error Any model name may be provided
             model: getModel(),
-            messages: await chatHistory,
+            messages: chatHistory,
         }),
     };
 }
