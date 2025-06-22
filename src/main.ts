@@ -387,9 +387,9 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
 
                 const allEmbeds = [noneEmbed, ...embeds];
 
-                // Discord allows a maximum of 10 embeds per message.
-                // If we have more, we need to paginate or send multiple messages.
-                const embedsToSend = allEmbeds.slice(0, 10);
+                // Discord allows a maximum of 10 embeds per message, but the total size is also limited.
+                // We'll send a smaller number of embeds to be safe.
+                const embedsToSend = allEmbeds.slice(0, 5);
 
                 await interaction.reply({
                     embeds: embedsToSend,
