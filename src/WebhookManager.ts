@@ -42,6 +42,36 @@ export class WebhookManager {
             let webhook = existingWebhooks.find((wh) => wh.name === character.card.name);
 
             if (!webhook) {
+                // If we're about to create a new webhook, check if we're at the limit
+                if (existingWebhooks.size >= 15) {
+                    logger.warn(
+                        `Channel ${channel.name} has ${existingWebhooks.size} webhooks, which is at the Discord limit. Attempting to rotate out an old one.`,
+                    );
+
+                    // Find the oldest webhook to remove.
+                    // We should not remove webhooks that are for characters currently loaded.
+                    const characterNames = new Set(this.characters.map((c) => c.card.name));
+                    let oldestWebhook: Webhook | undefined;
+
+                    for (const wh of existingWebhooks.values()) {
+                        if (!characterNames.has(wh.name)) {
+                            if (!oldestWebhook || wh.createdAt < oldestWebhook.createdAt) {
+                                oldestWebhook = wh;
+                            }
+                        }
+                    }
+
+                    if (oldestWebhook) {
+                        logger.info(`Deleting oldest webhook "${oldestWebhook.name}" to make room for new one.`);
+                        await oldestWebhook.delete("Rotating out old webhook to make room for a new one.");
+                    } else {
+                        logger.error(
+                            `Could not find a suitable webhook to delete in channel ${channel.name}. All webhooks are for currently loaded characters.`,
+                        );
+                        // We can't create a new webhook, so we have to return null
+                        return null;
+                    }
+                }
                 // Create new webhook
                 logger.info(`Creating webhook for character ${character.card.name} in channel ${channel.name}`);
 
