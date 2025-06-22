@@ -652,8 +652,14 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
             return;
         }
 
-        logger.info(`Using character: ${character ? character.card.name : "none"}`);
-        logger.info("Fetching message history...");
+        const logContext = message.guild
+            ? `[Guild: ${message.guild.name} | Channel: ${
+                (message.channel as TextChannel).name
+            } | User: ${message.author.tag}]`
+            : `[DM from ${message.author.tag}]`;
+
+        logger.info(`${logContext} Using character: ${character ? character.card.name : "none"}`);
+        logger.info(`${logContext} Fetching message history...`);
 
         const messages = Array.from((await message.channel.messages.fetch({ limit: 100 })).values());
         if (!messages.includes(message)) {
@@ -669,7 +675,7 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
         }, 9000); // Discord stops typing after 10 seconds.
 
         try {
-            logger.info("Generating response...");
+            logger.info(`${logContext} Generating response...`);
             const result = (await inferenceQueue.push(
                 generateMessage,
                 client,
@@ -689,7 +695,7 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
             }
 
             const reply = result;
-            logger.info("Replying...");
+            logger.info(`${logContext} Replying...`);
 
             // Use webhook if possible (only in guild channels), otherwise fall back to regular reply
             const webhookManager = getWebhookManager();
@@ -728,9 +734,9 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
                     await message.reply({ embeds: [embed], allowedMentions: { repliedUser: true } });
                 }
             }
-            logger.info("Reply sent!");
+            logger.info(`${logContext} Reply sent!`);
         } catch (exception: unknown) {
-            logger.error("Failed to generate or send response:", exception);
+            logger.error(`${logContext} Failed to generate or send response:`, exception);
             if (exception && typeof exception === "object" && "status" in exception) {
                 const status = (exception as { status: number }).status;
                 if (status >= 400 && status < 500) {
