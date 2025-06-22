@@ -16,7 +16,7 @@ export async function generateMessage(
     client: Client,
     messages: Message[],
     charId: string,
-    character: CharacterCard,
+    character: CharacterCard | null,
 ) {
     async function convertSnowflake(userId: string, guild: Guild | null) {
         let returnString: string;
@@ -75,7 +75,7 @@ export async function generateMessage(
             if (characterName) {
                 // Message is from a character
                 userName = characterName;
-                if (characterName === character.name || characterName === character.char_name) {
+                if (character && (characterName === character.name || characterName === character.char_name)) {
                     fromSystem = true;
                 }
 
@@ -88,7 +88,7 @@ export async function generateMessage(
             } else if (message.author.id === charId) {
                 // Message is from the bot, but not a character reply (e.g. an error message)
                 fromSystem = true;
-                userName = character.name || character.char_name || "Assistant";
+                userName = character?.name || character?.char_name || "Assistant";
                 messageText = message.content;
             } else {
                 // Message is from a user
@@ -118,7 +118,7 @@ export async function generateMessage(
     const username = lastHumanMessage?.user || "user";
 
     const engine = new TextEngine();
-    const chatHistory = await engine.buildPrompt(history, username, character);
+    const chatHistory = await engine.buildPrompt(history, username, character ?? undefined);
     await dumpDebug("prompt", chatHistory);
     return {
         completion: await engine.client.chat({

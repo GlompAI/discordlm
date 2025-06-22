@@ -280,15 +280,19 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
         if (interaction.isAutocomplete()) {
             // Handle autocomplete for character names
             if (interaction.commandName === "switch") {
-                const focusedValue = interaction.options.getFocused();
+                const focusedValue = interaction.options.getFocused().toLowerCase();
                 const characters = characterManager.getCharacters();
-                const filtered = characters.filter((char) =>
-                    char.card.name.toLowerCase().startsWith(focusedValue.toLowerCase())
-                ).slice(0, 25); // Discord limits to 25 choices
+                const choices = characters.map((char) => ({ name: char.card.name, value: char.card.name }));
 
-                await interaction.respond(
-                    filtered.map((char) => ({ name: char.card.name, value: char.card.name })),
-                );
+                // Add "none" option for raw mode
+                choices.unshift({ name: "None (Raw RP)", value: "none" });
+
+                const filtered = choices.filter((choice) => choice.name.toLowerCase().startsWith(focusedValue)).slice(
+                    0,
+                    25,
+                ); // Discord limits to 25 choices
+
+                await interaction.respond(filtered);
             }
             return;
         }
@@ -306,18 +310,23 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 return;
             }
 
-            const character = characterManager.getCharacter(characterName!);
+            const success = characterManager.setChannelCharacter(channelId, characterName!);
 
-            if (character) {
-                characterManager.setChannelCharacter(channelId, characterName!);
-                await interaction.reply(`Switched to ${character.card.name}`);
+            if (success) {
+                if (characterName!.toLowerCase() === "none" || characterName!.toLowerCase() === "raw") {
+                    await interaction.reply("Switched to raw mode (no character).");
+                } else {
+                    const character = characterManager.getCharacter(characterName!);
+                    await interaction.reply(`Switched to ${character!.card.name}`);
+                }
+                // Reset conversation on switch in DMs
                 if (interaction.channel?.type === ChannelType.DM) {
                     await interaction.channel.send(RESET_MESSAGE_CONTENT);
                 }
             } else {
                 const availableChars = characterManager.getCharacters().map((c) => c.card.name).join(", ");
                 await interaction.reply(
-                    `Character "${characterName}" not found. Available characters: ${availableChars}`,
+                    `Character "${characterName}" not found. Available characters: ${availableChars}, None`,
                 );
             }
         } else if (commandName === "list") {
@@ -328,12 +337,15 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
             }
 
             const currentChar = characterManager.getChannelCharacter(channelId);
-            const charList = characterManager.getCharacters().map((c) =>
-                c === currentChar ? `**${c.card.name}** (current)` : c.card.name
-            ).join(", ");
+            const allCharacters = characterManager.getCharacters();
+
+            const noneOption = currentChar === null ? `**None (Raw RP)** (current)` : "None (Raw RP)";
+
+            const charList = allCharacters.map((c) => c === currentChar ? `**${c.card.name}** (current)` : c.card.name)
+                .join(", ");
 
             await interaction.reply({
-                content: `Available characters: ${charList}`,
+                content: `Available characters: ${noneOption}, ${charList}`,
                 ephemeral: true,
             });
         } else if (commandName === "reset") {
@@ -436,10 +448,12 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
         }
 
         // If no character is available, inform the user
-        if (!character) {
+        // If no character is available, and there are no characters loaded, inform the user.
+        // A null character is valid for raw mode, so we only fail if there are no characters at all.
+        if (!character && characterManager.getCharacters().length === 0) {
             try {
                 await message.reply(
-                    "No characters available. Please use `/list` to see available characters and `/switch` to select one.",
+                    "No characters available. Please load some character cards.",
                 );
             } catch (exception) {
                 logger.error("Failed to send no character response: " + exception);
@@ -447,7 +461,7 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
             return;
         }
 
-        logger.info(`Using character: ${character.card.name}`);
+        logger.info(`Using character: ${character ? character.card.name : "none"}`);
         logger.info("Fetching message history...");
 
         const messages = Array.from((await message.channel.messages.fetch({ limit: 100 })).values());
@@ -473,8 +487,9 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
         let reply = "";
         try {
             logger.info("Generating response...");
-            const result = (await inferenceQueue.push(generateMessage, client, messages, botId, character.card))
-                .completion.choices[0].message.content;
+            const result =
+                (await inferenceQueue.push(generateMessage, client, messages, botId, character ? character.card : null))
+                    .completion.choices[0].message.content;
             if (!result) {
                 adze.error("Empty response from API");
                 return Promise.resolve();
@@ -504,22 +519,29 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
                     webhookManager && message.channel instanceof TextChannel &&
                     message.channel.type === ChannelType.GuildText
                 ) {
-                    const success = await webhookManager.sendAsCharacter(
-                        message.channel,
-                        character,
-                        part,
-                    );
-                    if (!success) {
-                        const embed = new EmbedBuilder()
-                            .setTitle(character.card.name)
-                            .setThumbnail(character.avatarUrl ?? null)
-                            .setDescription(part);
-                        await message.reply({ embeds: [embed], allowedMentions: { repliedUser: true } });
+                    if (character) {
+                        const success = await webhookManager.sendAsCharacter(
+                            message.channel,
+                            character,
+                            part,
+                        );
+                        if (!success) {
+                            // Fallback to embed reply if webhook fails
+                            const embed = new EmbedBuilder()
+                                .setTitle(character.card.name)
+                                .setThumbnail(character.avatarUrl ?? null)
+                                .setDescription(part);
+                            await message.reply({ embeds: [embed], allowedMentions: { repliedUser: true } });
+                        }
+                    } else {
+                        // Raw mode, no character
+                        await message.reply({ content: part, allowedMentions: { repliedUser: true } });
                     }
                 } else {
+                    // DMs or channels without webhook support
                     const embed = new EmbedBuilder()
-                        .setTitle(character.card.name)
-                        .setThumbnail(character.avatarUrl ?? null)
+                        .setTitle(character ? character.card.name : "Assistant")
+                        .setThumbnail(character?.avatarUrl ?? null)
                         .setDescription(part);
                     await message.reply({ embeds: [embed], allowedMentions: { repliedUser: true } });
                 }
