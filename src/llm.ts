@@ -100,8 +100,8 @@ export async function generateMessage(
             // Replace mentions in the final text
             const finalMessageText = await replaceAllAsync(
                 messageText,
-                /<@(\d+)/g,
-                (_, snowflake) => convertSnowflake(snowflake, message.guild),
+                /<@(\d+)>/g,
+                async (_, snowflake) => `@${await convertSnowflake(snowflake, message.guild)}`,
             );
 
             return {
