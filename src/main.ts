@@ -33,6 +33,7 @@ import { AvatarServer } from "./AvatarServer.ts";
 
 export const RESET_MESSAGE_CONTENT = "--- Bot conversation history reset ---";
 
+import { dumpDebug } from "./debug.ts";
 console.log(`DEBUG environment variable is: ${Deno.env.get("DEBUG")}`);
 console.log("=== DISCORD BOT STARTING ===");
 console.log("Setting up adze logging...");
@@ -348,6 +349,7 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
             }
 
             const embeds = allCharacters.map((char) => {
+                dumpDebug("list-character", char);
                 const embed = new EmbedBuilder()
                     .setTitle(char.card.name)
                     .setDescription(char.card.description || "No description available.")
@@ -360,7 +362,7 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 if (char === currentChar) {
                     embed.setFooter({ text: "Current Character" });
                 }
-
+                dumpDebug("list-embed", embed.toJSON());
                 return embed;
             });
 
