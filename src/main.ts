@@ -372,7 +372,7 @@ async function handleListCommand(interaction: any, characterManager: CharacterMa
 
     if (interaction.isChatInputCommand()) {
         await interaction.reply(replyOptions);
-    } else {
+    } else if (interaction.isButton()) {
         await interaction.update(replyOptions);
     }
 }
