@@ -350,12 +350,13 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
 
             const embeds = allCharacters.map((char) => {
                 dumpDebug("list-character", char);
+                const description = char.card.description || (char.card as any).data?.description;
                 const embed = new EmbedBuilder()
                     .setTitle(char.card.name)
                     .setColor(char === currentChar ? 0x00FF00 : 0x0099FF); // Green if current, blue otherwise
 
-                if (char.card.description && char.card.description.trim() !== "") {
-                    embed.setDescription(char.card.description);
+                if (description && description.trim() !== "") {
+                    embed.setDescription(description);
                 }
 
                 if (char.avatarUrl) {
