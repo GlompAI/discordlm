@@ -22,6 +22,7 @@ import { Queue } from "./queue.ts";
 
 import adze, { setup } from "npm:adze";
 import { generateMessage } from "./llm.ts";
+import * as OpenAI from "jsr:@agent/openai";
 import {
     getAvatarServerPort,
     getBotSelfId,
@@ -549,6 +550,20 @@ async function handleListCommand(interaction: any, characterManager: CharacterMa
     }
 }
 
+async function sendEphemeralError(message: OmitPartialGroupDMChannel<Message>, content: string) {
+    try {
+        const reply = await message.reply({
+            content,
+        });
+        // Delete the message after 10 seconds to make it "temporary"
+        setTimeout(() => {
+            reply.delete().catch((e) => logger.error("Failed to delete error message:", e));
+        }, 10000);
+    } catch (e) {
+        logger.error("Failed to send ephemeral error message:", e);
+    }
+}
+
 function onMessageCreate(botId: string, characterManager: CharacterManager, getWebhookManager: () => WebhookManager) {
     return async (message: OmitPartialGroupDMChannel<Message>) => {
         if (message.content === RESET_MESSAGE_CONTENT) {
@@ -666,6 +681,10 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
 
             if (!result) {
                 adze.error("Empty response from API");
+                await sendEphemeralError(
+                    message,
+                    "The model returned an empty response, which may indicate censorship.",
+                );
                 return; // Exit early
             }
 
@@ -710,9 +729,24 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
                 }
             }
             logger.info("Reply sent!");
-        } catch (exception) {
-            logger.error("Failed to generate or send response: " + exception);
-            console.log(exception);
+        } catch (exception: unknown) {
+            logger.error("Failed to generate or send response:", exception);
+            if (exception && typeof exception === "object" && "status" in exception) {
+                const status = (exception as { status: number }).status;
+                if (status >= 400 && status < 500) {
+                    await sendEphemeralError(
+                        message,
+                        `The model returned a client error (HTTP ${status}). This could be an issue with the request.`,
+                    );
+                } else if (status >= 500) {
+                    await sendEphemeralError(
+                        message,
+                        `The model returned a server error (HTTP ${status}). The service may be down.`,
+                    );
+                }
+            } else {
+                await sendEphemeralError(message, "An unexpected error occurred while generating a response.");
+            }
         } finally {
             // Stop typing events
             clearInterval(typingInterval);
