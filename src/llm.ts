@@ -73,9 +73,11 @@ export async function generateMessage(
             const characterName = getCharacterName(message); // Gets name from webhook or embed title
 
             if (characterName) {
-                // Message is from a character
+                // Message is from a character via webhook/embed
                 userName = characterName;
+                fromSystem = false; // Assume it's from another character by default
                 if (character && (characterName === character.name || characterName === character.char_name)) {
+                    // It's from the system (the bot's current identity) only if the name matches the active character
                     fromSystem = true;
                 }
 
