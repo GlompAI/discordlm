@@ -402,9 +402,29 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
             }
 
             if (interaction.isButton()) {
-                const [action] = interaction.customId.split("-");
+                const [action, direction, pageStr] = interaction.customId.split("-");
                 if (action === "list") {
-                    await handleListCommand(interaction, characterManager);
+                    const page = parseInt(pageStr, 10);
+                    const newPage = direction === "next" ? page + 1 : page - 1;
+
+                    // We need to pass the new page number to the handler.
+                    // We can't directly modify the interaction, so we'll create a new object
+                    // that looks like an interaction with the new page number.
+                    const newInteraction = {
+                        ...interaction,
+                        isChatInputCommand: () => false,
+                        isButton: () => true,
+                        customId: `list-${direction}-${newPage}`,
+                        options: {
+                            getInteger: (name: string) => {
+                                if (name === "page") {
+                                    return newPage;
+                                }
+                                return null;
+                            },
+                        },
+                    };
+                    await handleListCommand(newInteraction, characterManager);
                 }
                 return;
             }
