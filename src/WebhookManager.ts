@@ -49,14 +49,17 @@ export class WebhookManager {
                     );
 
                     // Find the oldest webhook to remove.
-                    const oldestWebhook = existingWebhooks.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()).first();
+                    const oldestWebhook = existingWebhooks.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime())
+                        .first();
 
                     if (oldestWebhook) {
                         logger.info(`Deleting oldest webhook "${oldestWebhook.name}" to make room for new one.`);
                         await oldestWebhook.delete("Rotating out old webhook to make room for a new one.");
                     } else {
                         // This case should be impossible if existingWebhooks.size >= 15, but we'll log it.
-                        logger.error(`Could not find an oldest webhook to delete in channel ${channel.name}, despite being at the limit.`);
+                        logger.error(
+                            `Could not find an oldest webhook to delete in channel ${channel.name}, despite being at the limit.`,
+                        );
                         return null;
                     }
                 }
