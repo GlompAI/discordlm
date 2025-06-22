@@ -1,5 +1,5 @@
 import TextEngine from "./TextEngine.ts";
-import { Client, Guild, Message } from "npm:discord.js";
+import { Client, Guild, Message, TextChannel } from "npm:discord.js";
 import Tokenizer from "npm:llama-tokenizer-js";
 import { replaceAllAsync } from "./replace.ts";
 import { getModel } from "./env.ts";
@@ -119,7 +119,13 @@ export async function generateMessage(
 
     const engine = new TextEngine();
     const chatHistory = await engine.buildPrompt(history, username, character ?? undefined);
-    await dumpDebug("prompt", chatHistory);
+    const lastMessage = messages[messages.length - 1];
+    const logContext = lastMessage.guild
+        ? `[Guild: ${lastMessage.guild.name} | Channel: ${
+            (lastMessage.channel as TextChannel).name
+        } | User: ${lastMessage.author.tag}]`
+        : `[DM from ${lastMessage.author.tag}]`;
+    await dumpDebug(logContext, "prompt", chatHistory);
     return {
         completion: await engine.client.chat({
             stream: false, // <- required!
