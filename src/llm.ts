@@ -99,6 +99,7 @@ export async function generateMessage(
                 fromSystem,
                 messageId: message.id,
                 user: userName,
+                timestamp: message.createdAt.toISOString(),
             };
         }),
     );

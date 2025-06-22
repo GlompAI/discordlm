@@ -9,6 +9,7 @@ export interface MessageView {
     fromSystem: boolean;
     tokens?: number;
     messageId: string;
+    timestamp: string;
 }
 
 export default class TextEngine {
@@ -124,11 +125,19 @@ The last user to engage with you, bringing about your interaction in the first p
         for (const message of messagesToInject) {
             if (message.fromSystem) {
                 chatHistory.push({
+                    role: "system",
+                    content: `The following message was sent at ${message.timestamp}`,
+                });
+                chatHistory.push({
                     content: message.message,
                     role: "assistant",
                     name: ownName,
                 });
             } else {
+                chatHistory.push({
+                    role: "system",
+                    content: `The following message was sent at ${message.timestamp}`,
+                });
                 chatHistory.push({
                     content: message.message,
                     role: "user",
