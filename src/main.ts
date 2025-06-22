@@ -632,6 +632,38 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
         // Get the current character for this channel
         let character = characterManager.getChannelCharacter(message.channel.id);
 
+        // If no character is set (raw mode), try to infer from recent history
+        if (character === null && characterManager.getCharacters().length > 0) {
+            logger.info(`No character set for channel ${message.channel.id}. Inferring from history...`);
+            const recentMessages = await message.channel.messages.fetch({ limit: 20 }); // Check last 20 messages
+            for (const recentMessage of recentMessages.values()) {
+                if (recentMessage.id === message.id) continue; // Skip the message that triggered this
+
+                let characterName: string | null = null;
+                // Is it a webhook message from a character?
+                if (recentMessage.webhookId && (recentMessage as any).author?.username) {
+                    characterName = (recentMessage as any).author.username;
+                } // Is it an embed message from the bot representing a character?
+                else if (recentMessage.author.id === botId && recentMessage.embeds.length > 0) {
+                    const embed = recentMessage.embeds[0];
+                    // The character name is in the title of the embed
+                    if (embed.title && embed.title !== "Assistant") {
+                        characterName = embed.title;
+                    }
+                }
+
+                if (characterName) {
+                    const inferredChar = characterManager.getCharacter(characterName);
+                    if (inferredChar) {
+                        logger.info(`Inferred character ${inferredChar.card.name} for channel ${message.channel.id}`);
+                        characterManager.setChannelCharacter(message.channel.id, inferredChar.card.name);
+                        character = inferredChar;
+                        break; // Stop after finding the most recent character message
+                    }
+                }
+            }
+        }
+
         // If this message is specifically targeted at a character, only respond if it's the active character
         if ((repliesToWebhookCharacter || mentionsCharacterByName) && !mentionsBot) {
             if (targetCharacterName !== character?.card.name) {
