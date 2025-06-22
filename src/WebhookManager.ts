@@ -103,6 +103,7 @@ export class WebhookManager {
         character: CharacterConfig,
         content: string,
         options?: Partial<WebhookMessageCreateOptions>,
+        messageToReply?: any,
     ): Promise<boolean> {
         const webhook = await this.getWebhookForCharacter(channel, character);
 
@@ -117,6 +118,12 @@ export class WebhookManager {
                 username: character.card.name,
                 ...options,
             };
+
+            if (messageToReply) {
+                sendOptions.reply = {
+                    messageReference: messageToReply,
+                };
+            }
 
             // Set avatarURL if available, converting file paths to public URLs if needed
             if (character.avatarUrl) {
