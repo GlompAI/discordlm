@@ -124,6 +124,9 @@ client.once(Events.ClientReady, async (readyClient) => {
     await characterManager.loadCharacters("./characters", avatarBaseUrl);
     logger.log(`Character loading completed`);
 
+    // Start watching for character changes
+    characterManager.watchCharacters();
+
     // Initialize webhook manager
     logger.log(`Initializing webhook manager...`);
     webhookManager = new WebhookManager(client, characterManager.getCharacters());
