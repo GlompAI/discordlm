@@ -680,6 +680,13 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
             }
         }
 
+        // Per user request, if the bot is directly @-mentioned in the message body,
+        // it should override any character and use raw mode. Reply pings do not count.
+        if (message.content.includes(`<@${botId}>`)) {
+            character = null;
+            logger.info(`Forcing raw mode due to direct bot mention in message content.`);
+        }
+
         // If no character is available, inform the user
         // If no character is available, and there are no characters loaded, inform the user.
         // A null character is valid for raw mode, so we only fail if there are no characters at all.
