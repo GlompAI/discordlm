@@ -119,12 +119,6 @@ export class WebhookManager {
                 ...options,
             };
 
-            if (messageToReply) {
-                sendOptions.reply = {
-                    messageReference: messageToReply,
-                };
-            }
-
             // Set avatarURL if available, converting file paths to public URLs if needed
             if (character.avatarUrl) {
                 if (character.avatarUrl.startsWith("http://") || character.avatarUrl.startsWith("https://")) {
