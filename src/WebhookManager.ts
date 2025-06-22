@@ -49,26 +49,14 @@ export class WebhookManager {
                     );
 
                     // Find the oldest webhook to remove.
-                    // We should not remove webhooks that are for characters currently loaded.
-                    const characterNames = new Set(this.characters.map((c) => c.card.name));
-                    let oldestWebhook: Webhook | undefined;
-
-                    for (const wh of existingWebhooks.values()) {
-                        if (!characterNames.has(wh.name)) {
-                            if (!oldestWebhook || wh.createdAt < oldestWebhook.createdAt) {
-                                oldestWebhook = wh;
-                            }
-                        }
-                    }
+                    const oldestWebhook = existingWebhooks.sort((a, b) => a.createdAt.getTime() - b.createdAt.getTime()).first();
 
                     if (oldestWebhook) {
                         logger.info(`Deleting oldest webhook "${oldestWebhook.name}" to make room for new one.`);
                         await oldestWebhook.delete("Rotating out old webhook to make room for a new one.");
                     } else {
-                        logger.error(
-                            `Could not find a suitable webhook to delete in channel ${channel.name}. All webhooks are for currently loaded characters.`,
-                        );
-                        // We can't create a new webhook, so we have to return null
+                        // This case should be impossible if existingWebhooks.size >= 15, but we'll log it.
+                        logger.error(`Could not find an oldest webhook to delete in channel ${channel.name}, despite being at the limit.`);
                         return null;
                     }
                 }
