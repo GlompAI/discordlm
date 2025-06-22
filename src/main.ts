@@ -319,10 +319,8 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                     const character = characterManager.getCharacter(characterName!);
                     await interaction.reply(`Switched to ${character!.card.name}`);
                 }
-                // Reset conversation on switch in DMs
-                if (interaction.channel?.type === ChannelType.DM) {
-                    await interaction.channel.send(RESET_MESSAGE_CONTENT);
-                }
+                // Reset conversation on switch
+                await interaction.channel.send(RESET_MESSAGE_CONTENT);
             } else {
                 const availableChars = characterManager.getCharacters().map((c) => c.card.name).join(", ");
                 await interaction.reply(
