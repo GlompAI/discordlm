@@ -44,37 +44,48 @@ export async function generateMessage(
         if (message.webhookId && (message as any).author?.username) {
             return (message as any).author.username;
         }
-        // For self-bot messages, we'd need additional logic to identify the character
-        // This could be based on the author's nickname, display name, or other metadata
-        // For now, we'll return null for non-webhook bot messages
+        // Check for embeds from the bot
+        if (message.author.bot && message.embeds.length > 0) {
+            const embed = message.embeds[0];
+            if (embed.author?.name) {
+                return embed.author.name;
+            }
+        }
         return null;
     }
 
     const history = await Promise.all(
         messages.filter((m) => m.content).map(async (message) => {
-            const content = await replaceAllAsync(
-                message.content,
-                /<@(\d+)/g,
-                (_, snowflake) => convertSnowflake(snowflake, message.guild),
-            );
+            const content = message.content
+                ? await replaceAllAsync(
+                    message.content,
+                    /<@(\d+)/g,
+                    (_, snowflake) => convertSnowflake(snowflake, message.guild),
+                )
+                : "";
 
             // Determine if this message is from the current character (system)
             let fromSystem = false;
             let userName = "";
+            let messageText = content;
 
-            if (message.webhookId) {
-                // This is a webhook message - check if it's from the current character
-                const webhookCharacterName = getCharacterName(message);
-                if (webhookCharacterName === character.name || webhookCharacterName === character.char_name) {
+            const characterName = getCharacterName(message);
+
+            if (characterName) {
+                // This is a message from a character (webhook or embed)
+                if (characterName === character.name || characterName === character.char_name) {
                     fromSystem = true;
-                    userName = webhookCharacterName;
+                    userName = characterName;
                 } else {
-                    // It's from a different character - treat as user message but with character name
                     fromSystem = false;
-                    userName = webhookCharacterName || "Unknown Character";
+                    userName = characterName;
+                }
+                // For embeds, the content is in the description
+                if (message.embeds.length > 0 && message.embeds[0].description) {
+                    messageText = message.embeds[0].description;
                 }
             } else if (message.author.id === charId) {
-                // This is from the bot itself (not webhook) - treat as system
+                // This is from the bot itself (not webhook or embed) - treat as system
                 fromSystem = true;
                 userName = character.name || character.char_name || "Assistant";
             } else {
@@ -84,7 +95,7 @@ export async function generateMessage(
             }
 
             return {
-                message: content,
+                message: messageText,
                 fromSystem,
                 messageId: message.id,
                 user: userName,
