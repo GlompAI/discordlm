@@ -352,6 +352,9 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
         if (message.author.bot && !message.webhookId) {
             return;
         }
+        if (message.author.id === botId && message.content.startsWith("Switched to ")) {
+            return;
+        }
 
         // Check if this message mentions the bot or is a reply to a webhook message
         const mentionsBot = message.mentions.has(botId);
