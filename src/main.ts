@@ -339,13 +339,49 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
             const currentChar = characterManager.getChannelCharacter(channelId);
             const allCharacters = characterManager.getCharacters();
 
-            const noneOption = currentChar === null ? `**None (Raw RP)** (current)` : "None (Raw RP)";
+            if (allCharacters.length === 0) {
+                await interaction.reply({
+                    content: "There are no characters loaded.",
+                    ephemeral: true,
+                });
+                return;
+            }
 
-            const charList = allCharacters.map((c) => c === currentChar ? `**${c.card.name}** (current)` : c.card.name)
-                .join(", ");
+            const embeds = allCharacters.map((char) => {
+                const embed = new EmbedBuilder()
+                    .setTitle(char.card.name)
+                    .setDescription(char.card.description || "No description available.")
+                    .setColor(char === currentChar ? 0x00FF00 : 0x0099FF); // Green if current, blue otherwise
+
+                if (char.avatarUrl) {
+                    embed.setThumbnail(char.avatarUrl);
+                }
+
+                if (char === currentChar) {
+                    embed.setFooter({ text: "Current Character" });
+                }
+
+                return embed;
+            });
+
+            // Handle "None" option
+            const noneEmbed = new EmbedBuilder()
+                .setTitle("None (Raw RP)")
+                .setDescription("Disables character-based roleplaying.")
+                .setColor(currentChar === null ? 0x00FF00 : 0x0099FF);
+
+            if (currentChar === null) {
+                noneEmbed.setFooter({ text: "Current Mode" });
+            }
+
+            const allEmbeds = [noneEmbed, ...embeds];
+
+            // Discord allows a maximum of 10 embeds per message.
+            // If we have more, we need to paginate or send multiple messages.
+            const embedsToSend = allEmbeds.slice(0, 10);
 
             await interaction.reply({
-                content: `Available characters: ${noneOption}, ${charList}`,
+                embeds: embedsToSend,
                 ephemeral: true,
             });
         } else if (commandName === "reset") {
