@@ -278,125 +278,127 @@ async function registerSlashCommands(client: Client) {
 
 function onInteractionCreate(characterManager: CharacterManager, getWebhookManager: () => WebhookManager) {
     return async (interaction: any) => {
-        if (interaction.isAutocomplete()) {
-            // Handle autocomplete for character names
-            if (interaction.commandName === "switch") {
-                const focusedValue = interaction.options.getFocused().toLowerCase();
-                const characters = characterManager.getCharacters();
-                const choices = characters.map((char) => ({ name: char.card.name, value: char.card.name }));
+        try {
+            if (interaction.isAutocomplete()) {
+                // Handle autocomplete for character names
+                if (interaction.commandName === "switch") {
+                    const focusedValue = interaction.options.getFocused().toLowerCase();
+                    const characters = characterManager.getCharacters();
+                    const choices = characters.map((char) => ({ name: char.card.name, value: char.card.name }));
 
-                // Add "none" option for raw mode
-                choices.unshift({ name: "None (Raw RP)", value: "none" });
+                    // Add "none" option for raw mode
+                    choices.unshift({ name: "None (Raw RP)", value: "none" });
 
-                const filtered = choices.filter((choice) => choice.name.toLowerCase().startsWith(focusedValue)).slice(
-                    0,
-                    25,
-                ); // Discord limits to 25 choices
+                    const filtered = choices.filter((choice) => choice.name.toLowerCase().startsWith(focusedValue))
+                        .slice(
+                            0,
+                            25,
+                        ); // Discord limits to 25 choices
 
-                await interaction.respond(filtered);
-            }
-            return;
-        }
-
-        if (!interaction.isChatInputCommand()) return;
-
-        const { commandName } = interaction;
-
-        if (commandName === "switch") {
-            const characterName = interaction.options.getString("character");
-            const channelId = interaction.channel?.id;
-
-            if (!channelId) {
-                await interaction.reply({ content: "Command can only be used in channels.", ephemeral: true });
+                    await interaction.respond(filtered);
+                }
                 return;
             }
 
-            const success = characterManager.setChannelCharacter(channelId, characterName!);
+            if (!interaction.isChatInputCommand()) return;
 
-            if (success) {
-                if (characterName!.toLowerCase() === "none" || characterName!.toLowerCase() === "raw") {
-                    await interaction.reply("Switched to raw mode (no character).");
+            const { commandName } = interaction;
+
+            if (commandName === "switch") {
+                const characterName = interaction.options.getString("character");
+                const channelId = interaction.channel?.id;
+
+                if (!channelId) {
+                    await interaction.reply({ content: "Command can only be used in channels.", ephemeral: true });
+                    return;
+                }
+
+                const success = characterManager.setChannelCharacter(channelId, characterName!);
+
+                if (success) {
+                    if (characterName!.toLowerCase() === "none" || characterName!.toLowerCase() === "raw") {
+                        await interaction.reply("Switched to raw mode (no character).");
+                    } else {
+                        const character = characterManager.getCharacter(characterName!);
+                        await interaction.reply(`Switched to ${character!.card.name}`);
+                    }
+                    // Reset conversation on switch in DMs
+                    if (interaction.channel?.type === ChannelType.DM) {
+                        await interaction.channel.send(RESET_MESSAGE_CONTENT);
+                    }
                 } else {
-                    const character = characterManager.getCharacter(characterName!);
-                    await interaction.reply(`Switched to ${character!.card.name}`);
+                    const availableChars = characterManager.getCharacters().map((c) => c.card.name).join(", ");
+                    await interaction.reply(
+                        `Character "${characterName}" not found. Available characters: ${availableChars}, None`,
+                    );
                 }
-                // Reset conversation on switch in DMs
-                if (interaction.channel?.type === ChannelType.DM) {
-                    await interaction.channel.send(RESET_MESSAGE_CONTENT);
+            } else if (commandName === "list") {
+                const channelId = interaction.channel?.id;
+                if (!channelId) {
+                    await interaction.reply({ content: "Command can only be used in channels.", ephemeral: true });
+                    return;
                 }
-            } else {
-                const availableChars = characterManager.getCharacters().map((c) => c.card.name).join(", ");
-                await interaction.reply(
-                    `Character "${characterName}" not found. Available characters: ${availableChars}, None`,
-                );
-            }
-        } else if (commandName === "list") {
-            const channelId = interaction.channel?.id;
-            if (!channelId) {
-                await interaction.reply({ content: "Command can only be used in channels.", ephemeral: true });
-                return;
-            }
 
-            const currentChar = characterManager.getChannelCharacter(channelId);
-            const allCharacters = characterManager.getCharacters();
+                const currentChar = characterManager.getChannelCharacter(channelId);
+                const allCharacters = characterManager.getCharacters();
 
-            if (allCharacters.length === 0) {
+                if (allCharacters.length === 0) {
+                    await interaction.reply({
+                        content: "There are no characters loaded.",
+                        ephemeral: true,
+                    });
+                    return;
+                }
+
+                const embeds = allCharacters.map((char) => {
+                    dumpDebug("list-character", char);
+                    const description = char.card.description || (char.card as any).data?.description;
+                    const embed = new EmbedBuilder()
+                        .setTitle(char.card.name)
+                        .setColor(char === currentChar ? 0x00FF00 : 0x0099FF); // Green if current, blue otherwise
+
+                    if (description && description.trim() !== "") {
+                        embed.setDescription(description);
+                    }
+
+                    if (char.avatarUrl) {
+                        embed.setThumbnail(char.avatarUrl);
+                    }
+
+                    if (char === currentChar) {
+                        embed.setFooter({ text: "Current Character" });
+                    }
+                    dumpDebug("list-embed", embed.toJSON());
+                    return embed;
+                });
+
+                // Handle "None" option
+                const noneEmbed = new EmbedBuilder()
+                    .setTitle("None (Raw RP)")
+                    .setDescription("Disables character-based roleplaying.")
+                    .setColor(currentChar === null ? 0x00FF00 : 0x0099FF);
+
+                if (currentChar === null) {
+                    noneEmbed.setFooter({ text: "Current Mode" });
+                }
+
+                const allEmbeds = [noneEmbed, ...embeds];
+
+                // Discord allows a maximum of 10 embeds per message.
+                // If we have more, we need to paginate or send multiple messages.
+                const embedsToSend = allEmbeds.slice(0, 10);
+
                 await interaction.reply({
-                    content: "There are no characters loaded.",
+                    embeds: embedsToSend,
                     ephemeral: true,
                 });
-                return;
-            }
-
-            const embeds = allCharacters.map((char) => {
-                dumpDebug("list-character", char);
-                const description = char.card.description || (char.card as any).data?.description;
-                const embed = new EmbedBuilder()
-                    .setTitle(char.card.name)
-                    .setColor(char === currentChar ? 0x00FF00 : 0x0099FF); // Green if current, blue otherwise
-
-                if (description && description.trim() !== "") {
-                    embed.setDescription(description);
-                }
-
-                if (char.avatarUrl) {
-                    embed.setThumbnail(char.avatarUrl);
-                }
-
-                if (char === currentChar) {
-                    embed.setFooter({ text: "Current Character" });
-                }
-                dumpDebug("list-embed", embed.toJSON());
-                return embed;
-            });
-
-            // Handle "None" option
-            const noneEmbed = new EmbedBuilder()
-                .setTitle("None (Raw RP)")
-                .setDescription("Disables character-based roleplaying.")
-                .setColor(currentChar === null ? 0x00FF00 : 0x0099FF);
-
-            if (currentChar === null) {
-                noneEmbed.setFooter({ text: "Current Mode" });
-            }
-
-            const allEmbeds = [noneEmbed, ...embeds];
-
-            // Discord allows a maximum of 10 embeds per message.
-            // If we have more, we need to paginate or send multiple messages.
-            const embedsToSend = allEmbeds.slice(0, 10);
-
-            await interaction.reply({
-                embeds: embedsToSend,
-                ephemeral: true,
-            });
-        } else if (commandName === "reset") {
-            await interaction.reply({
-                content: RESET_MESSAGE_CONTENT,
-                ephemeral: false,
-            });
-        } else if (commandName === "help") {
-            const helpText = `
+            } else if (commandName === "reset") {
+                await interaction.reply({
+                    content: RESET_MESSAGE_CONTENT,
+                    ephemeral: false,
+                });
+            } else if (commandName === "help") {
+                const helpText = `
 Welcome to the bot! Here's a quick guide on how to interact:
 
 **Commands:**
@@ -409,8 +411,23 @@ Welcome to the bot! Here's a quick guide on how to interact:
 *   For out-of-character (OOC) messages, use the format: \`{OOC: your message here}\`.
 
 Have fun!
-            `;
-            await interaction.reply({ content: helpText.trim(), ephemeral: true });
+                `;
+                await interaction.reply({ content: helpText.trim(), ephemeral: true });
+            }
+        } catch (error) {
+            logger.error("Error in onInteractionCreate:", error);
+            await dumpDebug("interaction-error", error);
+            if (interaction.replied || interaction.deferred) {
+                await interaction.followUp({
+                    content: "There was an error while executing this command!",
+                    ephemeral: true,
+                });
+            } else {
+                await interaction.reply({
+                    content: "There was an error while executing this command!",
+                    ephemeral: true,
+                });
+            }
         }
     };
 }
