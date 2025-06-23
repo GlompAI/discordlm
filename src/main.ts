@@ -28,6 +28,7 @@ import adze, { setup } from "npm:adze";
 import { generateMessage } from "./llm.ts";
 import * as OpenAI from "jsr:@agent/openai";
 import {
+    getAdminOverrideId,
     getAvatarServerPort,
     getBotSelfId,
     getBotToken,
@@ -853,7 +854,8 @@ function onMessageCreate(
             } else if (message.guild) {
                 // In guilds, only allow admins to use the raw assistant
                 const member = await message.guild.members.fetch(message.author.id);
-                if (!member.permissions.has("Administrator")) {
+                const adminOverrideId = getAdminOverrideId();
+                if (!member.permissions.has("Administrator") && member.id !== adminOverrideId) {
                     await sendEphemeralError(
                         message,
                         "You must be an administrator to interact with the raw assistant.",
