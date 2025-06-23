@@ -408,12 +408,6 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                     return;
                 }
 
-                const channel = await client.channels.fetch(interaction.channelId);
-                if (!channel || !channel.isTextBased()) {
-                    await interaction.editReply("This command can only be used in text-based channels.");
-                    return;
-                }
-
                 const messageContent = interaction.options.getString("message");
                 if (!messageContent) {
                     await interaction.reply({ content: "You must provide a message.", ephemeral: true });
@@ -421,19 +415,17 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 }
 
                 // Defer the reply to allow time for inference
-                await interaction.deferReply({ ephemeral: true });
+                await interaction.deferReply({ ephemeral: false });
 
-                const messages = Array.from((await channel.messages.fetch({ limit: 100 })).values());
-                messages.reverse(); // Oldest to newest
-
-                // Add the user's message to the history for context
-                messages.push({
+                // Since we have no perms, we can't get message history.
+                // We'll just use the user's message as the prompt.
+                const messages = [{
                     author: interaction.user,
                     content: messageContent,
                     id: interaction.id,
-                    channelId: channel.id,
+                    channelId: interaction.channelId,
                     createdAt: new Date(),
-                } as any);
+                } as any];
 
                 const result = (await inferenceQueue.push(
                     generateMessage,
@@ -451,21 +443,12 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                     return;
                 }
 
-                const webhookManager = getWebhookManager();
-                const targetChannel = channel.isThread() ? channel.parent : channel;
-                if (!targetChannel) {
-                    await interaction.editReply("Cannot find a valid channel to speak in.");
-                    return;
-                }
+                const embed = new EmbedBuilder()
+                    .setColor(0x0099FF)
+                    .setAuthor({ name: character.card.name, iconURL: character.avatarUrl })
+                    .setDescription(result);
 
-                const messageParts = smartSplit(result);
-                for (const part of messageParts) {
-                    await webhookManager.sendAsCharacter(targetChannel as TextChannel, character, part, {
-                        threadId: channel.isThread() ? channel.id : undefined,
-                    });
-                }
-
-                await interaction.editReply("Message sent!");
+                await interaction.editReply({ embeds: [embed] });
             }
         } catch (error) {
             logger.error("Error in onInteractionCreate:", error);
