@@ -646,6 +646,8 @@ function onMessageReactionAdd(
             ? `[Guild: ${message.guild.name} | Channel: ${(message.channel as TextChannel).name} | User: ${user.tag}]`
             : `[DM from ${user.tag}]`;
 
+        logger.info(`${logContext} Re-rolling message ID ${message.id}...`);
+
         // Show typing indicator while we generate a new response
         let typingInterval: number | undefined;
         try {
@@ -657,6 +659,7 @@ function onMessageReactionAdd(
                 }, 9000);
             }
 
+            logger.info(`${logContext} Fetching message history for re-roll...`);
             // Fetch the message history again, up to the message before the one being re-rolled
             const messages = Array.from(
                 (await message.channel.messages.fetch({ limit: 100, before: message.id })).values(),
@@ -670,7 +673,9 @@ function onMessageReactionAdd(
             } else if (message.embeds.length > 0 && message.embeds[0].title) {
                 character = characterManager.getCharacter(message.embeds[0].title);
             }
+            logger.info(`${logContext} Using character for re-roll: ${character ? character.card.name : "none"}`);
 
+            logger.info(`${logContext} Generating new response...`);
             const result = (await inferenceQueue.push(
                 generateMessage,
                 client,
