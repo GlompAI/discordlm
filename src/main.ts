@@ -11,10 +11,14 @@ import {
     Events,
     GatewayIntentBits,
     Message,
+    MessageReaction,
     OmitPartialGroupDMChannel,
+    PartialMessageReaction,
     Partials,
+    PartialUser,
     SlashCommandBuilder,
     TextChannel,
+    User,
 } from "npm:discord.js";
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
 
@@ -157,8 +161,13 @@ logger.log(`Bot token retrieved: [REDACTED]`);
 
 logger.log(`Setting up event handlers...`);
 
-client.on(Events.MessageCreate, onMessageCreate(BOT_SELF_ID, characterManager, () => webhookManager));
+const lastBotMessage = new Map<string, Message>();
+client.on(Events.MessageCreate, onMessageCreate(BOT_SELF_ID, characterManager, () => webhookManager, lastBotMessage));
 client.on(Events.InteractionCreate, onInteractionCreate(characterManager, () => webhookManager));
+client.on(
+    Events.MessageReactionAdd,
+    onMessageReactionAdd(BOT_SELF_ID, characterManager, () => webhookManager, lastBotMessage),
+);
 
 const shutdown = async () => {
     try {
@@ -563,22 +572,147 @@ async function handleListCommand(interaction: any, characterManager: CharacterMa
     }
 }
 
-async function sendEphemeralError(message: OmitPartialGroupDMChannel<Message>, content: string) {
+function onMessageReactionAdd(
+    botId: string,
+    characterManager: CharacterManager,
+    getWebhookManager: () => WebhookManager,
+    lastBotMessage: Map<string, Message>,
+) {
+    return async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => {
+        // Ignore reactions from bots
+        if (user.bot) return;
+
+        // Fetch partials
+        if (reaction.partial) {
+            try {
+                reaction = await reaction.fetch();
+            } catch (error) {
+                logger.error("Failed to fetch reaction:", error);
+                return;
+            }
+        }
+        if (user.partial) {
+            try {
+                user = await user.fetch();
+            } catch (error) {
+                logger.error("Failed to fetch user from reaction:", error);
+                return;
+            }
+        }
+        if (reaction.message.partial) {
+            try {
+                await reaction.message.fetch();
+            } catch (error) {
+                logger.error("Failed to fetch message from reaction:", error);
+                return;
+            }
+        }
+
+        const message = reaction.message as Message;
+
+        // Ignore reactions that aren't the re-roll emoji or on our own messages
+        if (reaction.emoji.name !== "♻️" || message.author.id !== botId) {
+            return;
+        }
+
+        // If this isn't the last message the bot sent, remove the reaction
+        const lastMessageId = lastBotMessage.get(message.channel.id)?.id;
+        if (!lastMessageId || message.id !== lastMessageId) {
+            try {
+                await reaction.users.remove(user.id);
+            } catch (error) {
+                logger.warn("Failed to remove reaction from old message:", error);
+            }
+            return;
+        }
+
+        const logContext = message.guild
+            ? `[Guild: ${message.guild.name} | Channel: ${(message.channel as TextChannel).name} | User: ${user.tag}]`
+            : `[DM from ${user.tag}]`;
+
+        logger.info(`${logContext} Re-rolling message ID ${message.id}...`);
+
+        // Show typing indicator while we generate a new response
+        let typingInterval: number | undefined;
+        try {
+            const channel = message.channel;
+            if (channel instanceof TextChannel) {
+                await channel.sendTyping();
+                typingInterval = setInterval(() => {
+                    channel.sendTyping();
+                }, 9000);
+            }
+            // Fetch the message history again, up to the message before the one being re-rolled
+            const messages = Array.from(
+                (await message.channel.messages.fetch({ limit: 100, before: message.id })).values(),
+            );
+            messages.reverse(); // Oldest to newest
+
+            const character = characterManager.getChannelCharacter(message.channel.id);
+
+            const result = (await inferenceQueue.push(
+                generateMessage,
+                client,
+                messages,
+                botId,
+                character ? character.card : null,
+            ))
+                .completion.choices[0].message.content;
+
+            if (!result) {
+                await sendEphemeralError(
+                    message,
+                    "Oops! It seems my response was blocked again. Please try rephrasing your message or using `/reset`.",
+                );
+                return;
+            }
+
+            const webhookManager = getWebhookManager();
+            if (message.webhookId && webhookManager && character) {
+                // It's a webhook message, so we can edit it
+                await webhookManager.editAsCharacter(message, character, result);
+            } else {
+                // It's a regular message (e.g., in DMs or a fallback), so edit the embed
+                const embed = new EmbedBuilder()
+                    .setTitle(character ? character.card.name : "Assistant")
+                    .setThumbnail(character?.avatarUrl ?? null)
+                    .setDescription(result);
+                await message.edit({ embeds: [embed] });
+            }
+            logger.info(`${logContext} Re-roll successful for message ID ${message.id}`);
+        } catch (error) {
+            logger.error(`${logContext} Failed to re-roll response for message ID ${message.id}:`, error);
+        } finally {
+            if (typingInterval) {
+                clearInterval(typingInterval);
+            }
+        }
+    };
+}
+
+async function sendEphemeralError(message: Message, content: string) {
     try {
-        const reply = await message.reply({
-            content,
-        });
-        // Delete the message after 10 seconds to make it "temporary"
-        setTimeout(() => {
-            reply.delete().catch((e) => logger.error("Failed to delete error message:", e));
-        }, 10000);
+        if (message.channel.isTextBased()) {
+            const reply = await message.reply({
+                content,
+            });
+            // Delete the message after 10 seconds to make it "temporary"
+            setTimeout(() => {
+                reply.delete().catch((e) => logger.error("Failed to delete error message:", e));
+            }, 10000);
+        }
     } catch (e) {
         logger.error("Failed to send ephemeral error message:", e);
     }
 }
 
-function onMessageCreate(botId: string, characterManager: CharacterManager, getWebhookManager: () => WebhookManager) {
-    return async (message: OmitPartialGroupDMChannel<Message>) => {
+function onMessageCreate(
+    botId: string,
+    characterManager: CharacterManager,
+    getWebhookManager: () => WebhookManager,
+    lastBotMessage: Map<string, Message>,
+) {
+    return async (message: Message) => {
         if (message.content === RESET_MESSAGE_CONTENT) {
             return;
         }
@@ -721,10 +855,14 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
         messages.reverse();
 
         // Send initial typing event and set up recurring typing
-        await message.channel.sendTyping();
-        const typingInterval = setInterval(() => {
-            message.channel.sendTyping();
-        }, 9000); // Discord stops typing after 10 seconds.
+        let typingInterval: number | undefined;
+        const channel = message.channel;
+        if (channel instanceof TextChannel) {
+            await channel.sendTyping();
+            typingInterval = setInterval(() => {
+                channel.sendTyping();
+            }, 9000); // Discord stops typing after 10 seconds.
+        }
 
         try {
             logger.info(`${logContext} Generating response...`);
@@ -760,22 +898,35 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
                     message.channel.type === ChannelType.GuildText
                 ) {
                     if (character) {
-                        const success = await webhookManager.sendAsCharacter(
+                        const sentMessage = await webhookManager.sendAsCharacter(
                             message.channel,
                             character,
                             part,
                         );
-                        if (!success) {
+                        if (sentMessage) {
+                            lastBotMessage.set(message.channel.id, sentMessage);
+                            await sentMessage.react("♻️");
+                        } else {
                             // Fallback to embed reply if webhook fails
                             const embed = new EmbedBuilder()
                                 .setTitle(character.card.name)
                                 .setThumbnail(character.avatarUrl ?? null)
                                 .setDescription(part);
-                            await message.reply({ embeds: [embed], allowedMentions: { repliedUser: true } });
+                            const sentMessage = await message.reply({
+                                embeds: [embed],
+                                allowedMentions: { repliedUser: true },
+                            });
+                            lastBotMessage.set(message.channel.id, sentMessage);
+                            await sentMessage.react("♻️");
                         }
                     } else {
                         // Raw mode, no character
-                        await message.reply({ content: part, allowedMentions: { repliedUser: true } });
+                        const sentMessage = await message.reply({
+                            content: part,
+                            allowedMentions: { repliedUser: true },
+                        });
+                        lastBotMessage.set(message.channel.id, sentMessage);
+                        await sentMessage.react("♻️");
                     }
                 } else {
                     // DMs or channels without webhook support
@@ -783,7 +934,12 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
                         .setTitle(character ? character.card.name : "Assistant")
                         .setThumbnail(character?.avatarUrl ?? null)
                         .setDescription(part);
-                    await message.reply({ embeds: [embed], allowedMentions: { repliedUser: true } });
+                    const sentMessage = await message.reply({
+                        embeds: [embed],
+                        allowedMentions: { repliedUser: true },
+                    });
+                    lastBotMessage.set(message.channel.id, sentMessage);
+                    await sentMessage.react("♻️");
                 }
             }
             logger.info(`${logContext} Reply sent!`);
