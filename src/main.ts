@@ -782,62 +782,49 @@ function onMessageCreate(
         }
 
         let character = null;
-        const isDirectPing = message.content.includes(`<@${botId}>`);
-
-        if (isDirectPing) {
-            logger.info(`Forcing raw mode due to direct bot mention in message content.`);
-        } else {
-            // Get the current character for this channel
+        if (isDM) {
+            // In DMs, always use the last used character, or infer if none is set.
             character = characterManager.getChannelCharacter(message.channel.id);
-
-            // If no character is set (raw mode), try to infer from recent history
             if (character === null && characterManager.getCharacters().length > 0) {
-                logger.info(`No character set for channel ${message.channel.id}. Inferring from history...`);
-                const recentMessages = await message.channel.messages.fetch({ limit: 20 }); // Check last 20 messages
+                logger.info(`No character set for DM channel ${message.channel.id}. Inferring from history...`);
+                const recentMessages = await message.channel.messages.fetch({ limit: 20 });
                 for (const recentMessage of recentMessages.values()) {
-                    if (recentMessage.id === message.id) continue; // Skip the message that triggered this
-
+                    if (recentMessage.id === message.id) continue;
                     let characterName: string | null = null;
-                    // Is it a webhook message from a character?
                     if (recentMessage.webhookId && (recentMessage as any).author?.username) {
                         characterName = (recentMessage as any).author.username;
-                    } // Is it an embed message from the bot representing a character?
-                    else if (recentMessage.author.id === botId && recentMessage.embeds.length > 0) {
+                    } else if (recentMessage.author.id === botId && recentMessage.embeds.length > 0) {
                         const embed = recentMessage.embeds[0];
-                        // The character name is in the title of the embed
                         if (embed.title && embed.title !== "Assistant") {
                             characterName = embed.title;
                         }
                     }
-
                     if (characterName) {
                         const inferredChar = characterManager.getCharacter(characterName);
                         if (inferredChar) {
-                            logger.info(
-                                `Inferred character ${inferredChar.card.name} for channel ${message.channel.id}`,
-                            );
+                            logger.info(`Inferred character ${inferredChar.card.name} for DM channel ${message.channel.id}`);
                             characterManager.setChannelCharacter(message.channel.id, inferredChar.card.name);
                             character = inferredChar;
-                            break; // Stop after finding the most recent character message
+                            break;
                         }
                     }
                 }
             }
-
-            // If this message is specifically targeted at a character, only respond if it's the active character
-            if ((repliesToWebhookCharacter || mentionsCharacterByName) && !mentionsBot) {
-                if (targetCharacterName !== character?.card.name) {
-                    // This message is for a different character, not the active one
-                    // Switch to the new character
-                    const newCharacter = characterManager.getCharacter(targetCharacterName);
-                    if (newCharacter) {
-                        characterManager.setChannelCharacter(message.channel.id, targetCharacterName);
-                        character = newCharacter;
-                        logger.info(`Switched character to ${targetCharacterName} in channel ${message.channel.id}`);
-                    } else {
-                        return;
-                    }
+        } else {
+            // In guilds, only use a character if they are explicitly mentioned or replied to.
+            // A direct ping to the bot will result in raw mode (character is null).
+            const isDirectPing = message.content.includes(`<@${botId}>`);
+            if (isDirectPing) {
+                logger.info(`Forcing raw mode due to direct bot mention in message content.`);
+            } else if (repliesToWebhookCharacter || mentionsCharacterByName) {
+                character = characterManager.getCharacter(targetCharacterName);
+                if (character) {
+                    characterManager.setChannelCharacter(message.channel.id, targetCharacterName);
+                    logger.info(`Switched character to ${targetCharacterName} in channel ${message.channel.id}`);
                 }
+            } else {
+                // If not a direct ping or character mention, use the channel's set character.
+                character = characterManager.getChannelCharacter(message.channel.id);
             }
         }
 
