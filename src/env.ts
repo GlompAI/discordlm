@@ -84,3 +84,7 @@ export function getInferenceParallelism(): number {
 export function isDebugEnabled(): boolean {
     return Deno.env.get("DEBUG") === "true";
 }
+
+export function getAdminOverrideId(): string | undefined {
+    return Deno.env.get("ADMIN_OVERRIDE_ID");
+}
