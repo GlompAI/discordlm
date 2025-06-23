@@ -114,6 +114,9 @@ Do not gender the user unless conversation context below implies it.
             } else if (message.role === "user") {
                 role = "user";
                 parts = [{ text: content }];
+                if (message.mediaContent) {
+                    parts.push(...message.mediaContent);
+                }
             } else {
                 continue; // ignore system messages in history
             }
