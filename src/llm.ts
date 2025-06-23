@@ -107,18 +107,20 @@ export async function generateMessage(
 
             const TWO_MEGABYTES = 2 * 1024 * 1024;
             const mediaContent = message.attachments
-                ?.filter((a) => {
-                    const isImage = a.contentType?.startsWith("image/");
-                    const isVideo = a.contentType?.startsWith("video/");
-                    if (isVideo) {
-                        return a.size < TWO_MEGABYTES;
-                    }
-                    return isImage;
-                })
-                .map((a) => ({
-                    type: "image_url" as const, // The API might use the same type for both
-                    image_url: { url: a.url },
-                })) ?? [];
+                ? message.attachments
+                    .filter((a) => {
+                        const isImage = a.contentType?.startsWith("image/");
+                        const isVideo = a.contentType?.startsWith("video/");
+                        if (isVideo) {
+                            return a.size < TWO_MEGABYTES;
+                        }
+                        return isImage;
+                    })
+                    .map((a) => ({
+                        type: "image_url" as const, // The API might use the same type for both
+                        image_url: { url: a.url },
+                    }))
+                : [];
 
             return {
                 message: finalMessageText,
