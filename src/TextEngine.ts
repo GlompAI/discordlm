@@ -134,7 +134,7 @@ Do not gender the user unless conversation context below implies it.
             const toolInstruction = {
                 role: "system" as const,
                 content:
-                    "You must use the available tools to answer any questions that require external information. Do not hallucinate or make up information.",
+                    "You are a helpful assistant that has access to a variety of tools. You are required to use the tools to answer any questions that require external information. Do not, under any circumstances, hallucinate or make up information.",
             };
             const jailbreak = {
                 role: "system" as const,

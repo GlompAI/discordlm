@@ -155,6 +155,7 @@ export async function generateMessage(
         messages: chatHistory,
         seed,
         tools: character ? undefined : tools,
+        tool_choice: character ? undefined : "auto",
     } as any);
 
     const { choices } = response;
@@ -184,6 +185,7 @@ export async function generateMessage(
                 model: getModel(),
                 messages: chatHistory,
                 seed,
+                tool_choice: character ? undefined : "auto",
             } as any),
         };
     }
