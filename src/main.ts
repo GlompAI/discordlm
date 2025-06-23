@@ -422,17 +422,13 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                     // This is a guild-installed command, so we can fetch history.
                     messages = Array.from((await interaction.channel.messages.fetch({ limit: 100 })).values());
                 } else {
-                    // This is a user-installed command. We can't access history.
-                    // We'll create a fake message history to seed the conversation.
-                    messages = [
-                        {
-                            message: messageContent,
-                            user: interaction.user.username,
-                            fromSystem: false,
-                            messageId: "user-install-fake-id",
-                            timestamp: new Date().toISOString(),
-                        },
-                    ];
+                    const channelId = interaction.channelId;
+                    const channel = await interaction.client.channels.fetch(channelId);
+                    if (!channel) {
+                        await interaction.reply({ content: "Cannot fetch channel metadata.", ephemeral: true });
+                        return;
+                    }
+                    const messages = channel.messages.fetch({ limit: 100 }).values();
                 }
 
                 const result = (await inferenceQueue.push(
