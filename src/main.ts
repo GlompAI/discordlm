@@ -611,6 +611,10 @@ function onMessageReactionAdd(
         }
 
         const message = reaction.message as Message;
+        const logContext = message.guild
+            ? `[Guild: ${message.guild.name} | Channel: ${(message.channel as TextChannel).name} | User: ${user.tag}]`
+            : `[DM from ${user.tag}]`;
+        logger.info(`${logContext} Reaction added: ${reaction.emoji.name} on message ${reaction.message.id}`);
 
         // Ignore reactions that aren't the re-roll or delete emojis, or on messages from non-bots
         if (!["♻️", "❌"].includes(reaction.emoji.name!) || !message.author.bot) {
@@ -629,12 +633,18 @@ function onMessageReactionAdd(
 
         // If this isn't the last message the bot sent, remove the reaction
         let lastMessage = lastBotMessage.get(message.channel.id);
+        logger.info(`${logContext} Last bot message in cache for channel ${message.channel.id}: ${lastMessage?.id}`);
 
         // If the bot restarted, the map will be empty. Try to recover by fetching recent messages.
         if (!lastMessage) {
             logger.info("lastBotMessage not found in cache, fetching history...");
             const messages = await message.channel.messages.fetch({ limit: 25 });
-            logger.info(`Fetched ${messages.size} messages. Filtering for bot messages...`);
+            logger.info(`Fetched ${messages.size} messages. Inspecting for bot messages...`);
+            messages.forEach((m) => {
+                logger.info(
+                    `Msg ID: ${m.id}, Author ID: ${m.author.id}, isBot: ${m.author.bot}, webhookId: ${m.webhookId}`,
+                );
+            });
             const lastBotMsgInHistory = messages.filter((m) => m.author.bot).first();
             if (lastBotMsgInHistory) {
                 logger.info(`Found last bot message in history: ${lastBotMsgInHistory.id}`);
@@ -646,21 +656,22 @@ function onMessageReactionAdd(
         }
 
         if (!lastMessage || message.id !== lastMessage.id) {
+            logger.info(
+                `${logContext} Reaction on message ${message.id} is not on the last bot message (${lastMessage?.id}). Ignoring.`,
+            );
             if (message.channel.type !== ChannelType.DM) {
-                logger.info(`Attempting to remove reaction from user ${user.id} on old message ${message.id}`);
+                logger.info(
+                    `${logContext} Attempting to remove reaction from user ${user.id} on old message ${message.id}`,
+                );
                 try {
                     await reaction.users.remove(user.id);
-                    logger.info(`Successfully removed reaction from user ${user.id}`);
+                    logger.info(`${logContext} Successfully removed reaction from user ${user.id}`);
                 } catch (error) {
-                    logger.error(`Failed to remove reaction from user ${user.id}:`, error);
+                    logger.error(`${logContext} Failed to remove reaction from user ${user.id}:`, error);
                 }
             }
             return;
         }
-
-        const logContext = message.guild
-            ? `[Guild: ${message.guild.name} | Channel: ${(message.channel as TextChannel).name} | User: ${user.tag}]`
-            : `[DM from ${user.tag}]`;
 
         logger.info(`${logContext} Re-rolling message ID ${message.id}...`);
 
@@ -723,6 +734,17 @@ function onMessageReactionAdd(
                 await message.edit({ embeds: [embed] });
             }
             logger.info(`${logContext} Re-roll successful for message ID ${message.id}`);
+
+            // Remove the user's reaction that triggered the re-roll
+            if (message.channel.type !== ChannelType.DM) {
+                logger.info(`Attempting to remove user's re-roll reaction from message ${message.id}`);
+                try {
+                    await reaction.users.remove(user.id);
+                    logger.info(`Successfully removed user's re-roll reaction.`);
+                } catch (error) {
+                    logger.error(`Failed to remove user's re-roll reaction:`, error);
+                }
+            }
         } catch (error) {
             logger.error(`${logContext} Failed to re-roll response for message ID ${message.id}:`, error);
         } finally {
@@ -943,7 +965,14 @@ function onMessageCreate(
                 if (!previousBotMessage) {
                     logger.info("previousBotMessage not found in cache, fetching history...");
                     const messages = await message.channel.messages.fetch({ limit: 10 });
-                    logger.info(`Fetched ${messages.size} messages. Filtering for bot messages...`);
+                    logger.info(
+                        `Fetched ${messages.size} messages for previous message recovery. Inspecting for bot messages...`,
+                    );
+                    messages.forEach((m) => {
+                        logger.info(
+                            `Msg ID: ${m.id}, Author ID: ${m.author.id}, isBot: ${m.author.bot}, webhookId: ${m.webhookId}`,
+                        );
+                    });
                     const lastBotMsgInHistory = messages.filter((m) => m.author.bot).first();
                     if (lastBotMsgInHistory) {
                         logger.info(`Found previous bot message in history: ${lastBotMsgInHistory.id}`);
