@@ -1,21 +1,12 @@
 import adze from "npm:adze@2.2.4";
 
 export function getApiKey() {
-    const key = Deno.env.get("OPENAI_KEY");
+    const key = Deno.env.get("GEMINI_API_KEY");
     if (!key) {
-        adze.error("No key provided");
+        adze.error("No Gemini API key provided");
         Deno.exit(1);
     }
     return key;
-}
-
-export function getBaseUrl() {
-    const url = Deno.env.get("OPENAI_URL");
-    if (!url) {
-        adze.error("No URL provided");
-        Deno.exit(1);
-    }
-    return url;
 }
 
 export function getBotToken() {
