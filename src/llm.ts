@@ -1,4 +1,4 @@
-import TextEngine from "./TextEngine.ts";
+import TextEngine, { MessageView } from "./TextEngine.ts";
 import { Client, Guild, Message, TextChannel } from "npm:discord.js";
 import Tokenizer from "npm:llama-tokenizer-js";
 import { replaceAllAsync } from "./replace.ts";
@@ -8,13 +8,17 @@ import adze from "npm:adze";
 import { dumpDebug } from "./debug.ts";
 import { RESET_MESSAGE_CONTENT } from "./main.ts";
 
+function isMessageView(message: Message | MessageView): message is MessageView {
+    return "fromSystem" in message;
+}
+
 export function countTokens(message: string): number {
     if (message == "") return 0;
     return Tokenizer.encode(message).length;
 }
 export async function generateMessage(
     client: Client,
-    messages: Message[],
+    messages: (Message | MessageView)[],
     charId: string,
     character: CharacterCard | null,
     seed?: number,
@@ -57,7 +61,7 @@ export async function generateMessage(
     }
 
     // Find the last reset message and truncate history
-    const lastResetIndex = messages.map((m) => m.content).lastIndexOf(
+    const lastResetIndex = messages.map((m) => isMessageView(m) ? "" : m.content).lastIndexOf(
         RESET_MESSAGE_CONTENT,
     );
 
@@ -65,72 +69,78 @@ export async function generateMessage(
         messages = messages.slice(lastResetIndex + 1);
     }
 
-    const history = await Promise.all(
-        messages.filter((m) => m.content || m.embeds.length > 0).map(async (message) => {
-            let fromSystem = false;
-            let userName = "";
-            let messageText = "";
+    const history: MessageView[] = await Promise.all(
+        messages.filter((m) => isMessageView(m) || m.content || m.embeds.length > 0).map(
+            async (message): Promise<MessageView> => {
+                if (isMessageView(message)) {
+                    return message;
+                }
 
-            const characterName = getCharacterName(message); // Gets name from webhook or embed title
+                let fromSystem = false;
+                let userName = "";
+                let messageText = "";
 
-            // First, check if the message is a raw reply from the bot.
-            // This happens if the author is the bot AND it's not a character reply (no webhook/embed title).
-            if (message.author.id === charId && !characterName) {
-                fromSystem = true;
-                userName = "Assistant"; // Raw bot replies are always from "Assistant"
-                messageText = message.content;
-            } else if (characterName) {
-                // This is a character message (from a webhook or an embed with a title).
-                userName = characterName;
-                // It's from the "system" if the character name matches the currently active character.
-                fromSystem = (character?.name === characterName) || (character?.char_name === characterName);
+                const characterName = getCharacterName(message); // Gets name from webhook or embed title
 
-                // Get message content from embed or raw content
-                if (message.embeds.length > 0 && message.embeds[0].description) {
-                    messageText = message.embeds[0].description;
+                // First, check if the message is a raw reply from the bot.
+                // This happens if the author is the bot AND it's not a character reply (no webhook/embed title).
+                if (message.author.id === charId && !characterName) {
+                    fromSystem = true;
+                    userName = "Assistant"; // Raw bot replies are always from "Assistant"
+                    messageText = message.content;
+                } else if (characterName) {
+                    // This is a character message (from a webhook or an embed with a title).
+                    userName = characterName;
+                    // It's from the "system" if the character name matches the currently active character.
+                    fromSystem = (character?.name === characterName) || (character?.char_name === characterName);
+
+                    // Get message content from embed or raw content
+                    if (message.embeds.length > 0 && message.embeds[0].description) {
+                        messageText = message.embeds[0].description;
+                    } else {
+                        messageText = message.content;
+                    }
                 } else {
+                    // It's a message from a human user.
+                    fromSystem = false;
+                    userName = await convertSnowflake(message.author.id, message.guild);
                     messageText = message.content;
                 }
-            } else {
-                // It's a message from a human user.
-                fromSystem = false;
-                userName = await convertSnowflake(message.author.id, message.guild);
-                messageText = message.content;
-            }
 
-            // Replace mentions in the final text
-            const finalMessageText = await replaceAllAsync(
-                messageText,
-                /<@(\d+)>/g,
-                async (_, snowflake) => `@${await convertSnowflake(snowflake, message.guild)}`,
-            );
+                // Replace mentions in the final text
+                const finalMessageText = await replaceAllAsync(
+                    messageText,
+                    /<@(\d+)>/g,
+                    async (_, snowflake) => `@${await convertSnowflake(snowflake, message.guild)}`,
+                );
 
-            const TWO_MEGABYTES = 2 * 1024 * 1024;
-            const mediaContent = message.attachments
-                ? message.attachments
-                    .filter((a) => {
-                        const isImage = a.contentType?.startsWith("image/");
-                        const isVideo = a.contentType?.startsWith("video/");
-                        if (isVideo) {
-                            return a.size < TWO_MEGABYTES;
-                        }
-                        return isImage;
-                    })
-                    .map((a) => ({
-                        type: "image_url" as const, // The API might use the same type for both
-                        image_url: { url: a.url },
-                    }))
-                : [];
+                const TWO_MEGABYTES = 2 * 1024 * 1024;
+                const mediaContent = message.attachments
+                    ? message.attachments
+                        .filter((a) => {
+                            const isImage = a.contentType?.startsWith("image/");
+                            const isVideo = a.contentType?.startsWith("video/");
+                            if (isVideo) {
+                                return a.size < TWO_MEGABYTES;
+                            }
+                            return isImage;
+                        })
+                        .map((a) => ({
+                            type: "image_url" as const, // The API might use the same type for both
+                            image_url: { url: a.url },
+                        }))
+                    : [];
 
-            return {
-                message: finalMessageText,
-                fromSystem,
-                messageId: message.id,
-                user: userName,
-                timestamp: message.createdAt.toISOString(),
-                mediaContent: mediaContent.length > 0 ? mediaContent : undefined,
-            };
-        }),
+                return {
+                    message: finalMessageText,
+                    fromSystem,
+                    messageId: message.id,
+                    user: userName,
+                    timestamp: message.createdAt.toISOString(),
+                    mediaContent: mediaContent.length > 0 ? mediaContent : undefined,
+                };
+            },
+        ),
     );
     // Get the username from the last human message (not from the bot)
     const lastHumanMessage = history.slice().reverse().find((msg) => !msg.fromSystem);
@@ -139,12 +149,16 @@ export async function generateMessage(
     const engine = new TextEngine();
     const chatHistory = await engine.buildPrompt(history, username, character ?? undefined);
     const lastMessage = messages[messages.length - 1];
-    const logContext = lastMessage.guild
-        ? `[Guild: ${lastMessage.guild.name} | Channel: ${
-            (lastMessage.channel as TextChannel).name
-        } | User: ${lastMessage.author.tag}]`
-        : `[DM from ${lastMessage.author.tag}]`;
-    await dumpDebug(logContext, "prompt", chatHistory);
+    if (lastMessage && !isMessageView(lastMessage)) {
+        const logContext = lastMessage.guild
+            ? `[Guild: ${lastMessage.guild.name} | Channel: ${
+                (lastMessage.channel as TextChannel).name
+            } | User: ${lastMessage.author.tag}]`
+            : `[DM from ${lastMessage.author.tag}]`;
+        await dumpDebug(logContext, "prompt", chatHistory);
+    } else {
+        await dumpDebug(`[User-Installed]`, "prompt", chatHistory);
+    }
     return {
         completion: await engine.client.chat({
             stream: false, // <- required!
