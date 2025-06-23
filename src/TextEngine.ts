@@ -119,8 +119,43 @@ Do not gender the user unless conversation context below implies it.
             history.unshift({ role, parts });
         }
 
+        // 3. Ensure History Starts with 'user' and Alternates Roles by merging consecutive messages.
+        const mergedHistory: any[] = [];
+        if (history.length > 0) {
+            // Start with the first message
+            mergedHistory.push(history[0]);
+
+            for (let i = 1; i < history.length; i++) {
+                const currentMessage = history[i];
+                const lastMessage = mergedHistory[mergedHistory.length - 1];
+
+                // If the role is the same as the last one, merge them.
+                if (currentMessage.role === lastMessage.role) {
+                    // Simple text concatenation.
+                    // Note: This assumes 'parts' is an array of objects with a 'text' property.
+                    // A more robust implementation might need to handle different part types.
+                    const lastPart = lastMessage.parts[lastMessage.parts.length - 1];
+                    const currentPart = currentMessage.parts[0];
+                    if (lastPart && currentPart && "text" in lastPart && "text" in currentPart) {
+                        lastPart.text += "\n" + currentPart.text;
+                    } else {
+                        // If parts are not simple text, just append them.
+                        lastMessage.parts.push(...currentMessage.parts);
+                    }
+                } else {
+                    // If the role is different, just add the new message.
+                    mergedHistory.push(currentMessage);
+                }
+            }
+        }
+
+        // Ensure the very first message is from the 'user'
+        const finalHistory = (mergedHistory.length > 0 && mergedHistory[0].role !== "user")
+            ? mergedHistory.slice(1)
+            : mergedHistory;
+
         return {
-            history: history, // Use the history as-is, without the filtering hack
+            history: finalHistory,
             systemInstruction: {
                 role: "system",
                 parts: [{ text: systemPromptText }],
