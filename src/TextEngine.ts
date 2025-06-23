@@ -133,7 +133,8 @@ Do not gender the user unless conversation context below implies it.
 `.trim();
             const toolInstruction = {
                 role: "system" as const,
-                content: "When appropriate, you may use the available tools to answer the user's questions.",
+                content:
+                    "You must use the available tools to answer any questions that require external information. Do not hallucinate or make up information.",
             };
             const jailbreak = {
                 role: "system" as const,
