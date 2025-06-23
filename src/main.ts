@@ -781,10 +781,10 @@ function onMessageCreate(
             return;
         }
 
-        // Per user request, if the bot is directly @-mentioned in the message body,
-        // it should override any character and use raw mode. Reply pings do not count.
         let character = null;
-        if (message.content.includes(`<@${botId}>`)) {
+        const isDirectPing = message.content.includes(`<@${botId}>`);
+
+        if (isDirectPing) {
             logger.info(`Forcing raw mode due to direct bot mention in message content.`);
         } else {
             // Get the current character for this channel
