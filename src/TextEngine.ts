@@ -10,7 +10,7 @@ export interface MessageView {
     tokens?: number;
     messageId: string;
     timestamp: string;
-    imageContent?: any[];
+    mediaContent?: any[];
 }
 
 export default class TextEngine {
@@ -136,8 +136,8 @@ The last user to engage with you, bringing about your interaction in the first p
                 text: message.message,
             }];
 
-            if (message.imageContent) {
-                content.push(...message.imageContent);
+            if (message.mediaContent) {
+                content.push(...message.mediaContent);
             }
 
             if (message.fromSystem) {
