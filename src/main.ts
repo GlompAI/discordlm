@@ -636,7 +636,7 @@ function onMessageReactionAdd(
         let typingInterval: number | undefined;
         try {
             const channel = message.channel;
-            if (channel instanceof TextChannel) {
+            if (channel.isTextBased() && "sendTyping" in channel) {
                 await channel.sendTyping();
                 typingInterval = setInterval(() => {
                     channel.sendTyping();
@@ -857,7 +857,7 @@ function onMessageCreate(
         // Send initial typing event and set up recurring typing
         let typingInterval: number | undefined;
         const channel = message.channel;
-        if (channel instanceof TextChannel) {
+        if (channel.isTextBased() && "sendTyping" in channel) {
             await channel.sendTyping();
             typingInterval = setInterval(() => {
                 channel.sendTyping();
