@@ -1,6 +1,7 @@
 import {
     ActionRowBuilder,
     ApplicationCommandType,
+    ApplicationIntegrationType,
     ButtonBuilder,
     ButtonStyle,
     ChannelType,
@@ -10,6 +11,7 @@ import {
     EmbedBuilder,
     Events,
     GatewayIntentBits,
+    InteractionContextType,
     Message,
     MessageReaction,
     OmitPartialGroupDMChannel,
@@ -290,6 +292,21 @@ async function registerSlashCommands(client: Client) {
         new SlashCommandBuilder()
             .setName("help")
             .setDescription("Shows the help message"),
+        new SlashCommandBuilder()
+            .setName("host")
+            .setDescription("Host a character on your profile")
+            .addStringOption((option) =>
+                option.setName("character")
+                    .setDescription("The character to host")
+                    .setRequired(true)
+                    .setAutocomplete(true)
+            )
+            .setIntegrationTypes([ApplicationIntegrationType.UserInstall])
+            .setContexts([
+                InteractionContextType.Guild,
+                InteractionContextType.BotDM,
+                InteractionContextType.PrivateChannel,
+            ]),
     ];
 
     try {
@@ -364,6 +381,22 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 });
             } else if (commandName === "help") {
                 await interaction.reply({ content: getHelpText(), ephemeral: true });
+            } else if (commandName === "host") {
+                if (interaction.guildId) {
+                    await interaction.reply({
+                        content: "This command can only be used in DMs or by installing the app to your profile.",
+                        ephemeral: true,
+                    });
+                    return;
+                }
+                const characterName = interaction.options.getString("character");
+                const success = characterManager.setUserCharacter(interaction.user.id, characterName!);
+                if (success) {
+                    const character = characterManager.getCharacter(characterName!);
+                    await interaction.reply(`Now hosting ${character!.card.name} on your profile.`);
+                } else {
+                    await interaction.reply(`Character "${characterName}" not found.`);
+                }
             }
         } catch (error) {
             logger.error("Error in onInteractionCreate:", error);
@@ -395,7 +428,7 @@ async function handleListCommand(interaction: any, characterManager: CharacterMa
         return;
     }
 
-    const currentChar = characterManager.getChannelCharacter(channelId);
+    const currentChar = characterManager.getChannelCharacter(channelId, interaction.user.id);
     const allCharacters = characterManager.getCharacters();
 
     if (allCharacters.length === 0) {
@@ -788,7 +821,7 @@ function onMessageCreate(
         }
 
         // Get the current character for this channel
-        let character = characterManager.getChannelCharacter(message.channel.id);
+        let character = characterManager.getChannelCharacter(message.channel.id, message.author.id);
 
         // If no character is set (raw mode), try to infer from recent history
         if (character === null && characterManager.getCharacters().length > 0) {
