@@ -783,7 +783,7 @@ function onMessageCreate(
     lastBotMessage: Map<string, Message>,
 ) {
     return async (message: Message) => {
-        if (message.content === RESET_MESSAGE_CONTENT) {
+        if (message.content === RESET_MESSAGE_CONTENT || message.interaction) {
             return;
         }
         // If the message is from a regular bot (not webhook), ignore it
