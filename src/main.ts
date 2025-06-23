@@ -581,19 +581,13 @@ function onMessageReactionAdd(
     lastBotMessage: Map<string, Message>,
 ) {
     return async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => {
-        logger.info("onMessageReactionAdd triggered");
         // Ignore reactions from bots
-        if (user.bot) {
-            logger.info("Reaction ignored: user is a bot.");
-            return;
-        }
-        logger.info(`Reaction received from user: ${user.id}`);
+        if (user.bot) return;
 
         // Fetch partials
         if (reaction.partial) {
             try {
                 reaction = await reaction.fetch();
-                logger.info("Fetched partial reaction.");
             } catch (error) {
                 logger.error("Failed to fetch reaction:", error);
                 return;
@@ -602,7 +596,6 @@ function onMessageReactionAdd(
         if (user.partial) {
             try {
                 user = await user.fetch();
-                logger.info("Fetched partial user.");
             } catch (error) {
                 logger.error("Failed to fetch user from reaction:", error);
                 return;
@@ -611,7 +604,6 @@ function onMessageReactionAdd(
         if (reaction.message.partial) {
             try {
                 await reaction.message.fetch();
-                logger.info("Fetched partial message.");
             } catch (error) {
                 logger.error("Failed to fetch message from reaction:", error);
                 return;
@@ -619,21 +611,17 @@ function onMessageReactionAdd(
         }
 
         const message = reaction.message as Message;
-        logger.info(`Reaction emoji: ${reaction.emoji.name}, Message author: ${message.author.id}, Bot ID: ${botId}`);
 
         // Ignore reactions that aren't the re-roll emoji or on our own messages
-        if (reaction.emoji.name !== "♻️" || message.author.id !== botId) {
-            logger.info("Reaction ignored: not re-roll emoji or not on our message.");
+        if (reaction.emoji.name !== "♻️" || (message.author.id !== botId && !message.webhookId)) {
             return;
         }
 
         // If this isn't the last message the bot sent, remove the reaction
         const lastMessageId = lastBotMessage.get(message.channel.id)?.id;
-        logger.info(`Current message ID: ${message.id}, Last bot message ID: ${lastMessageId}`);
         if (!lastMessageId || message.id !== lastMessageId) {
             try {
                 await reaction.users.remove(user.id);
-                logger.info("Removed reaction from old message.");
             } catch (error) {
                 logger.warn("Failed to remove reaction from old message:", error);
             }
