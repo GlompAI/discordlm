@@ -7,7 +7,7 @@ import { tools } from "./tools.ts";
 export interface MessageView {
     message: string;
     user: string;
-    fromSystem: boolean;
+    role: "user" | "assistant" | "system";
     tokens?: number;
     messageId: string;
     timestamp: string;
@@ -181,7 +181,7 @@ Do not gender the user unless conversation context below implies it.
             budget -= countTokens(TOOL_PROMPT);
         }
         for (const message of messages.toReversed()) {
-            const prefix = `${message.fromSystem ? ownName : message.user}: `;
+            const prefix = `${message.role === "assistant" ? ownName : message.user}: `;
             const timestamp = `The following message was sent at ${message.timestamp}`;
             const messageTokens = countTokens(prefix + message.message);
             const timestampTokens = countTokens(timestamp);
@@ -201,16 +201,23 @@ Do not gender the user unless conversation context below implies it.
             (m.message || m.message === "") && (!m.messageId || candidates.includes(m.messageId))
         );
         for (const message of messagesToInject) {
+            if (message.role === "system") {
+                chatHistory.push({
+                    role: "system",
+                    content: message.message,
+                });
+                continue;
+            }
             const content: any[] = [{
                 type: "text",
-                text: `${message.fromSystem ? ownName : message.user}: ${message.message}`,
+                text: `${message.role === "assistant" ? ownName : message.user}: ${message.message}`,
             }];
 
             if (message.mediaContent) {
                 content.push(...message.mediaContent);
             }
 
-            if (message.fromSystem) {
+            if (message.role === "assistant") {
                 chatHistory.push({
                     role: "system",
                     content: `The following message was sent at ${message.timestamp}`,

@@ -1,4 +1,4 @@
-import TextEngine from "./TextEngine.ts";
+import TextEngine, { MessageView } from "./TextEngine.ts";
 import { Client, Guild, Message, TextChannel } from "npm:discord.js";
 import Tokenizer from "npm:llama-tokenizer-js";
 import { replaceAllAsync } from "./replace.ts";
@@ -68,7 +68,7 @@ export async function generateMessage(
 
     const history = await Promise.all(
         messages.filter((m) => m.content || m.embeds.length > 0).map(async (message) => {
-            let fromSystem = false;
+            let role: "user" | "assistant" | "system" = "user";
             let userName = "";
             let messageText = "";
 
@@ -77,14 +77,16 @@ export async function generateMessage(
             // First, check if the message is a raw reply from the bot.
             // This happens if the author is the bot AND it's not a character reply (no webhook/embed title).
             if (message.author.id === charId && !characterName) {
-                fromSystem = true;
+                role = "assistant";
                 userName = "Assistant"; // Raw bot replies are always from "Assistant"
                 messageText = message.content;
             } else if (characterName) {
                 // This is a character message (from a webhook or an embed with a title).
                 userName = characterName;
                 // It's from the "system" if the character name matches the currently active character.
-                fromSystem = (character?.name === characterName) || (character?.char_name === characterName);
+                role = ((character?.name === characterName) || (character?.char_name === characterName))
+                    ? "assistant"
+                    : "user";
 
                 // Get message content from embed or raw content
                 if (message.embeds.length > 0 && message.embeds[0].description) {
@@ -94,7 +96,7 @@ export async function generateMessage(
                 }
             } else {
                 // It's a message from a human user.
-                fromSystem = false;
+                role = "user";
                 userName = await convertSnowflake(message.author.id, message.guild);
                 messageText = message.content;
             }
@@ -125,7 +127,7 @@ export async function generateMessage(
 
             return {
                 message: finalMessageText,
-                fromSystem,
+                role,
                 messageId: message.id,
                 user: userName,
                 timestamp: message.createdAt.toISOString(),
@@ -134,11 +136,11 @@ export async function generateMessage(
         }),
     );
     // Get the username from the last human message (not from the bot)
-    const lastHumanMessage = history.slice().reverse().find((msg) => !msg.fromSystem);
+    const lastHumanMessage = history.slice().reverse().find((msg) => msg.role === "user");
     const username = lastHumanMessage?.user || "user";
 
     const engine = new TextEngine();
-    let historyForPrompt = [...history];
+    let historyForPrompt: MessageView[] = [...history];
     const MAX_TOOL_CALLS = 5;
     let toolCalls = 0;
 
@@ -179,7 +181,7 @@ export async function generateMessage(
                 }
 
                 historyForPrompt.push({
-                    fromSystem: true,
+                    role: "system",
                     message: `<tool_result>${result}</tool_result>`,
                     user: "System",
                     messageId: "", // No message ID for tool results
