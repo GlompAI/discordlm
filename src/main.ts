@@ -327,7 +327,7 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
         try {
             if (interaction.isAutocomplete()) {
                 // Handle autocomplete for character names
-                if (interaction.commandName === "switch") {
+                if (interaction.commandName === "switch" || interaction.commandName === "host") {
                     const focusedValue = interaction.options.getFocused().toLowerCase();
                     const characters = characterManager.getCharacters();
                     const choices = characters.map((char) => ({ name: char.card.name, value: char.card.name }));
@@ -382,13 +382,6 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
             } else if (commandName === "help") {
                 await interaction.reply({ content: getHelpText(), ephemeral: true });
             } else if (commandName === "host") {
-                if (interaction.guildId) {
-                    await interaction.reply({
-                        content: "This command can only be used in DMs or by installing the app to your profile.",
-                        ephemeral: true,
-                    });
-                    return;
-                }
                 const characterName = interaction.options.getString("character");
                 const success = characterManager.setUserCharacter(interaction.user.id, characterName!);
                 if (success) {
