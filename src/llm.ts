@@ -109,20 +109,20 @@ export async function generateMessage(
                 async (_, snowflake) => `@${await convertSnowflake(snowflake, message.guild)}`,
             );
 
-            const TWO_MEGABYTES = 2 * 1024 * 1024;
             const mediaContent = message.attachments
-                ? message.attachments
-                    .filter((a) => {
-                        const isImage = a.contentType?.startsWith("image/");
-                        const isVideo = a.contentType?.startsWith("video/");
-                        if (isVideo) {
-                            return a.size < TWO_MEGABYTES;
-                        }
-                        return isImage;
-                    })
-                    .map((a) => ({
-                        type: "image_url" as const, // The API might use the same type for both
-                        image_url: { url: a.url },
+                ? await Promise.all(message.attachments
+                    .filter((a) => a.contentType?.startsWith("image/") || a.contentType?.startsWith("video/"))
+                    .map(async (a) => {
+                        const response = await fetch(a.url);
+                        const blob = await response.blob();
+                        const buffer = await blob.arrayBuffer();
+                        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+                        return {
+                            inlineData: {
+                                mimeType: a.contentType!,
+                                data: base64,
+                            },
+                        };
                     }))
                 : [];
 
