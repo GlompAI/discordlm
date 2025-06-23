@@ -56,6 +56,8 @@ const client = new Client({
         GatewayIntentBits.GuildMessages,
         GatewayIntentBits.DirectMessages,
         GatewayIntentBits.MessageContent,
+        GatewayIntentBits.GuildMessageReactions,
+        GatewayIntentBits.DirectMessageReactions,
     ],
     partials: [Partials.Channel],
 });
