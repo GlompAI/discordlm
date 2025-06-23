@@ -374,8 +374,13 @@ Welcome to the bot! Here's a quick guide on how to interact:
 
 **Commands:**
 *   \`/switch <character>\`: Switch the active character for roleplaying.
+*   \`/list\`: Lists available characters.
 *   \`/reset\`: Resets the conversation history with the bot.
 *   \`/help\`: Shows this help message.
+
+**Message Actions:**
+*   React with ♻️ on the bot's latest message to re-roll the response.
+*   React with ❌ on one of the bot's messages to delete it.
 
 **Roleplaying:**
 *   Use asterisks for actions, like \`*I walk into the room*\`.
