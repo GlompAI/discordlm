@@ -59,7 +59,7 @@ const client = new Client({
         GatewayIntentBits.GuildMessageReactions,
         GatewayIntentBits.DirectMessageReactions,
     ],
-    partials: [Partials.Channel],
+    partials: [Partials.Channel, Partials.Message, Partials.Reaction, Partials.User],
 });
 console.log("Discord client created");
 
