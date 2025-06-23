@@ -619,7 +619,6 @@ function onMessageReactionAdd(
         const logContext = message.guild
             ? `[Guild: ${message.guild.name} | Channel: ${(message.channel as TextChannel).name} | User: ${user.tag}]`
             : `[DM from ${user.tag}]`;
-        logger.info(`${logContext} Reaction added: ${reaction.emoji.name} on message ${reaction.message.id}`);
 
         // Ignore reactions that aren't the re-roll or delete emojis, or on messages from non-bots
         if (!["♻️", "❌"].includes(reaction.emoji.name!) || !message.author.bot) {
@@ -661,9 +660,6 @@ function onMessageReactionAdd(
         }
 
         if (!lastMessage || message.id !== lastMessage.id) {
-            logger.info(
-                `${logContext} Reaction on message ${message.id} is not on the last bot message (${lastMessage?.id}). Ignoring.`,
-            );
             if (message.channel.type !== ChannelType.DM) {
                 logger.info(
                     `${logContext} Attempting to remove reaction from user ${user.id} on old message ${message.id}`,
