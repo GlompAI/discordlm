@@ -631,12 +631,11 @@ function onMessageReactionAdd(
         }
 
         if (!lastMessage || message.id !== lastMessage.id) {
-            // Only try to remove reactions in non-DM channels
             if (message.channel.type !== ChannelType.DM) {
                 try {
                     await reaction.users.remove(user.id);
                 } catch (error) {
-                    logger.warn("Failed to remove reaction from old message:", error);
+                    // Ignore errors, as this is a best-effort attempt
                 }
             }
             return;
@@ -921,7 +920,6 @@ function onMessageCreate(
             for (const part of messageParts) {
                 // Before sending a new message, get the previous one and remove its reaction
                 const previousBotMessage = lastBotMessage.get(message.channel.id);
-                // Only try to remove reactions in non-DM channels
                 if (previousBotMessage && previousBotMessage.channel.type !== ChannelType.DM) {
                     try {
                         const reaction = previousBotMessage.reactions.cache.get("♻️");
@@ -929,7 +927,7 @@ function onMessageCreate(
                             await reaction.remove();
                         }
                     } catch (error) {
-                        logger.warn("Failed to remove reaction from previous message:", error);
+                        // Ignore errors, as this is a best-effort attempt
                     }
                 }
 
