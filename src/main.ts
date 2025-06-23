@@ -738,11 +738,11 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
                 .completion.choices[0].message.content;
 
             if (!result) {
-                adze.error("Empty response from API");
-                await sendEphemeralError(
-                    message,
-                    "The model returned an empty response, which may indicate censorship.",
+                adze.error("Empty response from API, likely due to ToS violation.");
+                await message.reply(
+                    "Whoops! It looks like that last exchange may have accidentally violated our terms of service. Sorry about that! To keep things on track, the conversation history has been reset. Please feel free to try again, and remember to adhere to our terms of service!",
                 );
+                await message.channel.send(RESET_MESSAGE_CONTENT);
                 return; // Exit early
             }
 
