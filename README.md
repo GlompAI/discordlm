@@ -86,6 +86,9 @@ The following environment variables are required:
 | `MODEL_NAME` | Model name to use on the API endpoint | Yes | - |
 | `OPENAI_KEY` | API key for the OpenAI-compatible endpoint | Yes | - |
 | `TOKEN_LIMIT` | Maximum token context to send to the API | No | 32600 |
+| `INFERENCE_PARALLELISM` | Number of parallel inference requests to allow | No | 1 |
+| `ADMIN_OVERRIDE_ID` | User ID to bypass administrator checks | No | - |
+| `DEBUG` | Enable debug logging | No | false |
 
 ### Getting Discord Bot Information
 
