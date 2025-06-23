@@ -54,8 +54,11 @@ export async function retrieve_url(url: string): Promise<string> {
     try {
         const response = await fetch(url);
         const text = await response.text();
+        const titleMatch = text.match(/<title>(.*?)<\/title>/);
+        const title = titleMatch ? titleMatch[1] : "No title found";
         // Basic HTML stripping. A more robust solution might be needed for complex pages.
-        return text.replace(/<[^>]*>/g, "").substring(0, 2000);
+        const body = text.replace(/<[^>]*>/g, "").substring(0, 2000);
+        return `Title: ${title}\n\n${body}`;
     } catch (e) {
         const error = e as Error;
         return `Error retrieving URL: ${error.message}`;

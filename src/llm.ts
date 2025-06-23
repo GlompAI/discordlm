@@ -143,6 +143,7 @@ export async function generateMessage(
     let historyForPrompt: MessageView[] = [...history];
     const MAX_TOOL_CALLS = 5;
     let toolCalls = 0;
+    let lastToolCall = "";
 
     while (toolCalls < MAX_TOOL_CALLS) {
         // Ensure the user's message is last in the context
@@ -172,6 +173,22 @@ export async function generateMessage(
         const responseText = response.choices[0].message.content;
 
         if (responseText && responseText.includes("<tool_code>")) {
+            const toolCall = responseText.substring(responseText.indexOf("<tool_code>"));
+            if (toolCall === lastToolCall) {
+                // Prevent re-running the same failed tool call
+                return {
+                    completion: {
+                        choices: [{
+                            message: {
+                                content:
+                                    "The previously attempted tool call failed to produce a useful result. Please try a different approach.",
+                                role: "assistant",
+                            },
+                        }],
+                    },
+                };
+            }
+            lastToolCall = toolCall;
             const toolNameMatch = responseText.match(/<tool>(.*?)<\/tool>/);
             const toolName = toolNameMatch ? toolNameMatch[1] : null;
 
