@@ -36,11 +36,6 @@ export default class TextEngine {
     buildPrompt = async (messages: MessageView[], username: string = "user", character?: CharacterCard) => {
         const card = character;
         const ownName = character?.name || character?.char_name || "Assistant";
-        for (const message of messages) {
-            if (!message.tokens || message.tokens === -1) {
-                message.tokens = countTokens(message.message);
-            }
-        }
         const chatHistory: any[] = [];
         const candidates: string[] = [];
 
@@ -137,12 +132,21 @@ Do not include any summary of the conversation.
             budget -= countTokens(JAILBREAK_PROMPT);
         }
         for (const message of messages.toReversed()) {
-            if (!message.tokens) {
-                message.tokens = countTokens(message.message);
+            const prefix = `${message.fromSystem ? ownName : message.user}: `;
+            const timestamp = `The following message was sent at ${message.timestamp}`;
+            const messageTokens = countTokens(prefix + message.message);
+            const timestampTokens = countTokens(timestamp);
+            const totalTokens = messageTokens + timestampTokens;
+
+            if (budget - totalTokens < 0) {
+                break;
             }
-            budget -= message.tokens;
-            if (budget < 0) break;
-            if (message.messageId) candidates.push(message.messageId);
+
+            budget -= totalTokens;
+            message.tokens = totalTokens;
+            if (message.messageId) {
+                candidates.push(message.messageId);
+            }
         }
         const messagesToInject = messages.filter((m) =>
             (m.message || m.message === "") && (!m.messageId || candidates.includes(m.messageId))
