@@ -409,17 +409,6 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 }
 
                 const channel = interaction.channel;
-                if (
-                    !channel ||
-                    (channel.type !== ChannelType.GuildText &&
-                        !channel.isThread())
-                ) {
-                    await interaction.reply({
-                        content: "This command can only be used in server text channels or threads.",
-                        ephemeral: true,
-                    });
-                    return;
-                }
 
                 const message = interaction.options.getString("message");
                 if (!message) {
