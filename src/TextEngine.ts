@@ -157,8 +157,28 @@ Do not gender the user unless conversation context below implies it.
                 });
             }
         }
+
+        // Ensure the history starts with a 'user' role and that roles alternate.
+        const finalHistory: any[] = [];
+        let lastRole: string | null = null;
+
+        // Find the first user message to start the conversation correctly
+        const firstUserIndex = chatHistory.findIndex((msg) => msg.role === "user");
+
+        if (firstUserIndex !== -1) {
+            const relevantHistory = chatHistory.slice(firstUserIndex);
+            for (const message of relevantHistory) {
+                // Skip consecutive messages with the same role
+                if (message.role !== lastRole) {
+                    finalHistory.push(message);
+                    lastRole = message.role;
+                }
+            }
+        }
+        // If no user message is found, finalHistory will be empty, which is valid.
+
         return {
-            history: chatHistory,
+            history: finalHistory,
             systemInstruction: {
                 role: "system",
                 parts: [{ text: systemPromptText }],
