@@ -408,7 +408,11 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                     return;
                 }
 
-                const channel = interaction.channel;
+                const channel = await client.channels.fetch(interaction.channelId);
+                if (!channel || !channel.isTextBased()) {
+                    await interaction.editReply("This command can only be used in text-based channels.");
+                    return;
+                }
 
                 const messageContent = interaction.options.getString("message");
                 if (!messageContent) {
