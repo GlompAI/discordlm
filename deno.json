@@ -44,7 +44,8 @@
         "fmt:check": "deno fmt --check"
     },
     "imports": {
-        "fflate": "npm:fflate"
+        "fflate": "npm:fflate",
+        "@google/generative-ai": "npm:@google/generative-ai@^0.21.0"
     },
     "exclude": [
         "dist/",

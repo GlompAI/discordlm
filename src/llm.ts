@@ -8,6 +8,7 @@ import adze from "npm:adze";
 import { dumpDebug } from "./debug.ts";
 import { RESET_MESSAGE_CONTENT } from "./main.ts";
 import { retrieve_url, search_web, tools } from "./tools.ts";
+import { FunctionDeclaration, FunctionDeclarationsTool } from "@google/generative-ai";
 
 export function countTokens(message: string): number {
     if (message == "") return 0;
@@ -66,7 +67,7 @@ export async function generateMessage(
         messages = messages.slice(lastResetIndex + 1);
     }
 
-    const history = await Promise.all(
+    const history: MessageView[] = await Promise.all(
         messages.filter((m) => m.content || m.embeds.length > 0).map(async (message) => {
             let role: "user" | "assistant" | "system" = "user";
             let userName = "";
@@ -140,53 +141,57 @@ export async function generateMessage(
     const username = lastHumanMessage?.user || "user";
 
     const engine = new TextEngine();
-    const chatHistory = await engine.buildPrompt(history, username, character ?? undefined);
+    const prompt = await engine.buildPrompt(history, username, character ?? undefined);
     const lastMessage = messages[messages.length - 1];
     const logContext = lastMessage.guild
         ? `[Guild: ${lastMessage.guild.name} | Channel: ${
             (lastMessage.channel as TextChannel).name
         } | User: ${lastMessage.author.tag}]`
         : `[DM from ${lastMessage.author.tag}]`;
-    await dumpDebug(logContext, "prompt", chatHistory);
+    await dumpDebug(logContext, "prompt", prompt);
 
-    const response = await engine.client.chat({
-        stream: false,
+    const model = engine.client.getGenerativeModel({
         model: getModel(),
-        messages: chatHistory,
-        seed,
-        tools: character ? undefined : tools,
-        tool_choice: character ? undefined : "auto",
-    } as any);
+        tools: character ? undefined : [{ functionDeclarations: tools }],
+        systemInstruction: prompt.systemInstruction,
+        safetySettings: prompt.safetySettings,
+    });
 
-    const { choices } = response;
-    const [choice] = choices;
+    const chat = model.startChat({
+        history: prompt.history,
+    });
 
-    if (choice.message.tool_calls) {
-        const toolCalls = choice.message.tool_calls;
+    const result = await chat.sendMessage("placeholder"); // Placeholder, actual content is in history
+    const response = result.response;
+    const toolCalls = response.functionCalls();
+
+    if (toolCalls) {
         for (const toolCall of toolCalls) {
-            const functionName = toolCall.function.name;
-            const args = JSON.parse(toolCall.function.arguments);
+            const functionName = toolCall.name;
+            const args: { [key: string]: any } = toolCall.args;
             let result = "";
             if (functionName === "search_web") {
                 result = await search_web(args.query);
             } else if (functionName === "retrieve_url") {
                 result = await retrieve_url(args.url);
             }
-            chatHistory.push({
+            history.push({
                 role: "tool",
-                tool_call_id: toolCall.id,
+                tool_call_id: functionName,
                 name: functionName,
-                content: result,
+                message: result,
+                messageId: "",
+                timestamp: new Date().toISOString(),
+                user: "Tool",
             });
         }
+        const finalPrompt = await engine.buildPrompt(history, username, character ?? undefined);
+        const finalChat = model.startChat({
+            history: finalPrompt.history,
+        });
+        const finalResult = await finalChat.sendMessage("placeholder");
         return {
-            completion: await engine.client.chat({
-                stream: false,
-                model: getModel(),
-                messages: chatHistory,
-                seed,
-                tool_choice: character ? undefined : "auto",
-            } as any),
+            completion: finalResult.response,
         };
     }
 
