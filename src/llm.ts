@@ -105,10 +105,20 @@ export async function generateMessage(
                 async (_, snowflake) => `@${await convertSnowflake(snowflake, message.guild)}`,
             );
 
-            const imageContent = message.attachments.filter((a) => a.contentType?.startsWith("image/")).map((a) => ({
-                type: "image_url" as const,
-                image_url: { url: a.url },
-            }));
+            const TWO_MEGABYTES = 2 * 1024 * 1024;
+            const mediaContent = message.attachments
+                .filter((a) => {
+                    const isImage = a.contentType?.startsWith("image/");
+                    const isVideo = a.contentType?.startsWith("video/");
+                    if (isVideo) {
+                        return a.size < TWO_MEGABYTES;
+                    }
+                    return isImage;
+                })
+                .map((a) => ({
+                    type: "image_url" as const, // The API might use the same type for both
+                    image_url: { url: a.url },
+                }));
 
             return {
                 message: finalMessageText,
@@ -116,7 +126,7 @@ export async function generateMessage(
                 messageId: message.id,
                 user: userName,
                 timestamp: message.createdAt.toISOString(),
-                imageContent: imageContent.length > 0 ? imageContent : undefined,
+                mediaContent: mediaContent.length > 0 ? mediaContent : undefined,
             };
         }),
     );
