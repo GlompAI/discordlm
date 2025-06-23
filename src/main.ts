@@ -612,8 +612,18 @@ function onMessageReactionAdd(
 
         const message = reaction.message as Message;
 
-        // Ignore reactions that aren't the re-roll emoji or on messages from non-bots
-        if (reaction.emoji.name !== "♻️" || !message.author.bot) {
+        // Ignore reactions that aren't the re-roll or delete emojis, or on messages from non-bots
+        if (!["♻️", "❌"].includes(reaction.emoji.name!) || !message.author.bot) {
+            return;
+        }
+
+        // Handle message deletion
+        if (reaction.emoji.name === "❌") {
+            try {
+                await message.delete();
+            } catch (error) {
+                logger.warn("Failed to delete message:", error);
+            }
             return;
         }
 
@@ -945,6 +955,7 @@ function onMessageCreate(
                         if (sentMessage) {
                             lastBotMessage.set(message.channel.id, sentMessage);
                             await sentMessage.react("♻️");
+                            await sentMessage.react("❌");
                         } else {
                             // Fallback to embed reply if webhook fails
                             const embed = new EmbedBuilder()
@@ -957,6 +968,7 @@ function onMessageCreate(
                             });
                             lastBotMessage.set(message.channel.id, sentMessage);
                             await sentMessage.react("♻️");
+                            await sentMessage.react("❌");
                         }
                     } else {
                         // Raw mode, no character
@@ -966,6 +978,7 @@ function onMessageCreate(
                         });
                         lastBotMessage.set(message.channel.id, sentMessage);
                         await sentMessage.react("♻️");
+                        await sentMessage.react("❌");
                     }
                 } else {
                     // DMs or channels without webhook support
@@ -979,6 +992,7 @@ function onMessageCreate(
                     });
                     lastBotMessage.set(message.channel.id, sentMessage);
                     await sentMessage.react("♻️");
+                    await sentMessage.react("❌");
                 }
             }
             logger.info(`${logContext} Reply sent!`);
