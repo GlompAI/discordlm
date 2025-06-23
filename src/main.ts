@@ -581,19 +581,13 @@ function onMessageReactionAdd(
     lastBotMessage: Map<string, Message>,
 ) {
     return async (reaction: MessageReaction | PartialMessageReaction, user: User | PartialUser) => {
-        logger.info("onMessageReactionAdd triggered");
         // Ignore reactions from bots
-        if (user.bot) {
-            logger.info("Reaction ignored: user is a bot.");
-            return;
-        }
-        logger.info(`Reaction received from user: ${user.id}`);
+        if (user.bot) return;
 
         // Fetch partials
         if (reaction.partial) {
             try {
                 reaction = await reaction.fetch();
-                logger.info("Fetched partial reaction.");
             } catch (error) {
                 logger.error("Failed to fetch reaction:", error);
                 return;
@@ -602,7 +596,6 @@ function onMessageReactionAdd(
         if (user.partial) {
             try {
                 user = await user.fetch();
-                logger.info("Fetched partial user.");
             } catch (error) {
                 logger.error("Failed to fetch user from reaction:", error);
                 return;
@@ -611,7 +604,6 @@ function onMessageReactionAdd(
         if (reaction.message.partial) {
             try {
                 await reaction.message.fetch();
-                logger.info("Fetched partial message.");
             } catch (error) {
                 logger.error("Failed to fetch message from reaction:", error);
                 return;
@@ -619,23 +611,30 @@ function onMessageReactionAdd(
         }
 
         const message = reaction.message as Message;
-        logger.info(`Reaction emoji: ${reaction.emoji.name}, Message author is bot: ${message.author.bot}`);
 
         // Ignore reactions that aren't the re-roll emoji or on messages from non-bots
         if (reaction.emoji.name !== "♻️" || !message.author.bot) {
-            logger.info("Reaction ignored: not re-roll emoji or not on our message.");
             return;
         }
 
         // If this isn't the last message the bot sent, remove the reaction
-        const lastMessageId = lastBotMessage.get(message.channel.id)?.id;
-        logger.info(`Current message ID: ${message.id}, Last bot message ID: ${lastMessageId}`);
-        if (!lastMessageId || message.id !== lastMessageId) {
+        let lastMessage = lastBotMessage.get(message.channel.id);
+
+        // If the bot restarted, the map will be empty. Try to recover by fetching recent messages.
+        if (!lastMessage) {
+            const messages = await message.channel.messages.fetch({ limit: 10 });
+            const lastBotMsgInHistory = messages.filter((m) => m.author.bot).first();
+            if (lastBotMsgInHistory) {
+                lastMessage = lastBotMsgInHistory;
+                lastBotMessage.set(message.channel.id, lastBotMsgInHistory); // Cache it for next time
+            }
+        }
+
+        if (!lastMessage || message.id !== lastMessage.id) {
             // Only try to remove reactions in non-DM channels
             if (message.channel.type !== ChannelType.DM) {
                 try {
                     await reaction.users.remove(user.id);
-                    logger.info("Removed reaction from old message.");
                 } catch (error) {
                     logger.warn("Failed to remove reaction from old message:", error);
                 }
@@ -646,8 +645,6 @@ function onMessageReactionAdd(
         const logContext = message.guild
             ? `[Guild: ${message.guild.name} | Channel: ${(message.channel as TextChannel).name} | User: ${user.tag}]`
             : `[DM from ${user.tag}]`;
-
-        logger.info(`${logContext} Re-rolling message ID ${message.id}...`);
 
         // Show typing indicator while we generate a new response
         let typingInterval: number | undefined;
