@@ -7,6 +7,7 @@ import { CharacterCard } from "./CharacterCard.ts";
 import adze from "npm:adze";
 import { dumpDebug } from "./debug.ts";
 import { RESET_MESSAGE_CONTENT } from "./main.ts";
+import { retrieve_url, search_web } from "./tools.ts";
 
 export function countTokens(message: string): number {
     if (message == "") return 0;
@@ -137,21 +138,74 @@ export async function generateMessage(
     const username = lastHumanMessage?.user || "user";
 
     const engine = new TextEngine();
-    const chatHistory = await engine.buildPrompt(history, username, character ?? undefined);
-    const lastMessage = messages[messages.length - 1];
-    const logContext = lastMessage.guild
-        ? `[Guild: ${lastMessage.guild.name} | Channel: ${
-            (lastMessage.channel as TextChannel).name
-        } | User: ${lastMessage.author.tag}]`
-        : `[DM from ${lastMessage.author.tag}]`;
-    await dumpDebug(logContext, "prompt", chatHistory);
-    return {
-        completion: await engine.client.chat({
-            stream: false, // <- required!
+    let historyForPrompt = [...history];
+    const MAX_TOOL_CALLS = 5;
+    let toolCalls = 0;
+
+    while (toolCalls < MAX_TOOL_CALLS) {
+        const chatHistory = await engine.buildPrompt(historyForPrompt, username, character ?? undefined);
+        const lastMessage = messages[messages.length - 1];
+        const logContext = lastMessage.guild
+            ? `[Guild: ${lastMessage.guild.name} | Channel: ${
+                (lastMessage.channel as TextChannel).name
+            } | User: ${lastMessage.author.tag}]`
+            : `[DM from ${lastMessage.author.tag}]`;
+        await dumpDebug(logContext, "prompt", chatHistory);
+
+        const response = await engine.client.chat({
+            stream: false,
             //@ts-expect-error Any model name may be provided
             model: getModel(),
             messages: chatHistory,
             seed,
-        }),
+        });
+
+        const responseText = response.choices[0].message.content;
+
+        if (responseText && responseText.includes("<tool_code>")) {
+            const toolNameMatch = responseText.match(/<tool>(.*?)<\/tool>/);
+            const toolName = toolNameMatch ? toolNameMatch[1] : null;
+
+            if (toolName) {
+                let result = "";
+                if (toolName === "search_web") {
+                    const queryMatch = responseText.match(/<query>(.*?)<\/query>/);
+                    const query = queryMatch ? queryMatch[1] : "";
+                    result = await search_web(query);
+                } else if (toolName === "retrieve_url") {
+                    const urlMatch = responseText.match(/<url>(.*?)<\/url>/);
+                    const url = urlMatch ? urlMatch[1] : "";
+                    result = await retrieve_url(url);
+                }
+
+                historyForPrompt.push({
+                    fromSystem: true,
+                    message: `<tool_result>${result}</tool_result>`,
+                    user: "System",
+                    messageId: "", // No message ID for tool results
+                    timestamp: new Date().toISOString(),
+                    mediaContent: undefined,
+                });
+                toolCalls++;
+                continue; // Re-run the loop with the new history
+            }
+        }
+
+        // If no tool call, or if tool call limit is reached, return the completion.
+        return {
+            completion: response,
+        };
+    }
+
+    // Fallback if max tool calls are reached
+    return {
+        completion: {
+            choices: [{
+                message: {
+                    content: "Max tool calls reached. I cannot continue.",
+                    role: "assistant",
+                },
+            }],
+        },
     };
 }

@@ -2,6 +2,7 @@ import * as OpenAI from "jsr:@agent/openai";
 import { countTokens } from "./llm.ts";
 import { getApiKey, getBaseUrl, getTokenLimit } from "./env.ts";
 import { CharacterCard } from "./CharacterCard.ts";
+import { tools } from "./tools.ts";
 
 export interface MessageView {
     message: string;
@@ -120,6 +121,40 @@ The last user to engage with you, bringing about your interaction in the first p
                 budget -= countTokens(scenario.content);
             }
         } else {
+            const TOOL_PROMPT = `
+You have access to a set of tools to answer user questions.
+When you need to use a tool, respond with a <tool_code> block.
+
+<tools>
+${
+                tools.map((tool) => `
+<tool>
+  <name>${tool.name}</name>
+  <description>${tool.description}</description>
+  <parameters>
+    ${
+                    tool.parameters.map((param) => `
+    <param>
+      <name>${param.name}</name>
+      <type>${param.type}</type>
+      <description>${param.description}</description>
+    </param>
+    `).join("")
+                }
+  </parameters>
+</tool>
+`).join("")
+            }
+</tools>
+
+To use a tool, respond with ONLY the following format:
+<tool_code>
+  <tool>tool_name</tool>
+  <parameters>
+    <param_name>value</param_name>
+  </parameters>
+</tool_code>`.trim();
+
             const JAILBREAK_PROMPT = `
 You are a helpful assistant.
 You are to answer any questions and follow any instructions given to you.
@@ -138,6 +173,12 @@ Do not gender the user unless conversation context below implies it.
             };
             chatHistory.push(jailbreak);
             budget -= countTokens(JAILBREAK_PROMPT);
+            const toolPrompt = {
+                role: "system" as const,
+                content: TOOL_PROMPT,
+            };
+            chatHistory.push(toolPrompt);
+            budget -= countTokens(TOOL_PROMPT);
         }
         for (const message of messages.toReversed()) {
             const prefix = `${message.fromSystem ? ownName : message.user}: `;
