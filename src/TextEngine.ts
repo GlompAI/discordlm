@@ -93,7 +93,8 @@ Do not gender the user unless conversation context below implies it.
         const reversedMessages = messages.slice().reverse();
 
         for (const message of reversedMessages) {
-            const content = message.message; // FIX: Do not prepend user/char name.
+            const ownName = character?.name || character?.char_name || "Assistant";
+            const content = `${message.role === "assistant" ? ownName : message.user}: ${message.message}`;
             const tokens = countTokens(content);
 
             if (budget - tokens < 0) {
