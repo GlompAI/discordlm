@@ -1,35 +1,39 @@
-export interface Tool {
-    name: string;
-    description: string;
-    parameters: {
-        name: string;
-        type: string;
-        description: string;
-    }[];
-}
+import * as OpenAI from "jsr:@agent/openai";
 
-export const tools: Tool[] = [
+export const tools: any[] = [
     {
-        name: "search_web",
-        description: "Searches the web for information.",
-        parameters: [
-            {
-                name: "query",
-                type: "string",
-                description: "The search query.",
+        type: "function",
+        function: {
+            name: "search_web",
+            description: "Searches the web for information.",
+            parameters: {
+                type: "object",
+                properties: {
+                    query: {
+                        type: "string",
+                        description: "The search query.",
+                    },
+                },
+                required: ["query"],
             },
-        ],
+        },
     },
     {
-        name: "retrieve_url",
-        description: "Retrieves the text content of a webpage.",
-        parameters: [
-            {
-                name: "url",
-                type: "string",
-                description: "The URL to retrieve.",
+        type: "function",
+        function: {
+            name: "retrieve_url",
+            description: "Retrieves the text content of a webpage.",
+            parameters: {
+                type: "object",
+                properties: {
+                    url: {
+                        type: "string",
+                        description: "The URL to retrieve.",
+                    },
+                },
+                required: ["url"],
             },
-        ],
+        },
     },
 ];
 
