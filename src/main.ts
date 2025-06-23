@@ -620,10 +620,13 @@ function onMessageReactionAdd(
         // If this isn't the last message the bot sent, remove the reaction
         const lastMessageId = lastBotMessage.get(message.channel.id)?.id;
         if (!lastMessageId || message.id !== lastMessageId) {
-            try {
-                await reaction.users.remove(user.id);
-            } catch (error) {
-                logger.warn("Failed to remove reaction from old message:", error);
+            // Only try to remove reactions in non-DM channels
+            if (message.channel.type !== ChannelType.DM) {
+                try {
+                    await reaction.users.remove(user.id);
+                } catch (error) {
+                    logger.warn("Failed to remove reaction from old message:", error);
+                }
             }
             return;
         }
@@ -897,7 +900,8 @@ function onMessageCreate(
             for (const part of messageParts) {
                 // Before sending a new message, get the previous one and remove its reaction
                 const previousBotMessage = lastBotMessage.get(message.channel.id);
-                if (previousBotMessage) {
+                // Only try to remove reactions in non-DM channels
+                if (previousBotMessage && previousBotMessage.channel.type !== ChannelType.DM) {
                     try {
                         const reaction = previousBotMessage.reactions.cache.get("♻️");
                         if (reaction && reaction.me) {
