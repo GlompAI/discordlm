@@ -642,10 +642,12 @@ function onMessageReactionAdd(
 
         if (!lastMessage || message.id !== lastMessage.id) {
             if (message.channel.type !== ChannelType.DM) {
+                logger.info(`Attempting to remove reaction from user ${user.id} on old message ${message.id}`);
                 try {
                     await reaction.users.remove(user.id);
+                    logger.info(`Successfully removed reaction from user ${user.id}`);
                 } catch (error) {
-                    // Ignore errors, as this is a best-effort attempt
+                    logger.error(`Failed to remove reaction from user ${user.id}:`, error);
                 }
             }
             return;
@@ -931,13 +933,15 @@ function onMessageCreate(
                 // Before sending a new message, get the previous one and remove its reaction
                 const previousBotMessage = lastBotMessage.get(message.channel.id);
                 if (previousBotMessage && previousBotMessage.channel.type !== ChannelType.DM) {
+                    logger.info(`Attempting to remove previous bot reaction from message ${previousBotMessage.id}`);
                     try {
                         const reaction = previousBotMessage.reactions.cache.get("♻️");
                         if (reaction && reaction.me) {
                             await reaction.remove();
+                            logger.info(`Successfully removed previous bot reaction.`);
                         }
                     } catch (error) {
-                        // Ignore errors, as this is a best-effort attempt
+                        logger.error("Failed to remove previous bot reaction:", error);
                     }
                 }
 
