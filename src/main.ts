@@ -1,7 +1,6 @@
 import {
     ActionRowBuilder,
     ApplicationCommandType,
-    ApplicationIntegrationType,
     ButtonBuilder,
     ButtonStyle,
     ChannelType,
@@ -11,7 +10,6 @@ import {
     EmbedBuilder,
     Events,
     GatewayIntentBits,
-    InteractionContextType,
     Message,
     MessageReaction,
     OmitPartialGroupDMChannel,
@@ -28,7 +26,6 @@ import { Queue } from "./queue.ts";
 
 import adze, { setup } from "npm:adze";
 import { generateMessage } from "./llm.ts";
-import { MessageView } from "./TextEngine.ts";
 import {
     getAdminOverrideId,
     getAvatarServerPort,
@@ -292,28 +289,6 @@ async function registerSlashCommands(client: Client) {
         new SlashCommandBuilder()
             .setName("help")
             .setDescription("Shows the help message"),
-        new SlashCommandBuilder()
-            .setName("host")
-            .setDescription("Host a character on your profile")
-            .addStringOption((option) =>
-                option.setName("character")
-                    .setDescription("The character to host")
-                    .setRequired(true)
-                    .setAutocomplete(true)
-            )
-            .setIntegrationTypes([ApplicationIntegrationType.UserInstall])
-            .setContexts([
-                InteractionContextType.Guild,
-                InteractionContextType.PrivateChannel,
-            ]),
-        new SlashCommandBuilder()
-            .setName("speak")
-            .setDescription("Make your hosted character speak in this channel")
-            .addStringOption((option) =>
-                option.setName("message")
-                    .setDescription("The message for your character to say")
-                    .setRequired(true)
-            ),
     ];
 
     try {
@@ -334,7 +309,7 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
         try {
             if (interaction.isAutocomplete()) {
                 // Handle autocomplete for character names
-                if (interaction.commandName === "switch" || interaction.commandName === "host") {
+                if (interaction.commandName === "switch") {
                     const focusedValue = interaction.options.getFocused().toLowerCase();
                     const characters = characterManager.getCharacters();
                     const choices = characters.map((char) => ({ name: char.card.name, value: char.card.name }));
@@ -388,71 +363,6 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 });
             } else if (commandName === "help") {
                 await interaction.reply({ content: getHelpText(), ephemeral: true });
-            } else if (commandName === "host") {
-                const characterName = interaction.options.getString("character");
-                const success = characterManager.setUserCharacter(interaction.user.id, characterName!);
-                if (success) {
-                    const character = characterManager.getCharacter(characterName!);
-                    await interaction.reply(`Now hosting ${character!.card.name} on your profile.`);
-                } else {
-                    await interaction.reply(`Character "${characterName}" not found.`);
-                }
-            } else if (commandName === "speak") {
-                const character = characterManager.getChannelCharacter(interaction.channelId, interaction.user.id);
-                if (!character) {
-                    await interaction.reply({
-                        content: "You need to host a character first! Use the `/host` command in a DM with me.",
-                        ephemeral: true,
-                    });
-                    return;
-                }
-
-                const messageContent = interaction.options.getString("message");
-                if (!messageContent) {
-                    await interaction.reply({ content: "You must provide a message.", ephemeral: true });
-                    return;
-                }
-
-                // Defer the reply to allow time for inference
-                await interaction.deferReply({ ephemeral: false });
-
-                // We need to handle user-installed apps differently, as they don't have channel history access.
-                let messages: (Message | MessageView)[] = [];
-                if (interaction.channel) {
-                    // This is a guild-installed command, so we can fetch history.
-                    messages = Array.from((await interaction.channel.messages.fetch({ limit: 100 })).values());
-                } else {
-                    const channelId = interaction.channelId;
-                    const channel = await interaction.client.channels.fetch(channelId);
-                    if (!channel) {
-                        await interaction.reply({ content: "Cannot fetch channel metadata.", ephemeral: true });
-                        return;
-                    }
-                    const messages = channel.messages.fetch({ limit: 100 }).values();
-                }
-
-                const result = (await inferenceQueue.push(
-                    generateMessage,
-                    client,
-                    messages,
-                    BOT_SELF_ID,
-                    character.card,
-                    Math.floor(Math.random() * 1000000),
-                )).completion.choices[0].message.content;
-
-                if (!result) {
-                    await interaction.editReply(
-                        "Oops! It seems my response was blocked. Please try rephrasing your message.",
-                    );
-                    return;
-                }
-
-                const embed = new EmbedBuilder()
-                    .setColor(0x0099FF)
-                    .setAuthor({ name: character.card.name, iconURL: character.avatarUrl })
-                    .setDescription(result);
-
-                await interaction.editReply({ embeds: [embed] });
             }
         } catch (error) {
             logger.error("Error in onInteractionCreate:", error);
@@ -484,7 +394,7 @@ async function handleListCommand(interaction: any, characterManager: CharacterMa
         return;
     }
 
-    const currentChar = characterManager.getChannelCharacter(channelId, interaction.user.id);
+    const currentChar = characterManager.getChannelCharacter(channelId);
     const allCharacters = characterManager.getCharacters();
 
     if (allCharacters.length === 0) {
@@ -877,7 +787,7 @@ function onMessageCreate(
         }
 
         // Get the current character for this channel
-        let character = characterManager.getChannelCharacter(message.channel.id, message.author.id);
+        let character = characterManager.getChannelCharacter(message.channel.id);
 
         // If no character is set (raw mode), try to infer from recent history
         if (character === null && characterManager.getCharacters().length > 0) {
@@ -1137,15 +1047,14 @@ function getHelpText() {
 Welcome to the bot! Here's a quick guide on how to interact:
 
 **Commands:**
-*   \`/host <character>\`: Host a character on your user profile. This allows you to interact with them by sending a Direct Message (DM) to the bot.
-*   \`/switch <character>\`: (Server-only) Switch the active character for the current channel.
+*   \`/switch <character>\`: Switch the active character for the current channel.
 *   \`/list\`: Lists available characters.
 *   \`/reset\`: Resets the conversation history with the bot.
 *   \`/help\`: Shows this help message.
 
 **How to Interact:**
-*   **Direct Messages (DMs):** After using \`/host\`, simply send a message to the bot to talk to your character.
-*   **In a Server:** If the bot is a member of a server, you can mention it (@<bot_name>) to talk to your hosted character.
+*   **Direct Messages (DMs):** Send a message to the bot to talk to your character.
+*   **In a Server:** Mention the bot (@<bot_name>) to talk to the active character.
 
 **Message Actions:**
 *   React with ♻️ on the bot's latest message to re-roll the response.
