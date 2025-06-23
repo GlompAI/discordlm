@@ -313,12 +313,7 @@ async function registerSlashCommands(client: Client) {
                 option.setName("message")
                     .setDescription("The message for your character to say")
                     .setRequired(true)
-            )
-            .setIntegrationTypes([ApplicationIntegrationType.UserInstall])
-            .setContexts([
-                InteractionContextType.Guild,
-                InteractionContextType.PrivateChannel,
-            ]),
+            ),
     ];
 
     try {
@@ -428,7 +423,7 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 const result = (await inferenceQueue.push(
                     generateMessage,
                     client,
-                    messages as any[],
+                    messages,
                     BOT_SELF_ID,
                     character.card,
                     Math.floor(Math.random() * 1000000),
