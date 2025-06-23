@@ -1,4 +1,4 @@
-import { Client, TextChannel, Webhook, WebhookMessageCreateOptions } from "npm:discord.js";
+import { Client, Message, TextChannel, Webhook, WebhookMessageCreateOptions } from "npm:discord.js";
 import { CharacterConfig } from "./CharacterCard.ts";
 import { getPublicAvatarBaseUrl } from "./env.ts";
 import adze from "npm:adze";
@@ -125,12 +125,12 @@ export class WebhookManager {
         content: string,
         options?: Partial<WebhookMessageCreateOptions>,
         messageToReply?: any,
-    ): Promise<boolean> {
+    ): Promise<Message | null> {
         const webhook = await this.getWebhookForCharacter(channel, character);
 
         if (!webhook) {
             logger.error(`No webhook available for character ${character.card.name}`);
-            return false;
+            return null;
         }
 
         try {
@@ -158,11 +158,42 @@ export class WebhookManager {
                 }
             }
 
-            await webhook.send(sendOptions);
-            return true;
+            const sentMessage = await webhook.send(sendOptions);
+            return sentMessage;
         } catch (error) {
             logger.error(`Failed to send message as ${character.card.name}:`, error);
-            return false;
+            return null;
+        }
+    }
+
+    async editAsCharacter(
+        message: Message,
+        character: CharacterConfig,
+        content: string,
+        options?: Partial<WebhookMessageCreateOptions>,
+    ): Promise<Message | null> {
+        if (!message.webhookId) {
+            logger.warn("Cannot edit a message that was not sent by a webhook.");
+            return null;
+        }
+
+        const webhook = await this.client.fetchWebhook(message.webhookId);
+        if (!webhook) {
+            logger.warn(`Could not fetch webhook with ID ${message.webhookId}`);
+            return null;
+        }
+
+        try {
+            const editOptions: any = {
+                content,
+                ...options,
+            };
+
+            const editedMessage = await webhook.editMessage(message.id, editOptions);
+            return editedMessage;
+        } catch (error) {
+            logger.error(`Failed to edit message as ${character.card.name}:`, error);
+            return null;
         }
     }
 
