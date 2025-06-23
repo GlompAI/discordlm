@@ -1074,10 +1074,15 @@ function getHelpText() {
 Welcome to the bot! Here's a quick guide on how to interact:
 
 **Commands:**
-*   \`/switch <character>\`: Switch the active character for roleplaying.
+*   \`/host <character>\`: Host a character on your user profile. This allows you to interact with them by sending a Direct Message (DM) to the bot.
+*   \`/switch <character>\`: (Server-only) Switch the active character for the current channel.
 *   \`/list\`: Lists available characters.
 *   \`/reset\`: Resets the conversation history with the bot.
 *   \`/help\`: Shows this help message.
+
+**How to Interact:**
+*   **Direct Messages (DMs):** After using \`/host\`, simply send a message to the bot to talk to your character.
+*   **In a Server:** If the bot is a member of a server, you can mention it (@<bot_name>) to talk to your hosted character.
 
 **Message Actions:**
 *   React with ♻️ on the bot's latest message to re-roll the response.
