@@ -145,6 +145,13 @@ export async function generateMessage(
     let toolCalls = 0;
 
     while (toolCalls < MAX_TOOL_CALLS) {
+        // Ensure the user's message is last in the context
+        const lastUserMessageIndex = historyForPrompt.map((m) => m.role).lastIndexOf("user");
+        if (lastUserMessageIndex !== -1 && lastUserMessageIndex < historyForPrompt.length - 1) {
+            const lastUserMessage = historyForPrompt.splice(lastUserMessageIndex, 1)[0];
+            historyForPrompt.push(lastUserMessage);
+        }
+
         const chatHistory = await engine.buildPrompt(historyForPrompt, username, character ?? undefined);
         const lastMessage = messages[messages.length - 1];
         const logContext = lastMessage.guild
