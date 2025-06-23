@@ -307,6 +307,14 @@ async function registerSlashCommands(client: Client) {
                 InteractionContextType.BotDM,
                 InteractionContextType.PrivateChannel,
             ]),
+        new SlashCommandBuilder()
+            .setName("speak")
+            .setDescription("Make your hosted character speak in this channel")
+            .addStringOption((option) =>
+                option.setName("message")
+                    .setDescription("The message for your character to say")
+                    .setRequired(true)
+            ),
     ];
 
     try {
@@ -390,6 +398,33 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 } else {
                     await interaction.reply(`Character "${characterName}" not found.`);
                 }
+            } else if (commandName === "speak") {
+                const character = characterManager.getChannelCharacter(interaction.channelId, interaction.user.id);
+                if (!character) {
+                    await interaction.reply({
+                        content: "You need to host a character first! Use the `/host` command in a DM with me.",
+                        ephemeral: true,
+                    });
+                    return;
+                }
+
+                if (!interaction.channel || !(interaction.channel instanceof TextChannel)) {
+                    await interaction.reply({
+                        content: "This command can only be used in server text channels.",
+                        ephemeral: true,
+                    });
+                    return;
+                }
+
+                const message = interaction.options.getString("message");
+                if (!message) {
+                    await interaction.reply({ content: "You must provide a message.", ephemeral: true });
+                    return;
+                }
+
+                const webhookManager = getWebhookManager();
+                await webhookManager.sendAsCharacter(interaction.channel, character, message);
+                await interaction.reply({ content: "Message sent!", ephemeral: true });
             }
         } catch (error) {
             logger.error("Error in onInteractionCreate:", error);
