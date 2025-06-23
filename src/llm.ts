@@ -176,8 +176,7 @@ export async function generateMessage(
                 result = await retrieve_url(args.url);
             }
             history.push({
-                role: "tool",
-                tool_call_id: functionName,
+                role: "function",
                 name: functionName,
                 message: result,
                 messageId: "",

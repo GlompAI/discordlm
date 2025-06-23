@@ -5,12 +5,11 @@ import { CharacterCard } from "./CharacterCard.ts";
 export interface MessageView {
     message: string;
     user: string;
-    role: "user" | "assistant" | "system" | "tool";
+    role: "user" | "assistant" | "system" | "function";
     tokens?: number;
     messageId: string;
     timestamp: string;
     mediaContent?: any[];
-    tool_call_id?: string;
     name?: string;
 }
 
@@ -125,14 +124,13 @@ Do not gender the user unless conversation context below implies it.
                 // System messages are handled above
                 continue;
             }
-            if (message.role === "tool") {
+            if (message.role === "function") {
                 chatHistory.push({
-                    role: "tool",
+                    role: "function",
                     parts: [{
-                        toolResponse: {
-                            id: message.tool_call_id,
-                            name: message.name,
-                            response: message.message,
+                        functionResponse: {
+                            name: message.name!,
+                            response: { content: message.message },
                         },
                     }],
                 });
