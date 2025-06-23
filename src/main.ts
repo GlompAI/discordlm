@@ -362,26 +362,7 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                     ephemeral: false,
                 });
             } else if (commandName === "help") {
-                const helpText = `
-Welcome to the bot! Here's a quick guide on how to interact:
-
-**Commands:**
-*   \`/switch <character>\`: Switch the active character for roleplaying.
-*   \`/list\`: Lists available characters.
-*   \`/reset\`: Resets the conversation history with the bot.
-*   \`/help\`: Shows this help message.
-
-**Message Actions:**
-*   React with ♻️ on the bot's latest message to re-roll the response.
-*   React with ❌ on one of the bot's messages to delete it.
-
-**Roleplaying:**
-*   Use asterisks for actions, like \`*I walk into the room*\`.
-*   For out-of-character (OOC) messages, use the format: \`{OOC: your message here}\`.
-
-Have fun!
-                `;
-                await interaction.reply({ content: helpText.trim(), ephemeral: true });
+                await interaction.reply({ content: getHelpText(), ephemeral: true });
             }
         } catch (error) {
             logger.error("Error in onInteractionCreate:", error);
@@ -863,18 +844,23 @@ function onMessageCreate(
             logger.info(`Forcing raw mode due to direct bot mention in message content.`);
         }
 
-        // If no character is available, inform the user
-        // If no character is available, and there are no characters loaded, inform the user.
-        // A null character is valid for raw mode, so we only fail if there are no characters at all.
-        if (!character && characterManager.getCharacters().length === 0) {
-            try {
-                await message.reply(
-                    "No characters available. Please load some character cards.",
-                );
-            } catch (exception) {
-                logger.error("Failed to send no character response: " + exception);
+        // If no character is available, apply special handling
+        if (!character) {
+            if (message.channel.type === ChannelType.DM) {
+                // In DMs, if no character is set, show the help message
+                await message.reply({ content: getHelpText(), allowedMentions: { repliedUser: true } });
+                return;
+            } else if (message.guild) {
+                // In guilds, only allow admins to use the raw assistant
+                const member = await message.guild.members.fetch(message.author.id);
+                if (!member.permissions.has("Administrator")) {
+                    await sendEphemeralError(
+                        message,
+                        "You must be an administrator to interact with the raw assistant.",
+                    );
+                    return;
+                }
             }
-            return;
         }
 
         const logContext = message.guild
@@ -1053,4 +1039,26 @@ function onMessageCreate(
             clearInterval(typingInterval);
         }
     };
+}
+
+function getHelpText() {
+    return `
+Welcome to the bot! Here's a quick guide on how to interact:
+
+**Commands:**
+*   \`/switch <character>\`: Switch the active character for roleplaying.
+*   \`/list\`: Lists available characters.
+*   \`/reset\`: Resets the conversation history with the bot.
+*   \`/help\`: Shows this help message.
+
+**Message Actions:**
+*   React with ♻️ on the bot's latest message to re-roll the response.
+*   React with ❌ on one of the bot's messages to delete it.
+
+**Roleplaying:**
+*   Use asterisks for actions, like \`*I walk into the room*\`.
+*   For out-of-character (OOC) messages, use the format: \`{OOC: your message here}\`.
+
+Have fun!
+    `.trim();
 }
