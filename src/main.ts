@@ -739,10 +739,10 @@ function onMessageCreate(botId: string, characterManager: CharacterManager, getW
 
             if (!result) {
                 adze.error("Empty response from API, likely due to ToS violation.");
-                await message.reply(
-                    "Whoops! It looks like that last exchange may have accidentally violated our terms of service. Sorry about that! To keep things on track, the conversation history has been reset. Please feel free to try again, and remember to adhere to our terms of service!",
+                await sendEphemeralError(
+                    message,
+                    "Oops! It seems my response was blocked, likely for safety reasons. This can happen if a message goes against our terms of service. You could try deleting your last message and rephrasing, or use the `/reset` command to clear our conversation and start fresh.",
                 );
-                await message.channel.send(RESET_MESSAGE_CONTENT);
                 return; // Exit early
             }
 
