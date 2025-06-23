@@ -632,11 +632,16 @@ function onMessageReactionAdd(
 
         // If the bot restarted, the map will be empty. Try to recover by fetching recent messages.
         if (!lastMessage) {
-            const messages = await message.channel.messages.fetch({ limit: 10 });
+            logger.info("lastBotMessage not found in cache, fetching history...");
+            const messages = await message.channel.messages.fetch({ limit: 25 });
+            logger.info(`Fetched ${messages.size} messages. Filtering for bot messages...`);
             const lastBotMsgInHistory = messages.filter((m) => m.author.bot).first();
             if (lastBotMsgInHistory) {
+                logger.info(`Found last bot message in history: ${lastBotMsgInHistory.id}`);
                 lastMessage = lastBotMsgInHistory;
                 lastBotMessage.set(message.channel.id, lastBotMsgInHistory); // Cache it for next time
+            } else {
+                logger.info("No bot message found in recent history.");
             }
         }
 
@@ -936,10 +941,15 @@ function onMessageCreate(
 
                 // If the bot restarted, try to recover the last message from history
                 if (!previousBotMessage) {
+                    logger.info("previousBotMessage not found in cache, fetching history...");
                     const messages = await message.channel.messages.fetch({ limit: 10 });
+                    logger.info(`Fetched ${messages.size} messages. Filtering for bot messages...`);
                     const lastBotMsgInHistory = messages.filter((m) => m.author.bot).first();
                     if (lastBotMsgInHistory) {
+                        logger.info(`Found previous bot message in history: ${lastBotMsgInHistory.id}`);
                         previousBotMessage = lastBotMsgInHistory;
+                    } else {
+                        logger.info("No previous bot message found in recent history.");
                     }
                 }
 
