@@ -910,6 +910,7 @@ function onMessageCreate(
                 messages,
                 botId,
                 character ? character.card : null,
+                Math.floor(Math.random() * 1000000),
             ))
                 .completion.choices[0].message.content;
 
