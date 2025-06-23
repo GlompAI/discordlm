@@ -18,9 +18,9 @@ export async function dumpDebug(
     if (logContext.startsWith("[DM from")) {
         const userMatch = logContext.match(/\[DM from (.*)\]/);
         const user = userMatch ? userMatch[1].replace(/[^a-zA-Z0-9]/g, "_") : "unknown_user";
-        const dir = `${LOG_DIR}/dm`;
+        const dir = `${LOG_DIR}/dm/${user}`;
         await ensureDir(dir);
-        logPath = `${dir}/${timestamp}-${user}-${context}.log`;
+        logPath = `${dir}/${timestamp}-${context}.log`;
     } else {
         const guildMatch = logContext.match(/\[Guild: (.*?) \|/);
         const channelMatch = logContext.match(/\| Channel: (.*?) \|/);
