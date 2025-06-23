@@ -642,6 +642,7 @@ function onMessageReactionAdd(
                     channel.sendTyping();
                 }, 9000);
             }
+
             // Fetch the message history again, up to the message before the one being re-rolled
             const messages = Array.from(
                 (await message.channel.messages.fetch({ limit: 100, before: message.id })).values(),
@@ -892,6 +893,19 @@ function onMessageCreate(
             const messageParts = smartSplit(reply);
 
             for (const part of messageParts) {
+                // Before sending a new message, get the previous one and remove its reaction
+                const previousBotMessage = lastBotMessage.get(message.channel.id);
+                if (previousBotMessage) {
+                    try {
+                        const reaction = previousBotMessage.reactions.cache.get("♻️");
+                        if (reaction && reaction.me) {
+                            await reaction.remove();
+                        }
+                    } catch (error) {
+                        logger.warn("Failed to remove reaction from previous message:", error);
+                    }
+                }
+
                 if (
                     webhookManager &&
                     message.channel instanceof TextChannel &&
