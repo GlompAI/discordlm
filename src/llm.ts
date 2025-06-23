@@ -17,6 +17,7 @@ export async function generateMessage(
     messages: Message[],
     charId: string,
     character: CharacterCard | null,
+    seed?: number,
 ) {
     async function convertSnowflake(userId: string, guild: Guild | null) {
         let returnString: string;
@@ -138,6 +139,7 @@ export async function generateMessage(
             //@ts-expect-error Any model name may be provided
             model: getModel(),
             messages: chatHistory,
+            seed,
         }),
     };
 }
