@@ -14,6 +14,7 @@ export class CharacterManager {
     private characters: CharacterConfig[] = [];
     private defaultCharacter: CharacterConfig | null = null;
     private channelCharacters = new Map<string, CharacterConfig | null>(); // channelId -> character
+    private userCharacters = new Map<string, CharacterConfig | null>(); // userId -> character
     private charactersDir: string = "./characters";
     private avatarBaseUrl?: string;
 
@@ -70,7 +71,10 @@ export class CharacterManager {
     /**
      * Get the active character for a channel (or default if not set)
      */
-    getChannelCharacter(channelId: string): CharacterConfig | null {
+    getChannelCharacter(channelId: string, userId?: string): CharacterConfig | null {
+        if (userId && this.userCharacters.has(userId)) {
+            return this.userCharacters.get(userId) as CharacterConfig | null;
+        }
         if (this.channelCharacters.has(channelId)) {
             return this.channelCharacters.get(channelId) as CharacterConfig | null;
         }
@@ -85,6 +89,24 @@ export class CharacterManager {
         if (character) {
             this.defaultCharacter = character;
             logger.info(`Set default character to: ${character.card.name}`);
+            return true;
+        }
+        return false;
+    }
+
+    /**
+     * Set the active character for a specific user
+     */
+    setUserCharacter(userId: string, characterName: string): boolean {
+        if (characterName.toLowerCase() === "none" || characterName.toLowerCase() === "raw") {
+            this.userCharacters.set(userId, null);
+            logger.info(`User ${userId} is no longer hosting a character.`);
+            return true;
+        }
+        const character = this.getCharacter(characterName);
+        if (character) {
+            this.userCharacters.set(userId, character);
+            logger.info(`Set character for user ${userId} to: ${character.card.name}`);
             return true;
         }
         return false;
