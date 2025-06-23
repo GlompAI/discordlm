@@ -931,7 +931,17 @@ function onMessageCreate(
 
             for (const part of messageParts) {
                 // Before sending a new message, get the previous one and remove its reaction
-                const previousBotMessage = lastBotMessage.get(message.channel.id);
+                let previousBotMessage = lastBotMessage.get(message.channel.id);
+
+                // If the bot restarted, try to recover the last message from history
+                if (!previousBotMessage) {
+                    const messages = await message.channel.messages.fetch({ limit: 10 });
+                    const lastBotMsgInHistory = messages.filter((m) => m.author.bot).first();
+                    if (lastBotMsgInHistory) {
+                        previousBotMessage = lastBotMsgInHistory;
+                    }
+                }
+
                 if (previousBotMessage && previousBotMessage.channel.type !== ChannelType.DM) {
                     logger.info(`Attempting to remove previous bot reaction from message ${previousBotMessage.id}`);
                     try {
