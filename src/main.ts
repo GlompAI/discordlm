@@ -663,7 +663,13 @@ function onMessageReactionAdd(
             );
             messages.reverse(); // Oldest to newest
 
-            const character = characterManager.getChannelCharacter(message.channel.id);
+            // Infer the character from the message being re-rolled
+            let character = null;
+            if (message.webhookId) {
+                character = characterManager.getCharacter(message.author.username);
+            } else if (message.embeds.length > 0 && message.embeds[0].title) {
+                character = characterManager.getCharacter(message.embeds[0].title);
+            }
 
             const result = (await inferenceQueue.push(
                 generateMessage,
