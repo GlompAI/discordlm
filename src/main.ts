@@ -612,8 +612,8 @@ function onMessageReactionAdd(
 
         const message = reaction.message as Message;
 
-        // Ignore reactions that aren't the re-roll emoji or on our own messages
-        if (reaction.emoji.name !== "♻️" || (message.author.id !== botId && !message.webhookId)) {
+        // Ignore reactions that aren't the re-roll emoji or on messages from non-bots
+        if (reaction.emoji.name !== "♻️" || !message.author.bot) {
             return;
         }
 
