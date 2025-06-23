@@ -116,7 +116,13 @@ export async function generateMessage(
                         const response = await fetch(a.url);
                         const blob = await response.blob();
                         const buffer = await blob.arrayBuffer();
-                        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+                        let binary = "";
+                        const bytes = new Uint8Array(buffer);
+                        const len = bytes.byteLength;
+                        for (let i = 0; i < len; i++) {
+                            binary += String.fromCharCode(bytes[i]);
+                        }
+                        const base64 = btoa(binary);
                         return {
                             inlineData: {
                                 mimeType: a.contentType!,
