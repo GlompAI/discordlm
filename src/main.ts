@@ -662,7 +662,7 @@ function onMessageReactionAdd(
                 character ? character.card : null,
                 Math.floor(Math.random() * 1000000),
             ))
-                .completion.choices[0].message.content;
+                .completion.text();
 
             if (!result) {
                 await sendEphemeralError(
@@ -896,7 +896,7 @@ function onMessageCreate(
                 character ? character.card : null,
                 Math.floor(Math.random() * 1000000),
             ))
-                .completion.choices[0].message.content;
+                .completion.text();
 
             if (!result) {
                 adze.error("Empty response from API, likely due to ToS violation.");

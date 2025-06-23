@@ -1,38 +1,32 @@
-import * as OpenAI from "jsr:@agent/openai";
+import { FunctionDeclaration, SchemaType } from "@google/generative-ai";
 
-export const tools: any[] = [
+export const tools: FunctionDeclaration[] = [
     {
-        type: "function",
-        function: {
-            name: "search_web",
-            description: "Searches the web for information.",
-            parameters: {
-                type: "object",
-                properties: {
-                    query: {
-                        type: "string",
-                        description: "The search query.",
-                    },
+        name: "search_web",
+        description: "Searches the web for information.",
+        parameters: {
+            type: SchemaType.OBJECT,
+            properties: {
+                query: {
+                    type: SchemaType.STRING,
+                    description: "The search query.",
                 },
-                required: ["query"],
             },
+            required: ["query"],
         },
     },
     {
-        type: "function",
-        function: {
-            name: "retrieve_url",
-            description: "Retrieves the text content of a webpage.",
-            parameters: {
-                type: "object",
-                properties: {
-                    url: {
-                        type: "string",
-                        description: "The URL to retrieve.",
-                    },
+        name: "retrieve_url",
+        description: "Retrieves the text content of a webpage.",
+        parameters: {
+            type: SchemaType.OBJECT,
+            properties: {
+                url: {
+                    type: SchemaType.STRING,
+                    description: "The URL to retrieve.",
                 },
-                required: ["url"],
             },
+            required: ["url"],
         },
     },
 ];

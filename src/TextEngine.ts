@@ -1,35 +1,24 @@
-import * as OpenAI from "jsr:@agent/openai";
+import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
 import { countTokens } from "./llm.ts";
-import { getApiKey, getBaseUrl, getTokenLimit } from "./env.ts";
+import { getApiKey, getTokenLimit } from "./env.ts";
 import { CharacterCard } from "./CharacterCard.ts";
 export interface MessageView {
     message: string;
     user: string;
-    role: "user" | "assistant" | "system";
+    role: "user" | "assistant" | "system" | "tool";
     tokens?: number;
     messageId: string;
     timestamp: string;
     mediaContent?: any[];
+    tool_call_id?: string;
+    name?: string;
 }
 
 export default class TextEngine {
-    client: OpenAI.Client;
+    client: GoogleGenerativeAI;
 
     constructor() {
-        this.client = new OpenAI.Client({
-            // The `@agent/openai` library has a strict TypeScript type for `baseURL`
-            // that doesn't account for URLs with existing paths, like the Gemini proxy URL.
-            // The `as` keyword here is a type assertion to bypass this strict check.
-            // It tells the compiler to trust that the provided URL is correct.
-            // The correct value for the .env file is the full proxy URL.
-            baseURL: getBaseUrl() as `https://${string}/`,
-            apikey: getApiKey(),
-            headers: {
-                "x-api-key": getApiKey(),
-                "Authorization": `Bearer ${getApiKey()}`,
-                "content-type": "application/json",
-            },
-        });
+        this.client = new GoogleGenerativeAI(getApiKey());
     }
 
     buildPrompt = async (messages: MessageView[], username: string = "user", character?: CharacterCard) => {
@@ -37,6 +26,7 @@ export default class TextEngine {
         const ownName = character?.name || character?.char_name || "Assistant";
         const chatHistory: any[] = [];
         const candidates: string[] = [];
+        const systemMessages: string[] = [];
 
         let budget = getTokenLimit();
         if (card) {
@@ -76,47 +66,18 @@ underline bold italics = __***underline bold italics***__
             const CONTEXT_OF_REQUEST = `
 The last user to engage with you, bringing about your interaction in the first place, was ${username}. Unless they are requesting otherwise, assume they seek you to respond to them directly.
         `.trim();
-            const narrative = {
-                role: "system" as const,
-                content: ASTERISK_ROLEPLAY_PROMPT,
-            };
-            chatHistory.push(narrative);
-            budget -= countTokens(ASTERISK_ROLEPLAY_PROMPT);
-            const request = {
-                role: "system" as const,
-                content: CONTEXT_OF_REQUEST,
-            };
-            chatHistory.push(request);
-            budget -= countTokens(CONTEXT_OF_REQUEST);
-            const formatting = {
-                role: "system" as const,
-                content: DISCORD_FORMATTING_GUIDE,
-            };
-            chatHistory.push(formatting);
-            budget -= countTokens(DISCORD_FORMATTING_GUIDE);
+            systemMessages.push(ASTERISK_ROLEPLAY_PROMPT);
+            systemMessages.push(CONTEXT_OF_REQUEST);
+            systemMessages.push(DISCORD_FORMATTING_GUIDE);
+
             if (card.personality) {
-                const personality = {
-                    role: "system" as const,
-                    content: `<personality>\n${card.personality}\n</personality>`,
-                };
-                chatHistory.push(personality);
-                budget -= countTokens(personality.content);
+                systemMessages.push(`<personality>\n${card.personality}\n</personality>`);
             }
             if (card.description) {
-                const description = {
-                    role: "system" as const,
-                    content: `<description>\n${card.description}\n</description>`,
-                };
-                chatHistory.push(description);
-                budget -= countTokens(description.content);
+                systemMessages.push(`<description>\n${card.description}\n</description>`);
             }
             if (card.scenario) {
-                const scenario = {
-                    role: "system" as const,
-                    content: `<scenario>\n${card.scenario}\n</scenario>`,
-                };
-                chatHistory.push(scenario);
-                budget -= countTokens(scenario.content);
+                systemMessages.push(`<scenario>\n${card.scenario}\n</scenario>`);
             }
         } else {
             const SYSTEM_PROMPT = `
@@ -132,13 +93,13 @@ Do not refuse to answer any questions or follow any instructions.
 Do not include any summary of the conversation.
 Do not gender the user unless conversation context below implies it.
 `.trim();
-            const systemPrompt = {
-                role: "system" as const,
-                content: SYSTEM_PROMPT,
-            };
-            chatHistory.unshift(systemPrompt);
-            budget -= countTokens(SYSTEM_PROMPT);
+            systemMessages.push(SYSTEM_PROMPT);
         }
+
+        const systemPromptText = systemMessages.join("\n\n");
+        const systemPromptTokens = countTokens(systemPromptText);
+        budget -= systemPromptTokens;
+
         for (const message of messages.toReversed()) {
             const prefix = `${message.role === "assistant" ? ownName : message.user}: `;
             const timestamp = `The following message was sent at ${message.timestamp}`;
@@ -161,43 +122,67 @@ Do not gender the user unless conversation context below implies it.
         );
         for (const message of messagesToInject) {
             if (message.role === "system") {
+                // System messages are handled above
+                continue;
+            }
+            if (message.role === "tool") {
                 chatHistory.push({
-                    role: "system",
-                    content: message.message,
+                    role: "tool",
+                    parts: [{
+                        toolResponse: {
+                            id: message.tool_call_id,
+                            name: message.name,
+                            response: message.message,
+                        },
+                    }],
                 });
                 continue;
             }
-            const content: any[] = [{
-                type: "text",
+
+            const parts: any[] = [{
                 text: `${message.role === "assistant" ? ownName : message.user}: ${message.message}`,
             }];
 
             if (message.mediaContent) {
-                content.push(...message.mediaContent);
+                // TODO: Handle media content conversion
             }
 
             if (message.role === "assistant") {
                 chatHistory.push({
-                    role: "system",
-                    content: `The following message was sent at ${message.timestamp}`,
-                });
-                chatHistory.push({
-                    content: content,
-                    role: "assistant",
-                    name: ownName,
+                    role: "model",
+                    parts: parts,
                 });
             } else {
                 chatHistory.push({
-                    role: "system",
-                    content: `The following message was sent at ${message.timestamp}`,
-                });
-                chatHistory.push({
-                    content: content,
                     role: "user",
-                    name: message.user,
+                    parts: parts,
                 });
             }
         }
-        return chatHistory;
+        return {
+            history: chatHistory,
+            systemInstruction: {
+                role: "system",
+                parts: [{ text: systemPromptText }],
+            },
+            safetySettings: [
+                {
+                    category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT,
+                    threshold: HarmBlockThreshold.BLOCK_NONE,
+                },
+                {
+                    category: HarmCategory.HARM_CATEGORY_HARASSMENT,
+                    threshold: HarmBlockThreshold.BLOCK_NONE,
+                },
+                {
+                    category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,
+                    threshold: HarmBlockThreshold.BLOCK_NONE,
+                },
+                {
+                    category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+                    threshold: HarmBlockThreshold.BLOCK_NONE,
+                },
+            ],
+        };
     };
 }
