@@ -314,9 +314,6 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                     const characters = characterManager.getCharacters();
                     const choices = characters.map((char) => ({ name: char.card.name, value: char.card.name }));
 
-                    // Add "none" option for raw mode
-                    choices.unshift({ name: "None (Raw RP)", value: "none" });
-
                     const filtered = choices.filter((choice) => choice.name.toLowerCase().startsWith(focusedValue))
                         .slice(
                             0,
@@ -344,12 +341,8 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 const success = characterManager.setChannelCharacter(channelId, characterName!);
 
                 if (success) {
-                    if (characterName!.toLowerCase() === "none" || characterName!.toLowerCase() === "raw") {
-                        await interaction.reply("Switched to raw mode (no character).");
-                    } else {
-                        const character = characterManager.getCharacter(characterName!);
-                        await interaction.reply(`Switched to ${character!.card.name}`);
-                    }
+                    const character = characterManager.getCharacter(characterName!);
+                    await interaction.reply(`Switched to ${character!.card.name}`);
                     // Reset conversation on switch in DMs
                     if (interaction.channel?.type === ChannelType.DM) {
                         await interaction.channel.send(RESET_MESSAGE_CONTENT);
@@ -357,7 +350,7 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 } else {
                     const availableChars = characterManager.getCharacters().map((c) => c.card.name).join(", ");
                     await interaction.reply(
-                        `Character "${characterName}" not found. Available characters: ${availableChars}, None`,
+                        `Character "${characterName}" not found. Available characters: ${availableChars}`,
                     );
                 }
             } else if (commandName === "list") {
@@ -463,17 +456,7 @@ async function handleListCommand(interaction: any, characterManager: CharacterMa
         return embed;
     });
 
-    // Handle "None" option
-    const noneEmbed = new EmbedBuilder()
-        .setTitle("None (Raw RP)")
-        .setDescription("Disables character-based roleplaying.")
-        .setColor(currentChar === null ? 0x00FF00 : 0x0099FF);
-
-    if (currentChar === null) {
-        noneEmbed.setFooter({ text: "Current Mode" });
-    }
-
-    const allEmbeds = [noneEmbed, ...embeds];
+    const allEmbeds = [...embeds];
 
     const row = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
@@ -545,17 +528,7 @@ async function handleListCommand(interaction: any, characterManager: CharacterMa
             return embed;
         });
 
-        // Handle "None" option
-        const noneEmbed = new EmbedBuilder()
-            .setTitle("None (Raw RP)")
-            .setDescription("Disables character-based roleplaying.")
-            .setColor(currentChar === null ? 0x00FF00 : 0x0099FF);
-
-        if (currentChar === null) {
-            noneEmbed.setFooter({ text: "Current Mode" });
-        }
-
-        const allEmbeds = [noneEmbed, ...embeds];
+        const allEmbeds = [...embeds];
 
         const row = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
