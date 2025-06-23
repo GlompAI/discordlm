@@ -304,7 +304,6 @@ async function registerSlashCommands(client: Client) {
             .setIntegrationTypes([ApplicationIntegrationType.UserInstall])
             .setContexts([
                 InteractionContextType.Guild,
-                InteractionContextType.BotDM,
                 InteractionContextType.PrivateChannel,
             ]),
         new SlashCommandBuilder()
@@ -314,7 +313,12 @@ async function registerSlashCommands(client: Client) {
                 option.setName("message")
                     .setDescription("The message for your character to say")
                     .setRequired(true)
-            ),
+            )
+            .setIntegrationTypes([ApplicationIntegrationType.UserInstall])
+            .setContexts([
+                InteractionContextType.Guild,
+                InteractionContextType.PrivateChannel,
+            ]),
     ];
 
     try {
@@ -419,13 +423,7 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
 
                 // Since we have no perms, we can't get message history.
                 // We'll just use the user's message as the prompt.
-                const messages = [{
-                    author: interaction.user,
-                    content: messageContent,
-                    id: interaction.id,
-                    channelId: interaction.channelId,
-                    createdAt: new Date(),
-                } as any];
+                const messages = await interaction.channel.messages.fetch({ limit: 100 });
 
                 const result = (await inferenceQueue.push(
                     generateMessage,
