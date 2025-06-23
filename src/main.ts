@@ -408,7 +408,8 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                     return;
                 }
 
-                if (!interaction.channel || !(interaction.channel instanceof TextChannel)) {
+                const channel = interaction.channel;
+                if (!channel || !channel.isTextBased() || channel.isDMBased()) {
                     await interaction.reply({
                         content: "This command can only be used in server text channels.",
                         ephemeral: true,
@@ -423,7 +424,14 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 }
 
                 const webhookManager = getWebhookManager();
-                await webhookManager.sendAsCharacter(interaction.channel, character, message);
+                const targetChannel = channel.isThread() ? channel.parent : channel;
+                if (!targetChannel) {
+                    await interaction.reply({ content: "Cannot find a valid channel to speak in.", ephemeral: true });
+                    return;
+                }
+                await webhookManager.sendAsCharacter(targetChannel as TextChannel, character, message, {
+                    threadId: channel.isThread() ? channel.id : undefined,
+                });
                 await interaction.reply({ content: "Message sent!", ephemeral: true });
             }
         } catch (error) {
