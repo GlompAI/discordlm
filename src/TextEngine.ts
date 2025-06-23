@@ -133,7 +133,7 @@ The last user to engage with you, bringing about your interaction in the first p
         for (const message of messagesToInject) {
             const content: any[] = [{
                 type: "text",
-                text: message.message,
+                text: `${message.fromSystem ? ownName : message.user}: ${message.message}`,
             }];
 
             if (message.mediaContent) {

@@ -951,7 +951,13 @@ function onMessageCreate(
                 return; // Exit early
             }
 
-            const reply = result;
+            // Escape special regex characters in the character's name
+            const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+            // Determine the name to remove from the beginning of the reply
+            const nameToRemove = character ? character.card.name : "Assistant";
+            const nameRegex = new RegExp(`^${escapeRegex(nameToRemove)}:\\s*`, "i");
+            const reply = result.replace(nameRegex, "");
             logger.info(`${logContext} Replying...`);
 
             // Use webhook if possible (only in guild channels), otherwise fall back to regular reply
