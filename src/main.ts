@@ -28,7 +28,7 @@ import { Queue } from "./queue.ts";
 
 import adze, { setup } from "npm:adze";
 import { generateMessage } from "./llm.ts";
-import * as OpenAI from "jsr:@agent/openai";
+import { MessageView } from "./TextEngine.ts";
 import {
     getAdminOverrideId,
     getAvatarServerPort,
@@ -416,9 +416,24 @@ function onInteractionCreate(characterManager: CharacterManager, getWebhookManag
                 // Defer the reply to allow time for inference
                 await interaction.deferReply({ ephemeral: false });
 
-                // Since we have no perms, we can't get message history.
-                // We'll just use the user's message as the prompt.
-                const messages = await interaction.channel.messages.fetch({ limit: 100 });
+                // We need to handle user-installed apps differently, as they don't have channel history access.
+                let messages: (Message | MessageView)[] = [];
+                if (interaction.channel) {
+                    // This is a guild-installed command, so we can fetch history.
+                    messages = Array.from((await interaction.channel.messages.fetch({ limit: 100 })).values());
+                } else {
+                    // This is a user-installed command. We can't access history.
+                    // We'll create a fake message history to seed the conversation.
+                    messages = [
+                        {
+                            message: messageContent,
+                            user: interaction.user.username,
+                            fromSystem: false,
+                            messageId: "user-install-fake-id",
+                            timestamp: new Date().toISOString(),
+                        },
+                    ];
+                }
 
                 const result = (await inferenceQueue.push(
                     generateMessage,
