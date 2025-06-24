@@ -10,4 +10,8 @@ export class ConversationService {
     public getLastBotMessage(channelId: string): Message | undefined {
         return this.lastBotMessage.get(channelId);
     }
+
+    public resetConversation(channelId: string): void {
+        this.lastBotMessage.delete(channelId);
+    }
 }
