@@ -75,8 +75,8 @@ export class LLMService {
             messages = messages.slice(lastResetIndex + 1);
         }
 
-        const history: MessageView[] = await Promise.all(
-            messages.filter((m) => m.content || m.embeds.length > 0).map(async (message) => {
+        const historyPromises = messages.filter((m) => m.content || m.embeds.length > 0).map(
+            async (message): Promise<MessageView | null> => {
                 let role: "user" | "assistant" | "system" = "user";
                 let userName = "";
                 let messageText = "";
@@ -113,7 +113,7 @@ export class LLMService {
                     async (_, snowflake) => `@${await convertSnowflake(snowflake, message.guild)}`,
                 );
 
-                const mediaContent = [];
+                const mediaContent: { inlineData: { mimeType: string; data: string } }[] = [];
 
                 if (message.attachments.size > 0) {
                     const attachmentMedia = await Promise.all(
@@ -145,7 +145,7 @@ export class LLMService {
                                                     reader.decodeAndBlitFrameRGBA(0, frameData);
                                                     png.data = frameData;
                                                     const pngBuffer = PNG.sync.write(png);
-                                                    const base64 = btoa(String.fromCharCode(...pngBuffer));
+                                                    const base64 = pngBuffer.toString("base64");
                                                     return {
                                                         inlineData: {
                                                             mimeType: "image/png",
@@ -157,12 +157,7 @@ export class LLMService {
                                                     return null;
                                                 }
                                             } else {
-                                                const bytes = new Uint8Array(buffer);
-                                                let binary = "";
-                                                for (let i = 0; i < bytes.byteLength; i++) {
-                                                    binary += String.fromCharCode(bytes[i]);
-                                                }
-                                                const base64 = btoa(binary);
+                                                const base64 = Buffer.from(buffer).toString("base64");
                                                 return {
                                                     inlineData: {
                                                         mimeType: a.contentType!,
@@ -184,15 +179,19 @@ export class LLMService {
                                             }
                                         }
                                     }
-                                    throw lastError;
+                                    if (lastError) {
+                                        throw lastError;
+                                    }
                                 } catch (error) {
                                     adze.error(`Failed to fetch attachment from ${a.url} after 3 attempts:`, error);
                                     return null;
                                 }
-                            })
-                            .filter(Boolean),
+                            }),
                     );
-                    mediaContent.push(...attachmentMedia);
+                    const filteredAttachmentMedia = attachmentMedia.filter((item) => item !== null) as {
+                        inlineData: { mimeType: string; data: string };
+                    }[];
+                    mediaContent.push(...filteredAttachmentMedia);
                 }
 
                 if (message.stickers.size > 0) {
@@ -213,18 +212,14 @@ export class LLMService {
                                 }
                                 const blob = await response.blob();
                                 const buffer = await blob.arrayBuffer();
-                                const bytes = new Uint8Array(buffer);
-                                let binary = "";
-                                for (let i = 0; i < bytes.byteLength; i++) {
-                                    binary += String.fromCharCode(bytes[i]);
-                                }
-                                const base64 = btoa(binary);
+                                const base64 = Buffer.from(buffer).toString("base64");
                                 mediaContent.push({
                                     inlineData: {
                                         mimeType: "image/png",
                                         data: base64,
                                     },
                                 });
+                                lastError = undefined; // Clear error on success
                                 break; // Success, exit retry loop
                             } catch (error) {
                                 lastError = error;
@@ -292,7 +287,7 @@ export class LLMService {
                                 reader.decodeAndBlitFrameRGBA(0, frameData);
                                 png.data = frameData;
                                 const pngBuffer = PNG.sync.write(png);
-                                const base64 = btoa(String.fromCharCode(...pngBuffer));
+                                const base64 = pngBuffer.toString("base64");
                                 mediaContent.push({
                                     inlineData: {
                                         mimeType: "image/png",
@@ -303,12 +298,7 @@ export class LLMService {
                                 adze.error(`Failed to process GIF emoji ${emojiUrl}:`, error);
                             }
                         } else {
-                            const bytes = new Uint8Array(buffer);
-                            let binary = "";
-                            for (let i = 0; i < bytes.byteLength; i++) {
-                                binary += String.fromCharCode(bytes[i]);
-                            }
-                            const base64 = btoa(binary);
+                            const base64 = Buffer.from(buffer).toString("base64");
                             mediaContent.push({
                                 inlineData: {
                                     mimeType: "image/png",
@@ -329,8 +319,11 @@ export class LLMService {
                     timestamp: message.createdAt.toISOString(),
                     mediaContent: mediaContent.length > 0 ? mediaContent : undefined,
                 };
-            }),
+            },
         );
+
+        const resolvedHistory = await Promise.all(historyPromises);
+        const history: MessageView[] = resolvedHistory.filter((item): item is MessageView => item != null);
 
         if (continuation) {
             history.push({
