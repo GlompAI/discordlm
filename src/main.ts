@@ -802,7 +802,9 @@ function onMessageCreate(
                     if (characterName) {
                         const inferredChar = characterManager.getCharacter(characterName);
                         if (inferredChar) {
-                            logger.info(`Inferred character ${inferredChar.card.name} for DM channel ${message.channel.id}`);
+                            logger.info(
+                                `Inferred character ${inferredChar.card.name} for DM channel ${message.channel.id}`,
+                            );
                             characterManager.setChannelCharacter(message.channel.id, inferredChar.card.name);
                             character = inferredChar;
                             break;
@@ -876,21 +878,34 @@ function onMessageCreate(
 
         try {
             logger.info(`${logContext} Generating response...`);
-            const result = (await inferenceQueue.push(
+            const result = await inferenceQueue.push(
                 generateMessage,
                 client,
                 messages,
                 botId,
                 character ? character.card : null,
                 Math.floor(Math.random() * 1000000),
-            ))
-                .completion.text();
+            );
 
-            if (!result) {
-                adze.error("Empty response from API, likely due to ToS violation.");
+            if (result.completion.promptFeedback?.blockReason) {
+                const reason = result.completion.promptFeedback.blockReason;
+                adze.error(`Response blocked due to: ${reason}`);
+                let userMessage =
+                    "Oops! It seems my response was blocked. This can happen for a variety of reasons, including if a message goes against our terms of service.";
+                if (reason === "SAFETY") {
+                    userMessage =
+                        "Oops! It seems my response was blocked for safety reasons. You could try deleting your last message and rephrasing, or use the `/reset` command to clear our conversation and start fresh.";
+                }
+                await sendEphemeralError(message, userMessage);
+                return; // Exit early
+            }
+
+            const text = result.completion.text();
+            if (!text) {
+                adze.error("Empty response from API, but no block reason provided.");
                 await sendEphemeralError(
                     message,
-                    "Oops! It seems my response was blocked, likely for safety reasons. This can happen if a message goes against our terms of service. You could try deleting your last message and rephrasing, or use the `/reset` command to clear our conversation and start fresh.",
+                    "I received an empty response from the AI. Please try again.",
                 );
                 return; // Exit early
             }
@@ -901,7 +916,7 @@ function onMessageCreate(
             // Determine the name to remove from the beginning of the reply
             const nameToRemove = character ? character.card.name : "Assistant";
             const nameRegex = new RegExp(`^${escapeRegex(nameToRemove)}:\\s*`, "i");
-            const reply = result.replace(nameRegex, "");
+            const reply = text.replace(nameRegex, "");
             logger.info(`${logContext} Replying...`);
 
             // Use webhook if possible (only in guild channels), otherwise fall back to regular reply
