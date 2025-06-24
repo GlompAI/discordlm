@@ -242,6 +242,9 @@ export class MessageReactionAddHandler {
                 const sentMessage = await webhookManager.sendAsCharacter(message.channel, character, result);
                 if (sentMessage) {
                     this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
+                    await sentMessage.react("♻️");
+                    await sentMessage.react("❌");
+                    await sentMessage.react("➡️");
                 }
             } else if (message.channel.isTextBased()) {
                 const embed = new EmbedBuilder()
@@ -251,6 +254,9 @@ export class MessageReactionAddHandler {
                 if ("send" in message.channel) {
                     const sentMessage = await message.channel.send({ embeds: [embed] });
                     this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
+                    await sentMessage.react("♻️");
+                    await sentMessage.react("❌");
+                    await sentMessage.react("➡️");
                 }
             }
             this.logger.info(`${logContext} Continuation successful for message ID ${message.id}`);
@@ -263,6 +269,12 @@ export class MessageReactionAddHandler {
             if (message.channel.type !== ChannelType.DM) {
                 try {
                     await reaction.users.remove(user.id);
+                    const botReactions = message.reactions.cache.filter((r) => r.me);
+                    for (const botReaction of botReactions.values()) {
+                        if (["❌", "➡️", "♻️"].includes(botReaction.emoji.name!)) {
+                            await botReaction.remove();
+                        }
+                    }
                 } catch (error) {
                     this.logger.error(`${logContext} Failed to remove reaction from user ${user.id}:`, error);
                 }
