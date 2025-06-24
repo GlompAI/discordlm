@@ -112,9 +112,7 @@ export class InteractionCreateHandler {
 
         if (interaction.customId === "delete") {
             if (interaction.channel?.type !== ChannelType.DM) {
-                const authorIdMatch = (message.components as any).flatMap((row: any) => row.components).find((c: any) =>
-                    "content" in c && c.content?.includes("https://a.a/")
-                )?.content?.match(/https:\/\/a\.a\/(\d+)/);
+                const authorIdMatch = message.content.match(/https:\/\/a\.a\/(\d+)/);
                 const authorId = authorIdMatch ? authorIdMatch[1] : null;
                 if (authorId && interaction.user.id !== authorId) {
                     await interaction.reply({ content: "You can only delete your own interactions.", ephemeral: true });
@@ -127,9 +125,7 @@ export class InteractionCreateHandler {
 
         if (interaction.customId === "reroll") {
             if (interaction.channel?.type !== ChannelType.DM) {
-                const authorIdMatch = (message.components as any).flatMap((row: any) => row.components).find((c: any) =>
-                    "content" in c && c.content?.includes("https://a.a/")
-                )?.content?.match(/https:\/\/a\.a\/(\d+)/);
+                const authorIdMatch = message.content.match(/https:\/\/a\.a\/(\d+)/);
                 const authorId = authorIdMatch ? authorIdMatch[1] : null;
                 if (authorId && interaction.user.id !== authorId) {
                     await interaction.reply({
