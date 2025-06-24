@@ -63,8 +63,9 @@ export class MessageCreateHandler {
                     targetCharacterName = (repliedMessage as Message).author?.username || "";
                     repliesToWebhookCharacter = true;
                 }
-            } catch (_error) {
-                // Failed to fetch replied message, ignore
+            } catch (error) {
+                this.logger.error("Failed to fetch replied message:");
+                console.log(error);
             }
         }
 
