@@ -224,7 +224,7 @@ export class MessageReactionAddHandler {
                 messages,
                 configService.getBotSelfId(),
                 character ? character.card : null,
-                Math.floor(Math.random() * 1000000),
+                Math.floor(Math.random() * 1000000), // seed
                 true, // continuation
             ))
                 .completion.text();
