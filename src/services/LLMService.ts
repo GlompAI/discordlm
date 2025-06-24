@@ -25,6 +25,7 @@ export class LLMService {
         charId: string,
         character: CharacterCard | null,
         _seed?: number,
+        continuation = false,
     ) {
         async function convertSnowflake(userId: string, guild: Guild | null) {
             let returnString: string;
@@ -248,6 +249,16 @@ export class LLMService {
                 };
             }),
         );
+
+        if (continuation) {
+            history.push({
+                role: "user",
+                user: "User",
+                message: "Please continue.",
+                messageId: "",
+                timestamp: new Date().toISOString(),
+            });
+        }
         const lastHumanMessage = history.slice().reverse().find((msg) => msg.role === "user");
         const username = lastHumanMessage?.user || "user";
 

@@ -62,7 +62,7 @@ export class MessageReactionAddHandler {
             ? `[Guild: ${message.guild.name} | Channel: ${(message.channel as TextChannel).name} | User: ${user.tag}]`
             : `[DM from ${user.tag}]`;
 
-        if (!["♻️", "❌"].includes(reaction.emoji.name!) || !message.author.bot) {
+        if (!["♻️", "❌", "➡️"].includes(reaction.emoji.name!) || !message.author.bot) {
             return;
         }
 
@@ -73,6 +73,10 @@ export class MessageReactionAddHandler {
                 this.logger.warn("Failed to delete message:", error);
             }
             return;
+        }
+
+        if (reaction.emoji.name === "➡️") {
+            return this.handleContinueReaction(reaction, user, message, logContext);
         }
 
         let lastMessage = this.conversationService.getLastBotMessage(message.channel.id);
@@ -179,6 +183,89 @@ export class MessageReactionAddHandler {
         } finally {
             if (typingInterval) {
                 clearInterval(typingInterval);
+            }
+        }
+    }
+
+    private async handleContinueReaction(
+        reaction: MessageReaction | PartialMessageReaction,
+        user: User | PartialUser,
+        message: Message,
+        logContext: string,
+    ) {
+        this.logger.info(`${logContext} Continue reaction on message ID ${message.id}...`);
+
+        let typingInterval: number | undefined;
+        try {
+            const channel = message.channel;
+            if (channel.isTextBased() && "sendTyping" in channel) {
+                await channel.sendTyping();
+                typingInterval = setInterval(() => {
+                    channel.sendTyping();
+                }, 9000);
+            }
+
+            const messages = Array.from(
+                (await message.channel.messages.fetch({ limit: 100, before: message.id })).values(),
+            );
+            messages.push(message);
+            messages.reverse();
+
+            let character = null;
+            if (message.webhookId) {
+                character = this.characterService.getCharacter(message.author.username);
+            } else if (message.embeds.length > 0 && message.embeds[0].title) {
+                character = this.characterService.getCharacter(message.embeds[0].title);
+            }
+
+            const result = (await this.inferenceQueue.push(
+                this.llmService.generateMessage.bind(this.llmService),
+                this.client,
+                messages,
+                configService.getBotSelfId(),
+                character ? character.card : null,
+                Math.floor(Math.random() * 1000000),
+                true, // continuation
+            ))
+                .completion.text();
+
+            if (!result) {
+                await this.sendEphemeralError(
+                    message,
+                    "Oops! It seems my response was blocked. Please try again.",
+                );
+                return;
+            }
+
+            const webhookManager = this.characterService.getWebhookManager();
+            if (webhookManager && character && message.channel instanceof TextChannel) {
+                const sentMessage = await webhookManager.sendAsCharacter(message.channel, character, result);
+                if (sentMessage) {
+                    this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
+                }
+            } else if (message.channel.isTextBased()) {
+                const embed = new EmbedBuilder()
+                    .setTitle(character ? character.card.name : "Assistant")
+                    .setThumbnail(character?.avatarUrl ?? null)
+                    .setDescription(result);
+                if ("send" in message.channel) {
+                    const sentMessage = await message.channel.send({ embeds: [embed] });
+                    this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
+                }
+            }
+            this.logger.info(`${logContext} Continuation successful for message ID ${message.id}`);
+        } catch (error) {
+            this.logger.error(`${logContext} Failed to continue response for message ID ${message.id}:`, error);
+        } finally {
+            if (typingInterval) {
+                clearInterval(typingInterval);
+            }
+            if (message.channel.type !== ChannelType.DM) {
+                try {
+                    await reaction.users.remove(user.id);
+                } catch (error) {
+                    this.logger.error(`${logContext} Failed to remove reaction from user ${user.id}:`, error);
+                }
             }
         }
     }
