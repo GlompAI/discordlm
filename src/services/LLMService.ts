@@ -124,53 +124,69 @@ export class LLMService {
                                 }
 
                                 try {
-                                    const response = await fetch(a.url);
-                                    if (!response.ok) {
-                                        adze.warn(
-                                            `Failed to fetch attachment: ${response.status} ${response.statusText}`,
-                                        );
-                                        return null;
-                                    }
-                                    const buffer = await response.arrayBuffer();
-
-                                    if (a.contentType === "image/gif") {
+                                    // Retry logic with exponential backoff
+                                    let lastError;
+                                    for (let attempt = 0; attempt < 3; attempt++) {
                                         try {
-                                            const reader = new GifReader(Buffer.from(buffer));
-                                            const png = new PNG({
-                                                width: reader.width,
-                                                height: reader.height,
-                                            });
-                                            const frameData = Buffer.alloc(reader.width * reader.height * 4);
-                                            reader.decodeAndBlitFrameRGBA(0, frameData);
-                                            png.data = frameData;
-                                            const pngBuffer = PNG.sync.write(png);
-                                            const base64 = btoa(String.fromCharCode(...pngBuffer));
-                                            return {
-                                                inlineData: {
-                                                    mimeType: "image/png",
-                                                    data: base64,
-                                                },
-                                            };
+                                            const response = await fetch(a.url);
+                                            if (!response.ok) {
+                                                throw new Error(`HTTP ${response.status} ${response.statusText}`);
+                                            }
+                                            const buffer = await response.arrayBuffer();
+
+                                            if (a.contentType === "image/gif") {
+                                                try {
+                                                    const reader = new GifReader(Buffer.from(buffer));
+                                                    const png = new PNG({
+                                                        width: reader.width,
+                                                        height: reader.height,
+                                                    });
+                                                    const frameData = Buffer.alloc(reader.width * reader.height * 4);
+                                                    reader.decodeAndBlitFrameRGBA(0, frameData);
+                                                    png.data = frameData;
+                                                    const pngBuffer = PNG.sync.write(png);
+                                                    const base64 = btoa(String.fromCharCode(...pngBuffer));
+                                                    return {
+                                                        inlineData: {
+                                                            mimeType: "image/png",
+                                                            data: base64,
+                                                        },
+                                                    };
+                                                } catch (error) {
+                                                    adze.error("Failed to process GIF attachment:", error);
+                                                    return null;
+                                                }
+                                            } else {
+                                                const bytes = new Uint8Array(buffer);
+                                                let binary = "";
+                                                for (let i = 0; i < bytes.byteLength; i++) {
+                                                    binary += String.fromCharCode(bytes[i]);
+                                                }
+                                                const base64 = btoa(binary);
+                                                return {
+                                                    inlineData: {
+                                                        mimeType: a.contentType!,
+                                                        data: base64,
+                                                    },
+                                                };
+                                            }
                                         } catch (error) {
-                                            adze.error("Failed to process GIF attachment:", error);
-                                            return null;
+                                            lastError = error;
+                                            if (attempt < 2) {
+                                                const delay = Math.pow(2, attempt) * 1000; // 1s, 2s
+                                                adze.warn(
+                                                    `Attempt ${
+                                                        attempt + 1
+                                                    } failed for attachment, retrying in ${delay}ms:`,
+                                                    error,
+                                                );
+                                                await new Promise((resolve) => setTimeout(resolve, delay));
+                                            }
                                         }
-                                    } else {
-                                        const bytes = new Uint8Array(buffer);
-                                        let binary = "";
-                                        for (let i = 0; i < bytes.byteLength; i++) {
-                                            binary += String.fromCharCode(bytes[i]);
-                                        }
-                                        const base64 = btoa(binary);
-                                        return {
-                                            inlineData: {
-                                                mimeType: a.contentType!,
-                                                data: base64,
-                                            },
-                                        };
                                     }
+                                    throw lastError;
                                 } catch (error) {
-                                    adze.error(`Failed to fetch attachment from ${a.url}:`, error);
+                                    adze.error(`Failed to fetch attachment from ${a.url} after 3 attempts:`, error);
                                     return null;
                                 }
                             })
@@ -187,27 +203,46 @@ export class LLMService {
                         finalMessageText += ` [sticker: ${sticker.name}]`;
                     }
                     try {
-                        const response = await fetch(sticker.url);
-                        if (!response.ok) {
-                            adze.warn(`Failed to fetch sticker: ${response.status} ${response.statusText}`);
-                        } else {
-                            const blob = await response.blob();
-                            const buffer = await blob.arrayBuffer();
-                            const bytes = new Uint8Array(buffer);
-                            let binary = "";
-                            for (let i = 0; i < bytes.byteLength; i++) {
-                                binary += String.fromCharCode(bytes[i]);
+                        // Retry logic for stickers
+                        let lastError;
+                        for (let attempt = 0; attempt < 3; attempt++) {
+                            try {
+                                const response = await fetch(sticker.url);
+                                if (!response.ok) {
+                                    throw new Error(`HTTP ${response.status} ${response.statusText}`);
+                                }
+                                const blob = await response.blob();
+                                const buffer = await blob.arrayBuffer();
+                                const bytes = new Uint8Array(buffer);
+                                let binary = "";
+                                for (let i = 0; i < bytes.byteLength; i++) {
+                                    binary += String.fromCharCode(bytes[i]);
+                                }
+                                const base64 = btoa(binary);
+                                mediaContent.push({
+                                    inlineData: {
+                                        mimeType: "image/png",
+                                        data: base64,
+                                    },
+                                });
+                                break; // Success, exit retry loop
+                            } catch (error) {
+                                lastError = error;
+                                if (attempt < 2) {
+                                    const delay = Math.pow(2, attempt) * 1000;
+                                    adze.warn(
+                                        `Attempt ${attempt + 1} failed for sticker, retrying in ${delay}ms:`,
+                                        error,
+                                    );
+                                    await new Promise((resolve) => setTimeout(resolve, delay));
+                                }
                             }
-                            const base64 = btoa(binary);
-                            mediaContent.push({
-                                inlineData: {
-                                    mimeType: "image/png",
-                                    data: base64,
-                                },
-                            });
+                        }
+                        if (lastError) {
+                            throw lastError;
                         }
                     } catch (error) {
-                        adze.error(`Failed to fetch sticker ${sticker.url}:`, error);
+                        adze.error(`Failed to fetch sticker ${sticker.url} after 3 attempts:`, error);
                     }
                 }
 
@@ -221,10 +256,30 @@ export class LLMService {
                     finalMessageText = finalMessageText.replace(match[0], "");
 
                     try {
-                        const response = await fetch(emojiUrl);
-                        if (!response.ok) continue;
+                        // Retry logic for emojis
+                        let buffer;
+                        let success = false;
+                        for (let attempt = 0; attempt < 3; attempt++) {
+                            try {
+                                const response = await fetch(emojiUrl);
+                                if (!response.ok) {
+                                    throw new Error(`HTTP ${response.status} ${response.statusText}`);
+                                }
+                                buffer = await response.arrayBuffer();
+                                success = true;
+                                break;
+                            } catch (error) {
+                                if (attempt < 2) {
+                                    const delay = Math.pow(2, attempt) * 500; // 500ms, 1s
+                                    adze.debug(`Attempt ${attempt + 1} failed for emoji, retrying in ${delay}ms`);
+                                    await new Promise((resolve) => setTimeout(resolve, delay));
+                                } else {
+                                    throw error;
+                                }
+                            }
+                        }
 
-                        const buffer = await response.arrayBuffer();
+                        if (!success || !buffer) continue;
 
                         if (isAnimated) {
                             try {
