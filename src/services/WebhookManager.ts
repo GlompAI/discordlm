@@ -11,13 +11,13 @@ import {
     WebhookMessageCreateOptions,
     WebhookMessageEditOptions,
 } from "discord.js";
-import { CharacterConfig } from "./CharacterCard.ts";
-import { getPublicAvatarBaseUrl } from "./env.ts";
+import { CharacterConfig } from "../CharacterCard.ts";
+import { getPublicAvatarBaseUrl } from "../env.ts";
 import adze from "npm:adze";
-import { componentService } from "./services/ComponentService.ts";
+import { componentService } from "./ComponentService.ts";
 
 const logger = adze.withEmoji.timestamp.seal();
-export const WEBHOOK_IDENTIFIER = "\u200B";
+export const WEBHOOK_IDENTIFIER = "​";
 
 export class WebhookManager {
     private webhooks = new Map<string, Webhook>(); // character name -> webhook

@@ -2,6 +2,8 @@ import { DiscordService } from "./services/DiscordService.ts";
 import { CharacterService } from "./services/CharacterService.ts";
 import { LLMService } from "./services/LLMService.ts";
 import { ConversationService } from "./services/ConversationService.ts";
+import { WebhookManager } from "./services/WebhookManager.ts";
+import { ReplyService } from "./services/ReplyService.ts";
 import { InteractionCreateHandler } from "./handlers/InteractionCreateHandler.ts";
 import { MessageCreateHandler } from "./handlers/MessageCreateHandler.ts";
 import { Events, SlashCommandBuilder } from "discord.js";
@@ -13,24 +15,28 @@ export class App {
     private readonly characterService: CharacterService;
     private readonly llmService: LLMService;
     private readonly conversationService: ConversationService;
+    private readonly webhookManager: WebhookManager;
+    private readonly replyService: ReplyService;
     private readonly interactionCreateHandler: InteractionCreateHandler;
     private readonly messageCreateHandler: MessageCreateHandler;
 
     constructor() {
         this.discordService = new DiscordService();
-        this.characterService = new CharacterService(this.discordService.client);
+        this.webhookManager = new WebhookManager(this.discordService.client, []);
+        this.characterService = new CharacterService(this.discordService.client, this.webhookManager);
         this.llmService = new LLMService();
         this.conversationService = new ConversationService();
+        this.replyService = new ReplyService(this.conversationService, this.webhookManager);
         this.interactionCreateHandler = new InteractionCreateHandler(
             this.characterService,
             this.llmService,
-            this.conversationService,
+            this.replyService,
             this.discordService.client,
         );
         this.messageCreateHandler = new MessageCreateHandler(
             this.characterService,
             this.llmService,
-            this.conversationService,
+            this.replyService,
             this.discordService.client,
         );
     }
