@@ -165,11 +165,59 @@ export class MessageCreateHandler {
     ): Promise<void> {
         this.logger.info(`${logContext} Fetching message history...`);
 
-        const messages = Array.from((await message.channel.messages.fetch({ limit: 100 })).values());
-        if (!messages.includes(message)) {
-            messages.push(message);
+        // Fetch messages in batches up to 1000 total
+        const allMessages: Message[] = [];
+        let lastMessageId: string | undefined;
+        let foundReset = false;
+        const maxMessages = 1000;
+        const batchSize = 100; // Discord API limit per request
+
+        while (allMessages.length < maxMessages && !foundReset) {
+            const fetchOptions: { limit: number; before?: string } = { limit: batchSize };
+            if (lastMessageId) {
+                fetchOptions.before = lastMessageId;
+            }
+
+            const batch = await message.channel.messages.fetch(fetchOptions);
+            const batchArray = Array.from(batch.values());
+
+            if (batchArray.length === 0) {
+                break; // No more messages to fetch
+            }
+
+            // Check for reset message in this batch (in reverse order since we're fetching backwards)
+            for (let i = batchArray.length - 1; i >= 0; i--) {
+                const msg = batchArray[i];
+                if (msg.content === RESET_MESSAGE_CONTENT) {
+                    foundReset = true;
+                    // Only include messages after the reset
+                    allMessages.unshift(...batchArray.slice(0, i));
+                    break;
+                }
+            }
+
+            if (!foundReset) {
+                allMessages.unshift(...batchArray);
+            }
+
+            // Update lastMessageId for next batch
+            lastMessageId = batchArray[batchArray.length - 1].id;
+
+            // Stop if we've reached the desired limit
+            if (allMessages.length >= maxMessages) {
+                // Trim to exactly maxMessages
+                allMessages.splice(0, allMessages.length - maxMessages);
+                break;
+            }
         }
-        messages.reverse();
+
+        // Ensure the current message is included if not already
+        if (!allMessages.find((m) => m.id === message.id)) {
+            allMessages.push(message);
+        }
+
+        const messages = allMessages;
+        this.logger.info(`${logContext} Fetched ${messages.length} messages`);
 
         let typingInterval: number | undefined;
         const channel = message.channel;
