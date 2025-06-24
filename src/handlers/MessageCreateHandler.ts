@@ -59,6 +59,7 @@ export class MessageCreateHandler {
                     } else {
                         targetCharacterName = repliedMessage.content.substring("Switched to ".length);
                     }
+                    this.logger.info(`Parsed character name from reply: ${targetCharacterName}`);
                 }
             } catch (_error) {
                 // Failed to fetch replied message, ignore
@@ -91,7 +92,7 @@ export class MessageCreateHandler {
             const isDirectPing = message.content.includes(`<@${configService.getBotSelfId()}>`);
             if (isDirectPing) {
                 this.logger.info(`Forcing raw mode due to direct bot mention in message content.`);
-            } else if (repliesToWebhookCharacter || mentionsCharacterByName) {
+            } else if (repliesToWebhookCharacter || mentionsCharacterByName || targetCharacterName) {
                 character = this.characterService.getCharacter(targetCharacterName);
             } else {
                 character = await this.characterService.inferCharacterFromHistory(message.channel);
