@@ -57,6 +57,10 @@ export class ConfigService {
     getAssistantName(): string {
         return this.getEnv("ASSISTANT_NAME", false, "Aria");
     }
+
+    getRateLimitPerMinute(): number {
+        return parseInt(this.getEnv("RATE_LIMIT_PER_MINUTE", false, "10"));
+    }
 }
 
 export const configService = new ConfigService();

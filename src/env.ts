@@ -11,3 +11,4 @@ export const getAvatarServerPort = () => configService.getAvatarServerPort();
 export const getInferenceParallelism = () => configService.getInferenceParallelism();
 export const isDebugEnabled = () => configService.isDebugEnabled();
 export const getAdminOverrideId = () => configService.getAdminOverrideId();
+export const getRateLimitPerMinute = () => configService.getRateLimitPerMinute();
