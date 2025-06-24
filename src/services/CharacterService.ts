@@ -1,5 +1,5 @@
 import { CharacterManager } from "../CharacterManager.ts";
-import { WebhookManager } from "./WebhookManager.ts";
+import { WebhookManager } from "../WebhookManager.ts";
 import { AvatarServer } from "../AvatarServer.ts";
 import { configService } from "./ConfigService.ts";
 import { Client, TextBasedChannel, TextChannel } from "discord.js";
@@ -12,9 +12,8 @@ export class CharacterService {
     private webhookManager!: WebhookManager;
     private avatarServer: AvatarServer | null = null;
 
-    constructor(private readonly client: Client, webhookManager: WebhookManager) {
+    constructor(private readonly client: Client) {
         this.characterManager = new CharacterManager();
-        this.webhookManager = webhookManager;
     }
 
     public async start(): Promise<void> {
@@ -47,6 +46,10 @@ export class CharacterService {
         this.logger.log(`Character loading completed`);
 
         this.characterManager.watchCharacters();
+
+        this.logger.log(`Initializing webhook manager...`);
+        this.webhookManager = new WebhookManager(this.client, this.characterManager.getCharacters());
+        this.logger.log(`Webhook manager initialized`);
     }
 
     public async stop(): Promise<void> {

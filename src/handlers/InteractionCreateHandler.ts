@@ -19,7 +19,7 @@ import { getHelpText } from "../utils.ts";
 import adze from "npm:adze";
 import { ComponentService } from "../services/ComponentService.ts";
 import { LLMService } from "../services/LLMService.ts";
-import { ReplyService } from "../services/ReplyService.ts";
+import { ConversationService } from "../services/ConversationService.ts";
 import { Queue } from "../queue.ts";
 import { configService } from "../services/ConfigService.ts";
 
@@ -31,7 +31,7 @@ export class InteractionCreateHandler {
     constructor(
         private readonly characterService: CharacterService,
         private readonly llmService: LLMService,
-        private readonly replyService: ReplyService,
+        private readonly conversationService: ConversationService,
         private readonly client: Client,
     ) {
         this.componentService = new ComponentService();
@@ -166,7 +166,7 @@ export class InteractionCreateHandler {
         if (interaction.customId === "confirm-reset") {
             if (!interaction.isButton()) return;
             if (interaction.channel && "send" in interaction.channel) {
-                // this.conversationService.resetConversation(interaction.channel.id);
+                this.conversationService.resetConversation(interaction.channel.id);
                 await interaction.update({ content: "Conversation history reset.", components: [] });
                 await interaction.channel.send(RESET_MESSAGE_CONTENT);
             }
@@ -395,7 +395,7 @@ export class InteractionCreateHandler {
                     interaction.user,
                 );
                 if (sentMessage) {
-                    // this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
+                    this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
                 }
             } else if (message.channel.isTextBased()) {
                 const embed = new EmbedBuilder()
@@ -407,7 +407,7 @@ export class InteractionCreateHandler {
                         embeds: [embed],
                         components: [this.componentService.createActionRow()],
                     });
-                    // this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
+                    this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
                 }
             }
             this.logger.info(`${logContext} Continuation successful for message ID ${message.id}`);
