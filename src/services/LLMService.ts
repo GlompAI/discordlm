@@ -1,5 +1,5 @@
 import { TextEngine } from "./TextEngine.ts";
-import { Client, Guild, Message, TextChannel } from "npm:discord.js";
+import { Client, Guild, Message, TextChannel } from "discord.js";
 import { replaceAllAsync } from "../replace.ts";
 import { configService } from "./ConfigService.ts";
 import { GifReader } from "npm:omggif";

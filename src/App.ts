@@ -4,7 +4,7 @@ import { LLMService } from "./services/LLMService.ts";
 import { ConversationService } from "./services/ConversationService.ts";
 import { InteractionCreateHandler } from "./handlers/InteractionCreateHandler.ts";
 import { MessageCreateHandler } from "./handlers/MessageCreateHandler.ts";
-import { Events, SlashCommandBuilder } from "npm:discord.js";
+import { Events, SlashCommandBuilder } from "discord.js";
 import adze from "npm:adze";
 
 export class App {

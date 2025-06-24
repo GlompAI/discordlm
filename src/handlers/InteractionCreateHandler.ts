@@ -11,7 +11,7 @@ import {
     StringSelectMenuInteraction,
     TextBasedChannel,
     TextChannel,
-} from "npm:discord.js";
+} from "discord.js";
 import { CharacterService } from "../services/CharacterService.ts";
 import { dumpDebug } from "../debug.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";

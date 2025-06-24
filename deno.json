@@ -44,6 +44,7 @@
         "fmt:check": "deno fmt --check"
     },
     "imports": {
+        "discord.js": "npm:discord.js@^14.15.3",
         "fflate": "npm:fflate",
         "@google/generative-ai": "npm:@google/generative-ai@^0.21.0",
         "omggif": "npm:omggif",

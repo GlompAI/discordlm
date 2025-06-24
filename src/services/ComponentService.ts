@@ -4,7 +4,7 @@ import {
     ButtonStyle,
     StringSelectMenuBuilder,
     StringSelectMenuOptionBuilder,
-} from "npm:discord.js";
+} from "discord.js";
 import { CharacterConfig } from "../CharacterCard.ts";
 
 export class ComponentService {
@@ -59,3 +59,5 @@ export class ComponentService {
         return new ActionRowBuilder<StringSelectMenuBuilder>().addComponents(selectMenu);
     }
 }
+
+export const componentService = new ComponentService();
