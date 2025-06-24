@@ -152,12 +152,9 @@ export class InteractionCreateHandler {
             const character = this.characterService.getCharacter(characterName);
             if (character) {
                 await interaction.update({
-                    content: `Switched to **${character.card.name}**`,
+                    content: `Switched to **${character.card.name}**\n${RESET_MESSAGE_CONTENT}`,
                     components: [],
                 });
-                if (interaction.channel?.type === ChannelType.DM) {
-                    await interaction.channel.send(RESET_MESSAGE_CONTENT);
-                }
             }
         }
 
@@ -165,8 +162,7 @@ export class InteractionCreateHandler {
             if (!interaction.isButton()) return;
             if (interaction.channel && "send" in interaction.channel) {
                 // this.conversationService.resetConversation(interaction.channel.id);
-                await interaction.update({ content: "Conversation history reset.", components: [] });
-                await interaction.channel.send(RESET_MESSAGE_CONTENT);
+                await interaction.update({ content: RESET_MESSAGE_CONTENT, components: [] });
             }
         }
 
@@ -183,10 +179,10 @@ export class InteractionCreateHandler {
             // Handle old command format
             const character = this.characterService.getCharacter(characterName);
             if (character) {
-                await interaction.reply(`Switched to ${character.card.name}`);
-                if (interaction.channel?.type === ChannelType.DM) {
-                    await interaction.channel.send(RESET_MESSAGE_CONTENT);
-                }
+                const replyContent = interaction.channel?.type === ChannelType.DM
+                    ? `Switched to ${character.card.name}\n${RESET_MESSAGE_CONTENT}`
+                    : `Switched to ${character.card.name}`;
+                await interaction.reply(replyContent);
             } else {
                 const availableChars = this.characterService.getCharacters().map((c) => c.card.name).join(", ");
                 await interaction.reply(
