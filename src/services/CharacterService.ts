@@ -2,7 +2,7 @@ import { CharacterManager } from "../CharacterManager.ts";
 import { WebhookManager } from "../WebhookManager.ts";
 import { AvatarServer } from "../AvatarServer.ts";
 import { configService } from "./ConfigService.ts";
-import { Client } from "npm:discord.js";
+import { Client, TextBasedChannel, TextChannel } from "npm:discord.js";
 import adze from "npm:adze";
 import { CharacterConfig } from "../CharacterCard.ts";
 
@@ -68,12 +68,37 @@ export class CharacterService {
         return this.characterManager.getCharacter(name);
     }
 
-    public getChannelCharacter(channelId: string): CharacterConfig | null {
-        return this.characterManager.getChannelCharacter(channelId);
-    }
+    public async inferCharacterFromHistory(channel: TextBasedChannel | null): Promise<CharacterConfig | null> {
+        if (!channel) {
+            return null;
+        }
 
-    public setChannelCharacter(channelId: string, characterName: string): boolean {
-        return this.characterManager.setChannelCharacter(channelId, characterName);
+        const messages = await channel.messages.fetch({ limit: 100 });
+        for (const message of messages.values()) {
+            if (message.author.id === this.client.user?.id && message.content.startsWith("Switched to ")) {
+                const characterName = message.content.substring("Switched to ".length);
+                const character = this.getCharacter(characterName);
+                if (character) {
+                    return character;
+                }
+            }
+
+            if (message.webhookId) {
+                const character = this.getCharacter(message.author.username);
+                if (character) {
+                    return character;
+                }
+            }
+
+            if (message.embeds.length > 0 && message.embeds[0].title) {
+                const character = this.getCharacter(message.embeds[0].title);
+                if (character) {
+                    return character;
+                }
+            }
+        }
+
+        return null;
     }
 
     public getWebhookManager(): WebhookManager {
