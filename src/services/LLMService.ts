@@ -25,7 +25,7 @@ export class LLMService {
         charId: string,
         character: CharacterCard | null,
         _seed?: number,
-        continuation = false,
+        continuation: { user: string; prompt: string } | false = false,
         sanitize = false,
     ) {
         async function convertSnowflake(userId: string, guild: Guild | null) {
@@ -257,8 +257,8 @@ export class LLMService {
         if (continuation) {
             history.push({
                 role: "user",
-                user: "User",
-                message: "Please continue.",
+                user: continuation.user,
+                message: continuation.prompt,
                 messageId: "",
                 timestamp: new Date().toISOString(),
             });

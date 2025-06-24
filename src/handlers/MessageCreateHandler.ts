@@ -146,7 +146,7 @@ export class MessageCreateHandler {
         try {
             this.logger.info(`${logContext} Generating response...`);
             const result = await this.inferenceQueue.push(
-                this.llmService.generateMessage.bind(this.llmService),
+                this.llmService.generateMessage.bind(this.llmService) as any,
                 this.client,
                 messages,
                 configService.getBotSelfId(),
@@ -154,7 +154,7 @@ export class MessageCreateHandler {
                 Math.floor(Math.random() * 1000000),
                 false,
                 sanitize,
-            );
+            ) as any;
 
             if (result.completion.promptFeedback?.blockReason) {
                 const reason = result.completion.promptFeedback.blockReason;
