@@ -3,7 +3,7 @@ import { Client, Guild, Message, TextChannel } from "npm:discord.js";
 import Tokenizer from "npm:llama-tokenizer-js";
 import { replaceAllAsync } from "./replace.ts";
 import { getModel } from "./env.ts";
-import { decode, encode } from "npm:gif-codec";
+import { GifReader } from "npm:omggif";
 import { PNG } from "npm:pngjs";
 import { Buffer } from "node:buffer";
 import { CharacterCard } from "./CharacterCard.ts";
@@ -128,13 +128,15 @@ export async function generateMessage(
 
                             if (a.contentType === "image/gif") {
                                 try {
-                                    const gif = decode(buffer);
-                                    const firstFrame = gif.frames[0];
+                                    const reader = new GifReader(Buffer.from(buffer));
+                                    const firstFrame = reader.frameInfo(0);
                                     const png = new PNG({
-                                        width: gif.width,
-                                        height: gif.height,
+                                        width: reader.width,
+                                        height: reader.height,
                                     });
-                                    png.data = Buffer.from(firstFrame.data);
+                                    const frameData = Buffer.alloc(reader.width * reader.height * 4);
+                                    reader.decodeAndBlitFrameRGBA(0, frameData);
+                                    png.data = frameData;
                                     const pngBuffer = PNG.sync.write(png);
                                     const base64 = btoa(String.fromCharCode(...pngBuffer));
                                     return {
@@ -206,13 +208,15 @@ export async function generateMessage(
 
                     if (isAnimated) {
                         try {
-                            const gif = decode(buffer);
-                            const firstFrame = gif.frames[0];
+                            const reader = new GifReader(Buffer.from(buffer));
+                            const firstFrame = reader.frameInfo(0);
                             const png = new PNG({
-                                width: gif.width,
-                                height: gif.height,
+                                width: reader.width,
+                                height: reader.height,
                             });
-                            png.data = Buffer.from(firstFrame.data);
+                            const frameData = Buffer.alloc(reader.width * reader.height * 4);
+                            reader.decodeAndBlitFrameRGBA(0, frameData);
+                            png.data = frameData;
                             const pngBuffer = PNG.sync.write(png);
                             const base64 = btoa(String.fromCharCode(...pngBuffer));
                             mediaContent.push({
