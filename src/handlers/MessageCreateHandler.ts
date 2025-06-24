@@ -41,6 +41,7 @@ export class MessageCreateHandler {
         const isDM = message.channel.type === ChannelType.DM;
 
         let repliesToWebhookCharacter = false;
+        let repliesToSwitchMessage = false;
         let targetCharacterName = "";
 
         if (message.reference && message.reference.messageId) {
@@ -59,6 +60,7 @@ export class MessageCreateHandler {
                     } else {
                         targetCharacterName = repliedMessage.content.substring("Switched to ".length);
                     }
+                    repliesToSwitchMessage = true;
                     this.logger.info(`Parsed character name from reply: ${targetCharacterName}`);
                 }
             } catch (_error) {
@@ -77,7 +79,8 @@ export class MessageCreateHandler {
             }
         }
 
-        const shouldProcess = mentionsBot || repliesToWebhookCharacter || mentionsCharacterByName || isDM;
+        const shouldProcess = mentionsBot || repliesToWebhookCharacter || mentionsCharacterByName ||
+            repliesToSwitchMessage || isDM;
 
         if (!shouldProcess) {
             return;
@@ -92,7 +95,7 @@ export class MessageCreateHandler {
             const isDirectPing = message.content.includes(`<@${configService.getBotSelfId()}>`);
             if (isDirectPing) {
                 this.logger.info(`Forcing raw mode due to direct bot mention in message content.`);
-            } else if (repliesToWebhookCharacter || mentionsCharacterByName || targetCharacterName) {
+            } else if (repliesToWebhookCharacter || mentionsCharacterByName || repliesToSwitchMessage) {
                 character = this.characterService.getCharacter(targetCharacterName);
             } else {
                 character = await this.characterService.inferCharacterFromHistory(message.channel);
