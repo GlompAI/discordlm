@@ -205,8 +205,10 @@ export class InteractionCreateHandler {
     private async handleReroll(interaction: ButtonInteraction, message: Message, logContext: string) {
         this.logger.info(`${logContext} Re-rolling message ID ${message.id}...`);
 
-        const originalEmbed = message.embeds[0];
-        const newEmbed = new EmbedBuilder(originalEmbed.toJSON()).setFooter({ text: "Generating..." });
+        const originalEmbed = message.embeds[0]
+            ? new EmbedBuilder(message.embeds[0].toJSON())
+            : new EmbedBuilder().setDescription(message.content);
+        const newEmbed = originalEmbed.setFooter({ text: "Generating..." });
 
         await interaction.update({
             embeds: [newEmbed],
@@ -273,8 +275,10 @@ export class InteractionCreateHandler {
     private async handleContinue(interaction: ButtonInteraction, message: Message, logContext: string) {
         this.logger.info(`${logContext} Continue interaction on message ID ${message.id}...`);
 
-        const originalContinueEmbed = message.embeds[0];
-        const newContinueEmbed = new EmbedBuilder(originalContinueEmbed.toJSON()).setFooter({ text: "Generating..." });
+        const originalContinueEmbed = message.embeds[0]
+            ? new EmbedBuilder(message.embeds[0].toJSON())
+            : new EmbedBuilder().setDescription(message.content);
+        const newContinueEmbed = originalContinueEmbed.setFooter({ text: "Generating..." });
 
         await interaction.update({
             embeds: [newContinueEmbed],
