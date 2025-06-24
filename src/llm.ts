@@ -115,12 +115,19 @@ export async function generateMessage(
             if (message.attachments.size > 0) {
                 const attachmentMedia = await Promise.all(
                     message.attachments
-                        .filter((a) => a.contentType?.startsWith("image/") || a.contentType?.startsWith("video/"))
+                        .filter((a) =>
+                            (a.contentType?.startsWith("image/") || a.contentType?.startsWith("video/")) &&
+                            a.contentType !== "image/gif"
+                        )
                         .map(async (a) => {
                             const response = await fetch(a.url);
-                            const blob = await response.blob();
-                            const buffer = await blob.arrayBuffer();
-                            const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+                            const buffer = await response.arrayBuffer();
+                            const bytes = new Uint8Array(buffer);
+                            let binary = "";
+                            for (let i = 0; i < bytes.byteLength; i++) {
+                                binary += String.fromCharCode(bytes[i]);
+                            }
+                            const base64 = btoa(binary);
                             return {
                                 inlineData: {
                                     mimeType: a.contentType!,
@@ -139,7 +146,12 @@ export async function generateMessage(
                 const response = await fetch(sticker.url);
                 const blob = await response.blob();
                 const buffer = await blob.arrayBuffer();
-                const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+                const bytes = new Uint8Array(buffer);
+                let binary = "";
+                for (let i = 0; i < bytes.byteLength; i++) {
+                    binary += String.fromCharCode(bytes[i]);
+                }
+                const base64 = btoa(binary);
                 mediaContent.push({
                     inlineData: {
                         mimeType: "image/png", // Stickers are usually PNGs
@@ -154,17 +166,23 @@ export async function generateMessage(
             while ((match = emojiRegex.exec(messageText)) !== null) {
                 const emojiId = match[2];
                 const isAnimated = match[0].startsWith("<a:");
-                const emojiUrl = `https://cdn.discordapp.com/emojis/${emojiId}.${isAnimated ? "gif" : "png"}`;
+                if (isAnimated) continue; // Skip animated emojis (GIFs)
+
+                const emojiUrl = `https://cdn.discordapp.com/emojis/${emojiId}.png`;
 
                 try {
                     const response = await fetch(emojiUrl);
                     if (response.ok) {
-                        const blob = await response.blob();
-                        const buffer = await blob.arrayBuffer();
-                        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+                        const buffer = await response.arrayBuffer();
+                        const bytes = new Uint8Array(buffer);
+                        let binary = "";
+                        for (let i = 0; i < bytes.byteLength; i++) {
+                            binary += String.fromCharCode(bytes[i]);
+                        }
+                        const base64 = btoa(binary);
                         mediaContent.push({
                             inlineData: {
-                                mimeType: blob.type,
+                                mimeType: "image/png",
                                 data: base64,
                             },
                         });
