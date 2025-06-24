@@ -123,44 +123,55 @@ export class LLMService {
                                     return null;
                                 }
 
-                                const response = await fetch(a.url);
-                                const buffer = await response.arrayBuffer();
+                                try {
+                                    const response = await fetch(a.url);
+                                    if (!response.ok) {
+                                        adze.warn(
+                                            `Failed to fetch attachment: ${response.status} ${response.statusText}`,
+                                        );
+                                        return null;
+                                    }
+                                    const buffer = await response.arrayBuffer();
 
-                                if (a.contentType === "image/gif") {
-                                    try {
-                                        const reader = new GifReader(Buffer.from(buffer));
-                                        const png = new PNG({
-                                            width: reader.width,
-                                            height: reader.height,
-                                        });
-                                        const frameData = Buffer.alloc(reader.width * reader.height * 4);
-                                        reader.decodeAndBlitFrameRGBA(0, frameData);
-                                        png.data = frameData;
-                                        const pngBuffer = PNG.sync.write(png);
-                                        const base64 = btoa(String.fromCharCode(...pngBuffer));
+                                    if (a.contentType === "image/gif") {
+                                        try {
+                                            const reader = new GifReader(Buffer.from(buffer));
+                                            const png = new PNG({
+                                                width: reader.width,
+                                                height: reader.height,
+                                            });
+                                            const frameData = Buffer.alloc(reader.width * reader.height * 4);
+                                            reader.decodeAndBlitFrameRGBA(0, frameData);
+                                            png.data = frameData;
+                                            const pngBuffer = PNG.sync.write(png);
+                                            const base64 = btoa(String.fromCharCode(...pngBuffer));
+                                            return {
+                                                inlineData: {
+                                                    mimeType: "image/png",
+                                                    data: base64,
+                                                },
+                                            };
+                                        } catch (error) {
+                                            adze.error("Failed to process GIF attachment:", error);
+                                            return null;
+                                        }
+                                    } else {
+                                        const bytes = new Uint8Array(buffer);
+                                        let binary = "";
+                                        for (let i = 0; i < bytes.byteLength; i++) {
+                                            binary += String.fromCharCode(bytes[i]);
+                                        }
+                                        const base64 = btoa(binary);
                                         return {
                                             inlineData: {
-                                                mimeType: "image/png",
+                                                mimeType: a.contentType!,
                                                 data: base64,
                                             },
                                         };
-                                    } catch (error) {
-                                        adze.error("Failed to process GIF attachment:", error);
-                                        return null;
                                     }
-                                } else {
-                                    const bytes = new Uint8Array(buffer);
-                                    let binary = "";
-                                    for (let i = 0; i < bytes.byteLength; i++) {
-                                        binary += String.fromCharCode(bytes[i]);
-                                    }
-                                    const base64 = btoa(binary);
-                                    return {
-                                        inlineData: {
-                                            mimeType: a.contentType!,
-                                            data: base64,
-                                        },
-                                    };
+                                } catch (error) {
+                                    adze.error(`Failed to fetch attachment from ${a.url}:`, error);
+                                    return null;
                                 }
                             })
                             .filter(Boolean),
@@ -175,21 +186,29 @@ export class LLMService {
                     } else {
                         finalMessageText += ` [sticker: ${sticker.name}]`;
                     }
-                    const response = await fetch(sticker.url);
-                    const blob = await response.blob();
-                    const buffer = await blob.arrayBuffer();
-                    const bytes = new Uint8Array(buffer);
-                    let binary = "";
-                    for (let i = 0; i < bytes.byteLength; i++) {
-                        binary += String.fromCharCode(bytes[i]);
+                    try {
+                        const response = await fetch(sticker.url);
+                        if (!response.ok) {
+                            adze.warn(`Failed to fetch sticker: ${response.status} ${response.statusText}`);
+                        } else {
+                            const blob = await response.blob();
+                            const buffer = await blob.arrayBuffer();
+                            const bytes = new Uint8Array(buffer);
+                            let binary = "";
+                            for (let i = 0; i < bytes.byteLength; i++) {
+                                binary += String.fromCharCode(bytes[i]);
+                            }
+                            const base64 = btoa(binary);
+                            mediaContent.push({
+                                inlineData: {
+                                    mimeType: "image/png",
+                                    data: base64,
+                                },
+                            });
+                        }
+                    } catch (error) {
+                        adze.error(`Failed to fetch sticker ${sticker.url}:`, error);
                     }
-                    const base64 = btoa(binary);
-                    mediaContent.push({
-                        inlineData: {
-                            mimeType: "image/png",
-                            data: base64,
-                        },
-                    });
                 }
 
                 const emojiRegex = /<a?:(\w+):(\d+)>/g;
