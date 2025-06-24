@@ -240,7 +240,6 @@ export class InteractionCreateHandler {
             });
         }
 
-        let typingInterval: number | undefined;
         try {
             const channel = message.channel;
 
@@ -298,8 +297,23 @@ export class InteractionCreateHandler {
             this.logger.error(`${logContext} Failed to re-roll response for message ID ${message.id}:`);
             console.log(error);
         } finally {
-            if (typingInterval) {
-                clearInterval(typingInterval);
+            const fetchedMessage = await message.channel.messages.fetch(message.id);
+            if (fetchedMessage) {
+                if (fetchedMessage.webhookId) {
+                    await fetchedMessage.edit({ components: [this.componentService.createActionRow(false)] });
+                } else if (fetchedMessage.embeds.length > 0) {
+                    const originalEmbed = new EmbedBuilder(fetchedMessage.embeds[0].toJSON());
+                    const newEmbed = originalEmbed.setFooter(null);
+                    await fetchedMessage.edit({
+                        embeds: [newEmbed],
+                        components: [this.componentService.createActionRow(false)],
+                    });
+                } else {
+                    await fetchedMessage.edit({
+                        content: fetchedMessage.content.replace(/\n\n> Generating.../, ""),
+                        components: [this.componentService.createActionRow(false)],
+                    });
+                }
             }
         }
     }
@@ -322,7 +336,6 @@ export class InteractionCreateHandler {
             });
         }
 
-        let typingInterval: number | undefined;
         try {
             const channel = message.channel;
 
@@ -387,8 +400,23 @@ export class InteractionCreateHandler {
             this.logger.error(`${logContext} Failed to continue response for message ID ${message.id}:`);
             console.log(error);
         } finally {
-            if (typingInterval) {
-                clearInterval(typingInterval);
+            const fetchedMessage = await message.channel.messages.fetch(message.id);
+            if (fetchedMessage) {
+                if (fetchedMessage.webhookId) {
+                    await fetchedMessage.edit({ components: [this.componentService.createActionRow(false)] });
+                } else if (fetchedMessage.embeds.length > 0) {
+                    const originalEmbed = new EmbedBuilder(fetchedMessage.embeds[0].toJSON());
+                    const newEmbed = originalEmbed.setFooter(null);
+                    await fetchedMessage.edit({
+                        embeds: [newEmbed],
+                        components: [this.componentService.createActionRow(false)],
+                    });
+                } else {
+                    await fetchedMessage.edit({
+                        content: fetchedMessage.content.replace(/\n\n> Generating.../, ""),
+                        components: [this.componentService.createActionRow(false)],
+                    });
+                }
             }
         }
     }
