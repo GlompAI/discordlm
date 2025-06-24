@@ -11,6 +11,7 @@ import { getPublicAvatarBaseUrl } from "./env.ts";
 import adze from "npm:adze";
 
 const logger = adze.withEmoji.timestamp.seal();
+export const WEBHOOK_IDENTIFIER = "\u200B";
 
 export class WebhookManager {
     private webhooks = new Map<string, Webhook>(); // character name -> webhook
@@ -142,7 +143,7 @@ export class WebhookManager {
 
         try {
             const sendOptions: WebhookMessageCreateOptions = {
-                content,
+                content: content + WEBHOOK_IDENTIFIER,
                 username: character.card.name,
                 ...options,
             };
@@ -192,7 +193,7 @@ export class WebhookManager {
 
         try {
             const editOptions: WebhookMessageCreateOptions = {
-                content,
+                content: content + WEBHOOK_IDENTIFIER,
                 ...options,
             };
 
