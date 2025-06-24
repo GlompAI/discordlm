@@ -204,15 +204,21 @@ export class InteractionCreateHandler {
     private async handleReroll(interaction: ButtonInteraction, message: Message, logContext: string) {
         this.logger.info(`${logContext} Re-rolling message ID ${message.id}...`);
 
-        const originalEmbed = message.embeds[0]
-            ? new EmbedBuilder(message.embeds[0].toJSON())
-            : new EmbedBuilder().setDescription(message.content);
-        const newEmbed = originalEmbed.setFooter({ text: "Generating..." });
+        if (message.webhookId) {
+            await interaction.update({
+                components: [this.componentService.createActionRow(true)],
+            });
+        } else {
+            const originalEmbed = message.embeds[0]
+                ? new EmbedBuilder(message.embeds[0].toJSON())
+                : new EmbedBuilder().setDescription(message.content);
+            const newEmbed = originalEmbed.setFooter({ text: "Generating..." });
 
-        await interaction.update({
-            embeds: [newEmbed],
-            components: [this.componentService.createActionRow(true)],
-        });
+            await interaction.update({
+                embeds: [newEmbed],
+                components: [this.componentService.createActionRow(true)],
+            });
+        }
 
         let typingInterval: number | undefined;
         try {
@@ -275,15 +281,21 @@ export class InteractionCreateHandler {
     private async handleContinue(interaction: ButtonInteraction, message: Message, logContext: string) {
         this.logger.info(`${logContext} Continue interaction on message ID ${message.id}...`);
 
-        const originalContinueEmbed = message.embeds[0]
-            ? new EmbedBuilder(message.embeds[0].toJSON())
-            : new EmbedBuilder().setDescription(message.content);
-        const newContinueEmbed = originalContinueEmbed.setFooter({ text: "Generating..." });
+        if (message.webhookId) {
+            await interaction.update({
+                components: [this.componentService.createActionRow(true)],
+            });
+        } else {
+            const originalContinueEmbed = message.embeds[0]
+                ? new EmbedBuilder(message.embeds[0].toJSON())
+                : new EmbedBuilder().setDescription(message.content);
+            const newContinueEmbed = originalContinueEmbed.setFooter({ text: "Generating..." });
 
-        await interaction.update({
-            embeds: [newContinueEmbed],
-            components: [this.componentService.createActionRow(true)],
-        });
+            await interaction.update({
+                embeds: [newContinueEmbed],
+                components: [this.componentService.createActionRow(true)],
+            });
+        }
 
         let typingInterval: number | undefined;
         try {
