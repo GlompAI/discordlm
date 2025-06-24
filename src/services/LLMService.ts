@@ -26,6 +26,7 @@ export class LLMService {
         character: CharacterCard | null,
         _seed?: number,
         continuation = false,
+        sanitize = false,
     ) {
         async function convertSnowflake(userId: string, guild: Guild | null) {
             let returnString: string;
@@ -96,7 +97,7 @@ export class LLMService {
                 } else {
                     role = "user";
                     userName = await convertSnowflake(message.author.id, message.guild);
-                    messageText = message.content;
+                    messageText = sanitize ? message.cleanContent : message.content;
                 }
 
                 let finalMessageText = await replaceAllAsync(

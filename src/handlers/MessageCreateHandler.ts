@@ -88,6 +88,7 @@ export class MessageCreateHandler {
             }
         }
 
+        let sanitize = false;
         if (!character) {
             if (message.channel.type === ChannelType.DM) {
                 await message.reply({ content: getHelpText(), allowedMentions: { repliedUser: true } });
@@ -96,11 +97,7 @@ export class MessageCreateHandler {
                 const member = await message.guild.members.fetch(message.author.id);
                 const adminOverrideId = configService.getAdminOverrideId();
                 if (!member.permissions.has("Administrator") && member.id !== adminOverrideId) {
-                    await this.sendEphemeralError(
-                        message,
-                        "You must be an administrator to interact with the raw assistant.",
-                    );
-                    return;
+                    sanitize = true;
                 }
             }
         }
@@ -138,6 +135,8 @@ export class MessageCreateHandler {
                 configService.getBotSelfId(),
                 character ? character.card : null,
                 Math.floor(Math.random() * 1000000),
+                false,
+                sanitize,
             );
 
             if (result.completion.promptFeedback?.blockReason) {
