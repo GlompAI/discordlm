@@ -286,7 +286,7 @@ export async function generateMessage(
         history: prompt.history,
     });
 
-    const result = await chat.sendMessage("placeholder"); // Placeholder, actual content is in history
+    const result = await chat.sendMessage(""); // Placeholder, actual content is in history
     const response = result.response;
     const toolCalls = response.functionCalls();
 
@@ -313,7 +313,7 @@ export async function generateMessage(
         const finalChat = model.startChat({
             history: finalPrompt.history,
         });
-        const finalResult = await finalChat.sendMessage("placeholder");
+        const finalResult = await finalChat.sendMessage("");
         return {
             completion: finalResult.response,
         };
