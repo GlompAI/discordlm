@@ -8,10 +8,13 @@ import adze from "npm:adze";
 import { getHelpText } from "../utils.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";
 import { Queue } from "../queue.ts";
+import { ComponentService } from "../services/ComponentService.ts";
+import { WEBHOOK_IDENTIFIER } from "../WebhookManager.ts";
 
 export class MessageCreateHandler {
     private readonly logger = adze.withEmoji.timestamp.seal();
     private readonly inferenceQueue: Queue;
+    private readonly componentService: ComponentService;
 
     constructor(
         private readonly characterService: CharacterService,
@@ -20,13 +23,14 @@ export class MessageCreateHandler {
         private readonly client: Client,
     ) {
         this.inferenceQueue = new Queue(configService.getInferenceParallelism());
+        this.componentService = new ComponentService();
     }
 
     public async handle(message: Message): Promise<void> {
         if (message.content === RESET_MESSAGE_CONTENT || message.interaction) {
             return;
         }
-        if (message.author.bot && !message.webhookId) {
+        if (message.author.bot && (!message.webhookId || !message.content.endsWith(WEBHOOK_IDENTIFIER))) {
             return;
         }
         if (message.author.id === configService.getBotSelfId() && message.content.startsWith("Switched to ")) {
@@ -183,17 +187,11 @@ export class MessageCreateHandler {
                 }
 
                 if (previousBotMessage && previousBotMessage.channel.type !== ChannelType.DM) {
-                    this.logger.info(
-                        `Attempting to remove previous bot reaction from message ${previousBotMessage.id}`,
-                    );
                     try {
-                        const reaction = previousBotMessage.reactions.cache.get("♻️");
-                        if (reaction && reaction.me) {
-                            await reaction.remove();
-                            this.logger.info(`Successfully removed previous bot reaction.`);
-                        }
+                        await previousBotMessage.edit({ components: [] });
+                        this.logger.info(`Successfully removed components from previous message.`);
                     } catch (error) {
-                        this.logger.error("Failed to remove previous bot reaction:", error);
+                        this.logger.error("Failed to remove components from previous message:", error);
                     }
                 }
 
@@ -207,22 +205,18 @@ export class MessageCreateHandler {
                             message.channel,
                             character,
                             part,
+                            { components: [this.componentService.createActionRow()] },
                         );
                         if (sentMessage) {
                             this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
-                            await sentMessage.react("♻️");
-                            await sentMessage.react("❌");
-                            await sentMessage.react("➡️");
                         }
                     } else {
                         const sentMessage = await message.reply({
                             content: part,
                             allowedMentions: { repliedUser: true },
+                            components: [this.componentService.createActionRow()],
                         });
                         this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
-                        await sentMessage.react("♻️");
-                        await sentMessage.react("❌");
-                        await sentMessage.react("➡️");
                     }
                 } else {
                     const embed = {
@@ -233,11 +227,9 @@ export class MessageCreateHandler {
                     const sentMessage = await message.reply({
                         embeds: [embed],
                         allowedMentions: { repliedUser: true },
+                        components: [this.componentService.createActionRow()],
                     });
                     this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
-                    await sentMessage.react("♻️");
-                    await sentMessage.react("❌");
-                    await sentMessage.react("➡️");
                 }
             }
             this.logger.info(`${logContext} Reply sent!`);

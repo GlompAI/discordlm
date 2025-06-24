@@ -4,7 +4,6 @@ import { LLMService } from "./services/LLMService.ts";
 import { ConversationService } from "./services/ConversationService.ts";
 import { InteractionCreateHandler } from "./handlers/InteractionCreateHandler.ts";
 import { MessageCreateHandler } from "./handlers/MessageCreateHandler.ts";
-import { MessageReactionAddHandler } from "./handlers/MessageReactionAddHandler.ts";
 import { Events, SlashCommandBuilder } from "npm:discord.js";
 import adze from "npm:adze";
 
@@ -16,21 +15,19 @@ export class App {
     private readonly conversationService: ConversationService;
     private readonly interactionCreateHandler: InteractionCreateHandler;
     private readonly messageCreateHandler: MessageCreateHandler;
-    private readonly messageReactionAddHandler: MessageReactionAddHandler;
 
     constructor() {
         this.discordService = new DiscordService();
         this.characterService = new CharacterService(this.discordService.client);
         this.llmService = new LLMService();
         this.conversationService = new ConversationService();
-        this.interactionCreateHandler = new InteractionCreateHandler(this.characterService);
-        this.messageCreateHandler = new MessageCreateHandler(
+        this.interactionCreateHandler = new InteractionCreateHandler(
             this.characterService,
             this.llmService,
             this.conversationService,
             this.discordService.client,
         );
-        this.messageReactionAddHandler = new MessageReactionAddHandler(
+        this.messageCreateHandler = new MessageCreateHandler(
             this.characterService,
             this.llmService,
             this.conversationService,
@@ -53,10 +50,6 @@ export class App {
             (interaction) => this.interactionCreateHandler.handle(interaction),
         );
         this.discordService.client.on(Events.MessageCreate, (message) => this.messageCreateHandler.handle(message));
-        this.discordService.client.on(
-            Events.MessageReactionAdd,
-            (reaction, user) => this.messageReactionAddHandler.handle(reaction, user),
-        );
 
         await this.discordService.login();
 
@@ -78,8 +71,8 @@ export class App {
                 .setDescription("Switch to a different character")
                 .addStringOption((option) =>
                     option.setName("character")
-                        .setDescription("The character to switch to")
-                        .setRequired(true)
+                        .setDescription("The character to switch to (optional, will show a menu if not provided)")
+                        .setRequired(false)
                         .setAutocomplete(true)
                 ),
             new SlashCommandBuilder()
