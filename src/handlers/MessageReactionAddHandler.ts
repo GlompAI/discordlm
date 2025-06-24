@@ -269,9 +269,10 @@ export class MessageReactionAddHandler {
             if (message.channel.type !== ChannelType.DM) {
                 try {
                     await reaction.users.remove(user.id);
+                    const freshMessage = await message.channel.messages.fetch(message.id);
                     const emojiToRemove = ["♻️", "❌", "➡️"];
                     for (const emoji of emojiToRemove) {
-                        const botReaction = message.reactions.cache.find((r) => r.emoji.name === emoji);
+                        const botReaction = freshMessage.reactions.cache.find((r) => r.emoji.name === emoji);
                         if (botReaction && botReaction.me) {
                             await botReaction.remove();
                         }
