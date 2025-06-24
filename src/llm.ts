@@ -109,28 +109,70 @@ export async function generateMessage(
                 async (_, snowflake) => `@${await convertSnowflake(snowflake, message.guild)}`,
             );
 
-            const mediaContent = message.attachments
-                ? await Promise.all(message.attachments
-                    .filter((a) => a.contentType?.startsWith("image/") || a.contentType?.startsWith("video/"))
-                    .map(async (a) => {
-                        const response = await fetch(a.url);
+            const mediaContent = [];
+
+            // Handle attachments
+            if (message.attachments.size > 0) {
+                const attachmentMedia = await Promise.all(
+                    message.attachments
+                        .filter((a) => a.contentType?.startsWith("image/") || a.contentType?.startsWith("video/"))
+                        .map(async (a) => {
+                            const response = await fetch(a.url);
+                            const blob = await response.blob();
+                            const buffer = await blob.arrayBuffer();
+                            const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+                            return {
+                                inlineData: {
+                                    mimeType: a.contentType!,
+                                    data: base64,
+                                },
+                            };
+                        }),
+                );
+                mediaContent.push(...attachmentMedia);
+            }
+
+            // Handle stickers
+            if (message.stickers.size > 0) {
+                const sticker = message.stickers.first()!;
+                messageText += ` [sticker: ${sticker.name}]`;
+                const response = await fetch(sticker.url);
+                const blob = await response.blob();
+                const buffer = await blob.arrayBuffer();
+                const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+                mediaContent.push({
+                    inlineData: {
+                        mimeType: "image/png", // Stickers are usually PNGs
+                        data: base64,
+                    },
+                });
+            }
+
+            // Handle custom emojis
+            const emojiRegex = /<a?:(\w+):(\d+)>/g;
+            let match;
+            while ((match = emojiRegex.exec(messageText)) !== null) {
+                const emojiId = match[2];
+                const isAnimated = match[0].startsWith("<a:");
+                const emojiUrl = `https://cdn.discordapp.com/emojis/${emojiId}.${isAnimated ? "gif" : "png"}`;
+
+                try {
+                    const response = await fetch(emojiUrl);
+                    if (response.ok) {
                         const blob = await response.blob();
                         const buffer = await blob.arrayBuffer();
-                        let binary = "";
-                        const bytes = new Uint8Array(buffer);
-                        const len = bytes.byteLength;
-                        for (let i = 0; i < len; i++) {
-                            binary += String.fromCharCode(bytes[i]);
-                        }
-                        const base64 = btoa(binary);
-                        return {
+                        const base64 = btoa(String.fromCharCode(...new Uint8Array(buffer)));
+                        mediaContent.push({
                             inlineData: {
-                                mimeType: a.contentType!,
+                                mimeType: blob.type,
                                 data: base64,
                             },
-                        };
-                    }))
-                : [];
+                        });
+                    }
+                } catch (error) {
+                    adze.error(`Failed to fetch emoji URL ${emojiUrl}:`, error);
+                }
+            }
 
             return {
                 message: finalMessageText,
