@@ -54,6 +54,9 @@ export class ConfigService {
     isDebugEnabled(): boolean {
         return this.getEnv("DEBUG", false, "false") === "true";
     }
+    getAssistantName(): string {
+        return this.getEnv("ASSISTANT_NAME", false, "Aria");
+    }
 }
 
 export const configService = new ConfigService();

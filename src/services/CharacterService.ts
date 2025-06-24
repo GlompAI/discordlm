@@ -42,6 +42,7 @@ export class CharacterService {
 
         this.logger.log(`Loading characters from ./characters with avatar base URL: ${avatarBaseUrl}`);
         await this.characterManager.loadCharacters("./characters", avatarBaseUrl);
+        await this.characterManager.loadAssistantCharacter("./characters");
         this.logger.log(`Character loading completed`);
 
         this.characterManager.watchCharacters();
@@ -68,9 +69,13 @@ export class CharacterService {
         return this.characterManager.getCharacter(name);
     }
 
+    public getAssistantCharacter(): CharacterConfig | null {
+        return this.characterManager.getAssistantCharacter();
+    }
+
     public async inferCharacterFromHistory(channel: TextBasedChannel | null): Promise<CharacterConfig | null> {
         if (!channel) {
-            return null;
+            return this.getAssistantCharacter();
         }
 
         const messages = await channel.messages.fetch({ limit: 100 });
@@ -98,7 +103,7 @@ export class CharacterService {
             }
         }
 
-        return null;
+        return this.getAssistantCharacter();
     }
 
     public getWebhookManager(): WebhookManager {

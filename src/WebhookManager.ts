@@ -134,7 +134,7 @@ export class WebhookManager {
         character: CharacterConfig,
         content: string,
         options?: Partial<WebhookMessageCreateOptions>,
-        _messageToReply?: unknown,
+        messageToReply?: Message,
     ): Promise<Message | null> {
         const webhook = await this.getWebhookForCharacter(channel, character);
 
@@ -144,8 +144,9 @@ export class WebhookManager {
         }
 
         try {
+            const authorId = messageToReply ? messageToReply.author.id : "UNKNOWN";
             const sendOptions: WebhookMessageCreateOptions = {
-                content: content + WEBHOOK_IDENTIFIER,
+                content: `${content}${WEBHOOK_IDENTIFIER}${authorId}`,
                 username: character.card.name,
                 ...options,
             };
@@ -194,8 +195,9 @@ export class WebhookManager {
         }
 
         try {
+            const authorId = message.content.split(WEBHOOK_IDENTIFIER)[1] || "UNKNOWN";
             const editOptions: WebhookMessageCreateOptions = {
-                content: content + WEBHOOK_IDENTIFIER,
+                content: `${content}${WEBHOOK_IDENTIFIER}${authorId}`,
                 ...options,
             };
 
