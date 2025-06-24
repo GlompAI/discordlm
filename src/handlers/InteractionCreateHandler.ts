@@ -128,7 +128,10 @@ export class InteractionCreateHandler {
                 const authorIdMatch = message.content.match(/https:\/\/a\.a\/(\d+)/);
                 const authorId = authorIdMatch ? authorIdMatch[1] : null;
                 if (authorId && interaction.user.id !== authorId) {
-                    await interaction.reply({ content: "You can only re-roll your own interactions.", ephemeral: true });
+                    await interaction.reply({
+                        content: "You can only re-roll your own interactions.",
+                        ephemeral: true,
+                    });
                     return;
                 }
             }
@@ -190,7 +193,9 @@ export class InteractionCreateHandler {
             }
         } else {
             // New dropdown format
-            const characters = this.characterService.getCharacters().filter((c) => c.card.name !== configService.getAssistantName());
+            const characters = this.characterService.getCharacters().filter((c) =>
+                c.card.name !== configService.getAssistantName()
+            );
             const currentCharacter = await this.characterService.inferCharacterFromHistory(interaction.channel);
             const selectMenu = this.componentService.createCharacterSelectMenu(characters, currentCharacter);
             await interaction.reply({
@@ -220,19 +225,18 @@ export class InteractionCreateHandler {
     private async handleReroll(interaction: ButtonInteraction, message: Message, logContext: string) {
         this.logger.info(`${logContext} Re-rolling message ID ${message.id}...`);
 
-        if (message.webhookId) {
-            await interaction.update({
-                components: [this.componentService.createActionRow(true)],
-            });
-        } else {
-            const originalEmbed = message.embeds[0]
-                ? new EmbedBuilder(message.embeds[0].toJSON())
-                : new EmbedBuilder().setDescription(message.content);
-            const newEmbed = originalEmbed.setFooter({ text: "Generating..." });
+        const actionRow = this.componentService.createActionRow(true);
 
+        if (message.webhookId) {
+            await interaction.update({ components: [actionRow] });
+        } else if (message.embeds.length > 0) {
+            const originalEmbed = new EmbedBuilder(message.embeds[0].toJSON());
+            const newEmbed = originalEmbed.setFooter({ text: "Generating..." });
+            await interaction.update({ embeds: [newEmbed], components: [actionRow] });
+        } else {
             await interaction.update({
-                embeds: [newEmbed],
-                components: [this.componentService.createActionRow(true)],
+                content: `${message.content}\n\n> Generating...`,
+                components: [actionRow],
             });
         }
 
@@ -279,11 +283,15 @@ export class InteractionCreateHandler {
                     components: [this.componentService.createActionRow()],
                 });
             } else {
-                const embed = new EmbedBuilder()
-                    .setTitle(character ? character.card.name : "Assistant")
-                    .setThumbnail(character?.avatarUrl ?? null)
-                    .setDescription(result);
-                await message.edit({ embeds: [embed], components: [this.componentService.createActionRow()] });
+                if (message.embeds.length > 0) {
+                    const embed = new EmbedBuilder()
+                        .setTitle(character ? character.card.name : "Assistant")
+                        .setThumbnail(character?.avatarUrl ?? null)
+                        .setDescription(result);
+                    await message.edit({ embeds: [embed], components: [this.componentService.createActionRow()] });
+                } else {
+                    await message.edit({ content: result, components: [this.componentService.createActionRow()] });
+                }
             }
             this.logger.info(`${logContext} Re-roll successful for message ID ${message.id}`);
         } catch (error) {
@@ -299,19 +307,18 @@ export class InteractionCreateHandler {
     private async handleContinue(interaction: ButtonInteraction, message: Message, logContext: string) {
         this.logger.info(`${logContext} Continue interaction on message ID ${message.id}...`);
 
-        if (message.webhookId) {
-            await interaction.update({
-                components: [this.componentService.createActionRow(true)],
-            });
-        } else {
-            const originalContinueEmbed = message.embeds[0]
-                ? new EmbedBuilder(message.embeds[0].toJSON())
-                : new EmbedBuilder().setDescription(message.content);
-            const newContinueEmbed = originalContinueEmbed.setFooter({ text: "Generating..." });
+        const continueActionRow = this.componentService.createActionRow(true);
 
+        if (message.webhookId) {
+            await interaction.update({ components: [continueActionRow] });
+        } else if (message.embeds.length > 0) {
+            const originalContinueEmbed = new EmbedBuilder(message.embeds[0].toJSON());
+            const newContinueEmbed = originalContinueEmbed.setFooter({ text: "Generating..." });
+            await interaction.update({ embeds: [newContinueEmbed], components: [continueActionRow] });
+        } else {
             await interaction.update({
-                embeds: [newContinueEmbed],
-                components: [this.componentService.createActionRow(true)],
+                content: `${message.content}\n\n> Generating...`,
+                components: [continueActionRow],
             });
         }
 

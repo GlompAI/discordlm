@@ -1,4 +1,4 @@
-import { ChannelType, Client, Message, TextChannel } from "discord.js";
+import { ChannelType, Client, EmbedBuilder, Message, TextChannel } from "discord.js";
 import { CharacterService } from "../services/CharacterService.ts";
 import { LLMService } from "../services/LLMService.ts";
 import { ConversationService } from "../services/ConversationService.ts";
@@ -236,11 +236,11 @@ export class MessageCreateHandler {
                         this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
                     }
                 } else {
-                    const embed = {
-                        title: character ? character.card.name : "Assistant",
-                        thumbnail: { url: character?.avatarUrl ?? "" },
-                        description: part,
-                    };
+                    const embed = new EmbedBuilder()
+                        .setTitle(character ? character.card.name : "Assistant")
+                        .setThumbnail(character?.avatarUrl ?? null)
+                        .setDescription(part);
+
                     const sentMessage = await message.reply({
                         embeds: [embed],
                         allowedMentions: { repliedUser: true },
