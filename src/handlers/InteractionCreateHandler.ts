@@ -179,7 +179,7 @@ export class InteractionCreateHandler {
             await interaction.reply({
                 content: "Select a character to switch to:",
                 components: [selectMenu],
-                ephemeral: true,
+                ephemeral: false,
             });
         }
     }
@@ -193,7 +193,7 @@ export class InteractionCreateHandler {
         await interaction.reply({
             content: "Are you sure you want to reset the conversation history?",
             components: [row],
-            ephemeral: true,
+            ephemeral: false,
         });
     }
 
