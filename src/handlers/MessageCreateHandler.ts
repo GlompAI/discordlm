@@ -49,6 +49,16 @@ export class MessageCreateHandler {
                 if (repliedMessage.webhookId) {
                     targetCharacterName = (repliedMessage as Message).author?.username || "";
                     repliesToWebhookCharacter = true;
+                } else if (
+                    repliedMessage.author.id === configService.getBotSelfId() &&
+                    repliedMessage.content.startsWith("Switched to ")
+                ) {
+                    const match = repliedMessage.content.match(/Switched to \*\*(.*?)\*\*/);
+                    if (match) {
+                        targetCharacterName = match[1];
+                    } else {
+                        targetCharacterName = repliedMessage.content.substring("Switched to ".length);
+                    }
                 }
             } catch (_error) {
                 // Failed to fetch replied message, ignore
