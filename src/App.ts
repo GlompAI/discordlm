@@ -40,6 +40,8 @@ export class App {
         this.discordService.onReady(async (client) => {
             if (client.user) {
                 this.logger.log(`Ready! Logged in as ${client.user.tag}`);
+                // Set the bot's Discord name in the LLM service
+                this.llmService.setBotDiscordName(client.user.username);
             }
             await this.characterService.start();
             await this.registerSlashCommands();

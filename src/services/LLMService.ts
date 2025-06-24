@@ -19,6 +19,10 @@ export class LLMService {
         this.textEngine = new TextEngine();
     }
 
+    public setBotDiscordName(name: string) {
+        this.textEngine.setBotDiscordName(name);
+    }
+
     public async generateMessage(
         client: Client,
         messages: Message[],
