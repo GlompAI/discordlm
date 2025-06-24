@@ -9,11 +9,13 @@ import { RESET_MESSAGE_CONTENT } from "../main.ts";
 import { Queue } from "../queue.ts";
 import { ComponentService } from "../services/ComponentService.ts";
 import { WEBHOOK_IDENTIFIER } from "../WebhookManager.ts";
+import { RateLimitService } from "../services/RateLimitService.ts";
 
 export class MessageCreateHandler {
     private readonly logger = adze.withEmoji.timestamp.seal();
     private readonly inferenceQueue: Queue;
     private readonly componentService: ComponentService;
+    private readonly rateLimitService: RateLimitService;
 
     constructor(
         private readonly characterService: CharacterService,
@@ -22,6 +24,7 @@ export class MessageCreateHandler {
     ) {
         this.inferenceQueue = new Queue(configService.getInferenceParallelism());
         this.componentService = new ComponentService();
+        this.rateLimitService = new RateLimitService(configService.getRateLimitPerMinute());
     }
 
     public async handle(message: Message): Promise<void> {
@@ -99,7 +102,11 @@ export class MessageCreateHandler {
         const isDirectPing = message.content.includes(`<@${configService.getBotSelfId()}>`);
 
         if (isDirectPing || repliesToAssistant) {
-            this.logger.info(`Forcing assistant character due to ${isDirectPing ? 'direct bot mention' : 'reply to Assistant message'}.`);
+            this.logger.info(
+                `Forcing assistant character due to ${
+                    isDirectPing ? "direct bot mention" : "reply to Assistant message"
+                }.`,
+            );
             character = this.characterService.getAssistantCharacter();
         } else if (isDM) {
             if (message.channel.isTextBased()) {
@@ -134,6 +141,28 @@ export class MessageCreateHandler {
             : `[DM from ${message.author.tag}]`;
 
         this.logger.info(`${logContext} Using character: ${character ? character.card.name : "none"}`);
+
+        // Check rate limit
+        if (!this.rateLimitService.canMakeRequest(message.author.id)) {
+            this.logger.info(`${logContext} User is rate limited`);
+            await this.rateLimitService.sendRateLimitNotification(message);
+
+            // Queue the task for later execution
+            this.rateLimitService.queueTask(message.author.id, async () => {
+                await this.processMessage(message, character, sanitize, logContext);
+            });
+            return;
+        }
+
+        await this.processMessage(message, character, sanitize, logContext);
+    }
+
+    private async processMessage(
+        message: Message,
+        character: any,
+        sanitize: boolean,
+        logContext: string,
+    ): Promise<void> {
         this.logger.info(`${logContext} Fetching message history...`);
 
         const messages = Array.from((await message.channel.messages.fetch({ limit: 100 })).values());
@@ -198,12 +227,15 @@ export class MessageCreateHandler {
             for (const part of messageParts) {
                 // Get webhook manager from character service
                 const webhookManager = this.characterService.getWebhookManager();
-                
+
                 // Check if this is the Assistant character (should not use webhooks)
                 const isAssistant = character && character.card.name === configService.getAssistantName();
-                
+
                 // If we have a non-Assistant character and webhook manager, and we're in a guild channel
-                if (character && !isAssistant && webhookManager && message.guild && message.channel instanceof TextChannel) {
+                if (
+                    character && !isAssistant && webhookManager && message.guild &&
+                    message.channel instanceof TextChannel
+                ) {
                     // Send as character using webhook
                     const sentMessage = await webhookManager.sendAsCharacter(
                         message.channel,
@@ -211,7 +243,7 @@ export class MessageCreateHandler {
                         part,
                         { components: [this.componentService.createActionRow()] },
                         message,
-                        message.author
+                        message.author,
                     );
                     if (!sentMessage) {
                         // Fallback to regular reply if webhook fails
@@ -231,7 +263,7 @@ export class MessageCreateHandler {
                             .setTitle(character ? character.card.name : "Assistant")
                             .setThumbnail(character?.avatarUrl ?? null)
                             .setDescription(part);
-                        
+
                         await message.reply({
                             embeds: [embed],
                             allowedMentions: { repliedUser: true },

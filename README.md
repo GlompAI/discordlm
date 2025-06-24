@@ -11,6 +11,8 @@ A Discord bot that integrates with OpenAI-compatible language model endpoints to
 - Configurable token limits for context management
 - Graceful typing indicators while generating responses
 - Automatic message history context
+- Per-user rate limiting with configurable requests per minute
+- Automatic queuing of rate-limited requests
 
 ## Setup
 
@@ -87,6 +89,7 @@ The following environment variables are required:
 | `OPENAI_KEY` | API key for the OpenAI-compatible endpoint | Yes | - |
 | `TOKEN_LIMIT` | Maximum token context to send to the API | No | 32600 |
 | `INFERENCE_PARALLELISM` | Number of parallel inference requests to allow | No | 1 |
+| `RATE_LIMIT_PER_MINUTE` | Maximum requests per user per minute | No | 10 |
 | `ADMIN_OVERRIDE_ID` | User ID to bypass administrator checks | No | - |
 | `DEBUG` | Enable debug logging | No | false |
 
@@ -158,6 +161,23 @@ docker-compose up -d
 1. Invite the bot to your Discord server with appropriate permissions (Send Messages, Read Message History)
 2. Mention the bot in a channel or send it a direct message
 3. The bot will respond using the configured AI model
+
+## Rate Limiting
+
+The bot includes a per-user rate limiting system to prevent abuse:
+
+- **Default limit**: 10 requests per minute per user
+- **Configurable**: Set `RATE_LIMIT_PER_MINUTE` environment variable
+- **User feedback**: Users receive a temporary message when rate limited
+- **Automatic queuing**: Rate-limited requests are queued and processed when the limit resets
+- **In-memory storage**: Rate limits are stored in memory and reset on bot restart
+
+When a user exceeds the rate limit, they'll see a message like:
+```
+⏱️ Rate limited. Try again in 45s.
+```
+
+The message automatically deletes after 5 seconds, and their request will be processed automatically when the rate limit window resets.
 
 ## Permissions Required
 
