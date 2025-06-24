@@ -45,7 +45,9 @@
     },
     "imports": {
         "fflate": "npm:fflate",
-        "@google/generative-ai": "npm:@google/generative-ai@^0.21.0"
+        "@google/generative-ai": "npm:@google/generative-ai@^0.21.0",
+        "gif-codec": "npm:gif-codec",
+        "pngjs": "npm:pngjs"
     },
     "exclude": [
         "dist/",
