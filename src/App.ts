@@ -4,6 +4,7 @@ import { LLMService } from "./services/LLMService.ts";
 import { ConversationService } from "./services/ConversationService.ts";
 import { InteractionCreateHandler } from "./handlers/InteractionCreateHandler.ts";
 import { MessageCreateHandler } from "./handlers/MessageCreateHandler.ts";
+import { WebhookManager } from "./WebhookManager.ts";
 import { Events, SlashCommandBuilder } from "discord.js";
 import adze from "npm:adze";
 
@@ -13,24 +14,24 @@ export class App {
     private readonly characterService: CharacterService;
     private readonly llmService: LLMService;
     private readonly conversationService: ConversationService;
+    private readonly webhookManager: WebhookManager;
     private readonly interactionCreateHandler: InteractionCreateHandler;
     private readonly messageCreateHandler: MessageCreateHandler;
 
     constructor() {
         this.discordService = new DiscordService();
+        this.webhookManager = new WebhookManager(this.discordService.client, []);
         this.characterService = new CharacterService(this.discordService.client);
         this.llmService = new LLMService();
         this.conversationService = new ConversationService();
         this.interactionCreateHandler = new InteractionCreateHandler(
             this.characterService,
             this.llmService,
-            this.conversationService,
             this.discordService.client,
         );
         this.messageCreateHandler = new MessageCreateHandler(
             this.characterService,
             this.llmService,
-            this.conversationService,
             this.discordService.client,
         );
     }
