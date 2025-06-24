@@ -81,7 +81,8 @@ export class CharacterService {
         const messages = await channel.messages.fetch({ limit: 100 });
         for (const message of messages.values()) {
             if (message.author.id === this.client.user?.id && message.content.startsWith("Switched to ")) {
-                const characterName = message.content.substring("Switched to ".length);
+                const match = message.content.match(/Switched to \*\*(.*?)\*\*/);
+                const characterName = match ? match[1] : message.content.substring("Switched to ".length);
                 const character = this.getCharacter(characterName);
                 if (character) {
                     return character;
@@ -90,14 +91,16 @@ export class CharacterService {
 
             if (message.webhookId) {
                 const character = this.getCharacter(message.author.username);
-                if (character) {
+                // Skip Aria to avoid selecting it from old interactions
+                if (character && character.card.name !== "Aria") {
                     return character;
                 }
             }
 
             if (message.embeds.length > 0 && message.embeds[0].title) {
                 const character = this.getCharacter(message.embeds[0].title);
-                if (character) {
+                // Skip Aria embeds from old interactions
+                if (character && character.card.name !== "Aria") {
                     return character;
                 }
             }
