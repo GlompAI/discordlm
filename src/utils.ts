@@ -1,4 +1,9 @@
+import { userMention } from "discord.js";
+import { configService } from "./services/ConfigService.ts";
+
 export function getHelpText() {
+    const assistantName = configService.getAssistantName();
+    const botId = configService.getBotSelfId();
     return `
 Welcome to the bot! Here's a quick guide on how to interact:
 
@@ -10,8 +15,8 @@ Welcome to the bot! Here's a quick guide on how to interact:
 
 **How to Interact:**
 *   **Direct Messages (DMs):** Send a message to the bot to talk to your character.
-*   **In a Server:** Mention the bot (@<bot_name>) to talk to the active character.
-*   **Assistant:** Mention the assistant by name (e.g., @Assistant) to invoke it directly, without a character persona.
+*   **In a Server:** Reply to any character message to have that character reply to you. You can also reply to the \`/switch\` message.
+*   **Assistant:** Mention ${userMention(botId)} anywhere to invoke the assistant directly, without a character persona.
 
 **Message Actions:**
 *   **Reroll (♻️):** Re-generates the bot's last response.
