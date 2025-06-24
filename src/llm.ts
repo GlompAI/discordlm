@@ -106,7 +106,7 @@ export async function generateMessage(
             }
 
             // Replace mentions in the final text
-            const finalMessageText = await replaceAllAsync(
+            let finalMessageText = await replaceAllAsync(
                 messageText,
                 /<@(\d+)>/g,
                 async (_, snowflake) => `@${await convertSnowflake(snowflake, message.guild)}`,
@@ -172,7 +172,7 @@ export async function generateMessage(
             // Handle stickers
             if (message.stickers.size > 0) {
                 const sticker = message.stickers.first()!;
-                messageText += ` [sticker: ${sticker.name}]`;
+                finalMessageText = `[sticker: ${sticker.name}]`;
                 const response = await fetch(sticker.url);
                 const blob = await response.blob();
                 const buffer = await blob.arrayBuffer();
@@ -198,7 +198,7 @@ export async function generateMessage(
                 const emojiId = match[2];
                 const isAnimated = match[0].startsWith("<a:");
                 const emojiUrl = `https://cdn.discordapp.com/emojis/${emojiId}.${isAnimated ? "gif" : "png"}`;
-                messageText += ` [emote: ${emojiName}]`;
+                finalMessageText = finalMessageText.replace(match[0], `[emote: ${emojiName}]`);
 
                 try {
                     const response = await fetch(emojiUrl);
