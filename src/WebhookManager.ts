@@ -1,4 +1,4 @@
-import { Client, Message, TextChannel, Webhook, WebhookMessageCreateOptions } from "npm:discord.js";
+import { Client, Message, TextChannel, Webhook, WebhookMessageCreateOptions, WebhookMessageEditOptions } from "npm:discord.js";
 import { CharacterConfig } from "./CharacterCard.ts";
 import { getPublicAvatarBaseUrl } from "./env.ts";
 import adze from "npm:adze";
@@ -29,7 +29,7 @@ export class WebhookManager {
                 // Verify the webhook still exists by trying to edit it
                 await webhook.edit({ name: webhook.name });
                 return webhook;
-            } catch (error) {
+            } catch (_error) {
                 // Webhook was deleted, remove from cache
                 this.webhooks.delete(webhookKey);
                 logger.warn(`Webhook for ${character.card.name} in channel ${channel.name} was deleted`);
@@ -124,7 +124,7 @@ export class WebhookManager {
         character: CharacterConfig,
         content: string,
         options?: Partial<WebhookMessageCreateOptions>,
-        messageToReply?: any,
+        _messageToReply?: unknown,
     ): Promise<Message | null> {
         const webhook = await this.getWebhookForCharacter(channel, character);
 
@@ -134,7 +134,7 @@ export class WebhookManager {
         }
 
         try {
-            const sendOptions: any = {
+            const sendOptions: WebhookMessageCreateOptions = {
                 content,
                 username: character.card.name,
                 ...options,
@@ -184,12 +184,12 @@ export class WebhookManager {
         }
 
         try {
-            const editOptions: any = {
+            const editOptions: WebhookMessageCreateOptions = {
                 content,
                 ...options,
             };
 
-            const editedMessage = await webhook.editMessage(message.id, editOptions);
+            const editedMessage = await webhook.editMessage(message.id, editOptions as WebhookMessageEditOptions);
             return editedMessage;
         } catch (error) {
             logger.error(`Failed to edit message as ${character.card.name}:`, error);
@@ -200,7 +200,7 @@ export class WebhookManager {
     /**
      * Clean up webhooks (call this on shutdown)
      */
-    async cleanup(): Promise<void> {
+    cleanup(): void {
         logger.info("Cleaning up webhooks...");
         this.webhooks.clear();
     }
