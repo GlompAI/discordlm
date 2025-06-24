@@ -119,7 +119,39 @@ export class InteractionCreateHandler {
                     return;
                 }
             }
-            await message.delete();
+
+            try {
+                await message.delete();
+                // If in DM, acknowledge the deletion since the message is gone
+                if (interaction.channel?.type === ChannelType.DM) {
+                    await interaction.reply({ content: "Message deleted.", ephemeral: true });
+                }
+            } catch (error: any) {
+                this.logger.error(`Failed to delete message ${message.id}:`, error);
+
+                // Handle specific error cases
+                if (error.code === 10008) {
+                    // Unknown Message - already deleted
+                    await interaction.reply({ content: "This message has already been deleted.", ephemeral: true });
+                } else if (error.message?.includes("connection reset") || error.message?.includes("ECONNRESET")) {
+                    // Network error - try to acknowledge the interaction at least
+                    await interaction.reply({
+                        content: "Network error while deleting message. Please try again.",
+                        ephemeral: true,
+                    }).catch(() => {
+                        // If we can't even reply, just log it
+                        this.logger.error("Could not send error response to user");
+                    });
+                } else {
+                    // Generic error
+                    await interaction.reply({
+                        content: "Failed to delete message. Please try again later.",
+                        ephemeral: true,
+                    }).catch(() => {
+                        this.logger.error("Could not send error response to user");
+                    });
+                }
+            }
             return;
         }
 
