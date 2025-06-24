@@ -50,7 +50,7 @@ export class MessageCreateHandler {
                 if (
                     repliedMessage.author.id === configService.getBotSelfId() &&
                     repliedMessage.content.startsWith("Switched to ")
-                ){
+                ) {
                     const match = repliedMessage.content.match(/Switched to \*\*(.*?)\*\*/);
                     if (match) {
                         targetCharacterName = match[1];
@@ -59,8 +59,7 @@ export class MessageCreateHandler {
                     }
                     repliesToSwitchMessage = true;
                     this.logger.info(`Parsed character name from reply: ${targetCharacterName}`);
-                }
-                else if (repliedMessage.webhookId) {
+                } else if (repliedMessage.webhookId) {
                     targetCharacterName = (repliedMessage as Message).author?.username || "";
                     repliesToWebhookCharacter = true;
                 }

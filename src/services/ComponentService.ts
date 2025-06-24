@@ -8,24 +8,27 @@ import {
 import { CharacterConfig } from "../CharacterCard.ts";
 
 export class ComponentService {
-    public createActionRow(): ActionRowBuilder<ButtonBuilder> {
+    public createActionRow(disabled = false): ActionRowBuilder<ButtonBuilder> {
         const row = new ActionRowBuilder<ButtonBuilder>()
             .addComponents(
                 new ButtonBuilder()
                     .setCustomId("reroll")
                     .setLabel("Reroll")
                     .setStyle(ButtonStyle.Primary)
-                    .setEmoji("♻️"),
+                    .setEmoji("♻️")
+                    .setDisabled(disabled),
                 new ButtonBuilder()
                     .setCustomId("delete")
                     .setLabel("Delete")
                     .setStyle(ButtonStyle.Danger)
-                    .setEmoji("❌"),
+                    .setEmoji("❌")
+                    .setDisabled(disabled),
                 new ButtonBuilder()
                     .setCustomId("continue")
                     .setLabel("Continue")
                     .setStyle(ButtonStyle.Success)
-                    .setEmoji("➡️"),
+                    .setEmoji("➡️")
+                    .setDisabled(disabled),
             );
         return row;
     }
