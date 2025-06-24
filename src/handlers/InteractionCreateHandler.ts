@@ -259,7 +259,9 @@ export class InteractionCreateHandler {
 
             const webhookManager = this.characterService.getWebhookManager();
             if (message.webhookId && webhookManager && character) {
-                await webhookManager.editAsCharacter(message, character, result);
+                await webhookManager.editAsCharacter(message, character, result, {
+                    components: [this.componentService.createActionRow()],
+                });
             } else {
                 const embed = new EmbedBuilder()
                     .setTitle(character ? character.card.name : "Assistant")
