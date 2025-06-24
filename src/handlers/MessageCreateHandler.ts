@@ -42,6 +42,7 @@ export class MessageCreateHandler {
         let repliesToSwitchMessage = false;
         let targetCharacterName = "";
 
+        let repliesToAssistant = false;
         if (message.reference && message.reference.messageId) {
             try {
                 const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
@@ -60,6 +61,15 @@ export class MessageCreateHandler {
                 } else if (repliedMessage.webhookId) {
                     targetCharacterName = (repliedMessage as Message).author?.username || "";
                     repliesToWebhookCharacter = true;
+                } else if (
+                    repliedMessage.author.id === configService.getBotSelfId() &&
+                    !repliedMessage.webhookId &&
+                    !repliedMessage.content.startsWith("Switched to ")
+                ) {
+                    // This is a reply to an Assistant message (regular bot message, not webhook)
+                    repliesToAssistant = true;
+                    targetCharacterName = configService.getAssistantName();
+                    this.logger.info(`Detected reply to Assistant message`);
                 }
             } catch (error) {
                 this.logger.error("Failed to fetch replied message:");
@@ -79,7 +89,7 @@ export class MessageCreateHandler {
         }
 
         const shouldProcess = mentionsBot || repliesToWebhookCharacter || mentionsCharacterByName ||
-            repliesToSwitchMessage || isDM;
+            repliesToSwitchMessage || repliesToAssistant || isDM;
 
         if (!shouldProcess) {
             return;
@@ -88,8 +98,8 @@ export class MessageCreateHandler {
         let character = null;
         const isDirectPing = message.content.includes(`<@${configService.getBotSelfId()}>`);
 
-        if (isDirectPing) {
-            this.logger.info(`Forcing assistant character due to direct bot mention.`);
+        if (isDirectPing || repliesToAssistant) {
+            this.logger.info(`Forcing assistant character due to ${isDirectPing ? 'direct bot mention' : 'reply to Assistant message'}.`);
             character = this.characterService.getAssistantCharacter();
         } else if (isDM) {
             if (message.channel.isTextBased()) {
