@@ -140,7 +140,12 @@ export class InteractionCreateHandler {
         }
 
         if (interaction.customId === "confirm-reset") {
-            await interaction.update({ content: RESET_MESSAGE_CONTENT, components: [] });
+            if (!interaction.isButton()) return;
+            if (interaction.channel && "send" in interaction.channel) {
+                this.conversationService.resetConversation(interaction.channel.id);
+                await interaction.update({ content: "Conversation history reset.", components: [] });
+                await interaction.channel.send(RESET_MESSAGE_CONTENT);
+            }
         }
 
         if (interaction.customId.startsWith("list-")) {
