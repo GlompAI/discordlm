@@ -172,7 +172,11 @@ export async function generateMessage(
             // Handle stickers
             if (message.stickers.size > 0) {
                 const sticker = message.stickers.first()!;
-                finalMessageText = `[sticker: ${sticker.name}]`;
+                if (finalMessageText.trim() === "") {
+                    finalMessageText = `[sticker: ${sticker.name}]`;
+                } else {
+                    finalMessageText += ` [sticker: ${sticker.name}]`;
+                }
                 const response = await fetch(sticker.url);
                 const blob = await response.blob();
                 const buffer = await blob.arrayBuffer();
@@ -192,13 +196,13 @@ export async function generateMessage(
 
             // Handle custom emojis
             const emojiRegex = /<a?:(\w+):(\d+)>/g;
-            let match;
-            while ((match = emojiRegex.exec(messageText)) !== null) {
+            const matches = [...finalMessageText.matchAll(emojiRegex)];
+            for (const match of matches) {
                 const emojiName = match[1];
                 const emojiId = match[2];
                 const isAnimated = match[0].startsWith("<a:");
                 const emojiUrl = `https://cdn.discordapp.com/emojis/${emojiId}.${isAnimated ? "gif" : "png"}`;
-                finalMessageText = finalMessageText.replace(match[0], `[emote: ${emojiName}]`);
+                finalMessageText = finalMessageText.replace(match[0], ""); // Remove emote text
 
                 try {
                     const response = await fetch(emojiUrl);
