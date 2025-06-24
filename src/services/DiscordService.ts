@@ -1,4 +1,4 @@
-import { Client, GatewayIntentBits, Partials } from "npm:discord.js";
+import { Client, GatewayIntentBits, Partials } from "discord.js";
 import { configService } from "./ConfigService.ts";
 import adze from "npm:adze";
 

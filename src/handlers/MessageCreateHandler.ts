@@ -1,4 +1,4 @@
-import { ChannelType, Client, Message, TextChannel } from "npm:discord.js";
+import { ChannelType, Client, Message, TextChannel } from "discord.js";
 import { CharacterService } from "../services/CharacterService.ts";
 import { LLMService } from "../services/LLMService.ts";
 import { ConversationService } from "../services/ConversationService.ts";
