@@ -216,7 +216,7 @@ export class MessageCreateHandler {
                     message.channel instanceof TextChannel &&
                     message.channel.type === ChannelType.GuildText
                 ) {
-                    if (character) {
+                    if (character && character.card.name !== configService.getAssistantName()) {
                         const sentMessage = await this.characterService.getWebhookManager().sendAsCharacter(
                             message.channel,
                             character,
