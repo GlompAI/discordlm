@@ -365,7 +365,10 @@ export class InteractionCreateHandler {
                 configService.getBotSelfId(),
                 character ? character.card : null,
                 Math.floor(Math.random() * 1000000), // seed
-                true, // continuation
+                {
+                    user: interaction.user.username,
+                    prompt: "{OOC: Please continue the roleplay interaction. Your last message was great.}",
+                },
             ))
                 .completion.text();
 
