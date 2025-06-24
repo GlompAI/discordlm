@@ -88,15 +88,17 @@ export class MessageCreateHandler {
         }
 
         let character = null;
-        if (isDM) {
+        const isDirectPing = message.content.includes(`<@${configService.getBotSelfId()}>`);
+
+        if (isDirectPing) {
+            this.logger.info(`Forcing assistant character due to direct bot mention.`);
+            character = this.characterService.getAssistantCharacter();
+        } else if (isDM) {
             if (message.channel.isTextBased()) {
                 character = await this.characterService.inferCharacterFromHistory(message.channel);
             }
         } else {
-            const isDirectPing = message.content.includes(`<@${configService.getBotSelfId()}>`);
-            if (isDirectPing) {
-                this.logger.info(`Forcing raw mode due to direct bot mention in message content.`);
-            } else if (repliesToWebhookCharacter || mentionsCharacterByName || repliesToSwitchMessage) {
+            if (repliesToWebhookCharacter || mentionsCharacterByName || repliesToSwitchMessage) {
                 character = this.characterService.getCharacter(targetCharacterName);
             } else {
                 character = await this.characterService.inferCharacterFromHistory(message.channel);
