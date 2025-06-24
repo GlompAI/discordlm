@@ -167,16 +167,19 @@ export class MessageCreateHandler {
 
         // Fetch messages in batches up to 1000 total
         const allMessages: Message[] = [];
-        let lastMessageId: string | undefined;
+        let lastMessageId: string | undefined = message.id;
         let foundReset = false;
         const maxMessages = 1000;
         const batchSize = 100; // Discord API limit per request
 
+        // First, add the current message
+        allMessages.push(message);
+
         while (allMessages.length < maxMessages && !foundReset) {
-            const fetchOptions: { limit: number; before?: string } = { limit: batchSize };
-            if (lastMessageId) {
-                fetchOptions.before = lastMessageId;
-            }
+            const fetchOptions: { limit: number; before?: string } = {
+                limit: batchSize,
+                before: lastMessageId,
+            };
 
             const batch = await message.channel.messages.fetch(fetchOptions);
             const batchArray = Array.from(batch.values());
@@ -185,43 +188,43 @@ export class MessageCreateHandler {
                 break; // No more messages to fetch
             }
 
-            // Check for reset message in this batch (in reverse order since we're fetching backwards)
-            for (let i = batchArray.length - 1; i >= 0; i--) {
+            // Discord returns messages in reverse chronological order (newest first)
+            // We need to reverse each batch to get chronological order
+            batchArray.reverse();
+
+            // Check for reset message in this batch (now in chronological order)
+            let resetIndex = -1;
+            for (let i = 0; i < batchArray.length; i++) {
                 const msg = batchArray[i];
                 if (msg.content === RESET_MESSAGE_CONTENT) {
                     foundReset = true;
-                    // Only include messages after the reset
-                    allMessages.unshift(...batchArray.slice(0, i));
+                    resetIndex = i;
                     break;
                 }
             }
 
-            if (!foundReset) {
+            if (foundReset && resetIndex !== -1) {
+                // Only include messages after the reset
+                const messagesAfterReset = batchArray.slice(resetIndex + 1);
+                allMessages.unshift(...messagesAfterReset);
+            } else {
+                // Add all messages from this batch to the beginning
                 allMessages.unshift(...batchArray);
             }
 
-            // Update lastMessageId for next batch
-            lastMessageId = batchArray[batchArray.length - 1].id;
+            // Update lastMessageId for next batch (use the oldest message from this batch)
+            lastMessageId = batchArray[0].id;
 
             // Stop if we've reached the desired limit
             if (allMessages.length >= maxMessages) {
-                // Trim to exactly maxMessages
+                // Trim from the beginning (oldest messages) to keep the most recent ones
                 allMessages.splice(0, allMessages.length - maxMessages);
                 break;
             }
         }
 
-        // Ensure the current message is included if not already
-        if (!allMessages.find((m) => m.id === message.id)) {
-            allMessages.push(message);
-        }
-
-        // IMPORTANT: Reverse the messages to be in chronological order (oldest first)
-        // This is critical for the LLM to understand the conversation flow
-        allMessages.reverse();
-
         const messages = allMessages;
-        this.logger.info(`${logContext} Fetched ${messages.length} messages`);
+        this.logger.info(`${logContext} Fetched ${messages.length} messages in chronological order`);
 
         let typingInterval: number | undefined;
         const channel = message.channel;
