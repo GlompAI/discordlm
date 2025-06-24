@@ -269,14 +269,15 @@ export class MessageReactionAddHandler {
             if (message.channel.type !== ChannelType.DM) {
                 try {
                     await reaction.users.remove(user.id);
-                    const botReactions = message.reactions.cache.filter((r) => r.me);
-                    for (const botReaction of botReactions.values()) {
-                        if (["❌", "➡️", "♻️"].includes(botReaction.emoji.name!)) {
+                    const emojiToRemove = ["♻️", "❌", "➡️"];
+                    for (const emoji of emojiToRemove) {
+                        const botReaction = message.reactions.cache.find((r) => r.emoji.name === emoji);
+                        if (botReaction && botReaction.me) {
                             await botReaction.remove();
                         }
                     }
                 } catch (error) {
-                    this.logger.error(`${logContext} Failed to remove reaction from user ${user.id}:`, error);
+                    this.logger.error(`${logContext} Failed to remove reactions from message ${message.id}:`, error);
                 }
             }
         }
