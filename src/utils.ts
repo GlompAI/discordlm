@@ -11,11 +11,12 @@ Welcome to the bot! Here's a quick guide on how to interact:
 **How to Interact:**
 *   **Direct Messages (DMs):** Send a message to the bot to talk to your character.
 *   **In a Server:** Mention the bot (@<bot_name>) to talk to the active character.
+*   **Assistant:** Mention the assistant by name (e.g., @Assistant) to invoke it directly, without a character persona.
 
 **Message Actions:**
-*   React with ♻️ on the bot's latest message to re-roll the response.
-*   React with ❌ on one of the bot's messages to delete it.
-*   React with ➡️ on the bot's latest message to have it continue generating a response.
+*   **Reroll (♻️):** Re-generates the bot's last response.
+*   **Delete (❌):** Deletes the bot's message.
+*   **Continue (➡️):** Prompts the bot to continue its last message.
 
 **Roleplaying:**
 *   Use asterisks for actions, like \`*I walk into the room*\`.
