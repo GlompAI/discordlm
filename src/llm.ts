@@ -3,6 +3,9 @@ import { Client, Guild, Message, TextChannel } from "npm:discord.js";
 import Tokenizer from "npm:llama-tokenizer-js";
 import { replaceAllAsync } from "./replace.ts";
 import { getModel } from "./env.ts";
+import { decode, encode } from "npm:gif-codec";
+import { PNG } from "npm:pngjs";
+import { Buffer } from "node:buffer";
 import { CharacterCard } from "./CharacterCard.ts";
 import adze from "npm:adze";
 import { dumpDebug } from "./debug.ts";
@@ -115,26 +118,51 @@ export async function generateMessage(
             if (message.attachments.size > 0) {
                 const attachmentMedia = await Promise.all(
                     message.attachments
-                        .filter((a) =>
-                            (a.contentType?.startsWith("image/") || a.contentType?.startsWith("video/")) &&
-                            a.contentType !== "image/gif"
-                        )
                         .map(async (a) => {
+                            if (!a.contentType?.startsWith("image/") && !a.contentType?.startsWith("video/")) {
+                                return null;
+                            }
+
                             const response = await fetch(a.url);
                             const buffer = await response.arrayBuffer();
-                            const bytes = new Uint8Array(buffer);
-                            let binary = "";
-                            for (let i = 0; i < bytes.byteLength; i++) {
-                                binary += String.fromCharCode(bytes[i]);
+
+                            if (a.contentType === "image/gif") {
+                                try {
+                                    const gif = decode(buffer);
+                                    const firstFrame = gif.frames[0];
+                                    const png = new PNG({
+                                        width: gif.width,
+                                        height: gif.height,
+                                    });
+                                    png.data = Buffer.from(firstFrame.data);
+                                    const pngBuffer = PNG.sync.write(png);
+                                    const base64 = btoa(String.fromCharCode(...pngBuffer));
+                                    return {
+                                        inlineData: {
+                                            mimeType: "image/png",
+                                            data: base64,
+                                        },
+                                    };
+                                } catch (error) {
+                                    adze.error("Failed to process GIF attachment:", error);
+                                    return null;
+                                }
+                            } else {
+                                const bytes = new Uint8Array(buffer);
+                                let binary = "";
+                                for (let i = 0; i < bytes.byteLength; i++) {
+                                    binary += String.fromCharCode(bytes[i]);
+                                }
+                                const base64 = btoa(binary);
+                                return {
+                                    inlineData: {
+                                        mimeType: a.contentType!,
+                                        data: base64,
+                                    },
+                                };
                             }
-                            const base64 = btoa(binary);
-                            return {
-                                inlineData: {
-                                    mimeType: a.contentType!,
-                                    data: base64,
-                                },
-                            };
-                        }),
+                        })
+                        .filter(Boolean),
                 );
                 mediaContent.push(...attachmentMedia);
             }
@@ -164,16 +192,39 @@ export async function generateMessage(
             const emojiRegex = /<a?:(\w+):(\d+)>/g;
             let match;
             while ((match = emojiRegex.exec(messageText)) !== null) {
+                const emojiName = match[1];
                 const emojiId = match[2];
                 const isAnimated = match[0].startsWith("<a:");
-                if (isAnimated) continue; // Skip animated emojis (GIFs)
-
-                const emojiUrl = `https://cdn.discordapp.com/emojis/${emojiId}.png`;
+                const emojiUrl = `https://cdn.discordapp.com/emojis/${emojiId}.${isAnimated ? "gif" : "png"}`;
+                messageText += ` [emote: ${emojiName}]`;
 
                 try {
                     const response = await fetch(emojiUrl);
-                    if (response.ok) {
-                        const buffer = await response.arrayBuffer();
+                    if (!response.ok) continue;
+
+                    const buffer = await response.arrayBuffer();
+
+                    if (isAnimated) {
+                        try {
+                            const gif = decode(buffer);
+                            const firstFrame = gif.frames[0];
+                            const png = new PNG({
+                                width: gif.width,
+                                height: gif.height,
+                            });
+                            png.data = Buffer.from(firstFrame.data);
+                            const pngBuffer = PNG.sync.write(png);
+                            const base64 = btoa(String.fromCharCode(...pngBuffer));
+                            mediaContent.push({
+                                inlineData: {
+                                    mimeType: "image/png",
+                                    data: base64,
+                                },
+                            });
+                        } catch (error) {
+                            adze.error(`Failed to process GIF emoji ${emojiUrl}:`, error);
+                        }
+                    } else {
                         const bytes = new Uint8Array(buffer);
                         let binary = "";
                         for (let i = 0; i < bytes.byteLength; i++) {
