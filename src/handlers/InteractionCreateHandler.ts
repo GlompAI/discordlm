@@ -204,17 +204,18 @@ export class InteractionCreateHandler {
 
     private async handleReroll(interaction: ButtonInteraction, message: Message, logContext: string) {
         this.logger.info(`${logContext} Re-rolling message ID ${message.id}...`);
-        await interaction.deferUpdate();
+
+        const originalEmbed = message.embeds[0];
+        const newEmbed = new EmbedBuilder(originalEmbed.toJSON()).setFooter({ text: "Generating..." });
+
+        await interaction.update({
+            embeds: [newEmbed],
+            components: [this.componentService.createActionRow(true)],
+        });
 
         let typingInterval: number | undefined;
         try {
             const channel = message.channel;
-            if (channel.isTextBased() && "sendTyping" in channel) {
-                await channel.sendTyping();
-                typingInterval = setInterval(() => {
-                    channel.sendTyping();
-                }, 9000);
-            }
 
             this.logger.info(`${logContext} Fetching message history for re-roll...`);
             const messages = Array.from(
@@ -257,7 +258,7 @@ export class InteractionCreateHandler {
                     .setTitle(character ? character.card.name : "Assistant")
                     .setThumbnail(character?.avatarUrl ?? null)
                     .setDescription(result);
-                await message.edit({ embeds: [embed] });
+                await message.edit({ embeds: [embed], components: [this.componentService.createActionRow()] });
             }
             this.logger.info(`${logContext} Re-roll successful for message ID ${message.id}`);
         } catch (error) {
@@ -271,18 +272,18 @@ export class InteractionCreateHandler {
 
     private async handleContinue(interaction: ButtonInteraction, message: Message, logContext: string) {
         this.logger.info(`${logContext} Continue interaction on message ID ${message.id}...`);
-        await interaction.deferUpdate();
-        await message.edit({ components: [] });
+
+        const originalContinueEmbed = message.embeds[0];
+        const newContinueEmbed = new EmbedBuilder(originalContinueEmbed.toJSON()).setFooter({ text: "Generating..." });
+
+        await interaction.update({
+            embeds: [newContinueEmbed],
+            components: [this.componentService.createActionRow(true)],
+        });
 
         let typingInterval: number | undefined;
         try {
             const channel = message.channel;
-            if (channel.isTextBased() && "sendTyping" in channel) {
-                await channel.sendTyping();
-                typingInterval = setInterval(() => {
-                    channel.sendTyping();
-                }, 9000);
-            }
 
             const messages = Array.from(
                 (await message.channel.messages.fetch({ limit: 100, before: message.id })).values(),
