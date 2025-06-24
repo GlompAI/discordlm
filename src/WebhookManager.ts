@@ -37,10 +37,12 @@ export class WebhookManager {
                 // Verify the webhook still exists by trying to edit it
                 await webhook.edit({ name: webhook.name });
                 return webhook;
-            } catch (_error) {
-                // Webhook was deleted, remove from cache
+            } catch (error) {
                 this.webhooks.delete(webhookKey);
-                logger.warn(`Webhook for ${character.card.name} in channel ${channel.name} was deleted`);
+                logger.warn(
+                    `Webhook for ${character.card.name} in channel ${channel.name} was deleted, will recreate.`,
+                );
+                console.log(error);
             }
         }
 

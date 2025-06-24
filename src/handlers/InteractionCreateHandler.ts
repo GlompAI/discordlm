@@ -68,21 +68,22 @@ export class InteractionCreateHandler {
             } else if (commandName === "reset") {
                 await this.handleResetCommand(interaction);
             } else if (commandName === "help") {
-                await interaction.reply({ content: getHelpText(), ephemeral: true });
+                await interaction.reply({ content: getHelpText(), flags: [64] });
             }
         } catch (error) {
-            this.logger.error("Error in onInteractionCreate:", error);
+            this.logger.error("Error in onInteractionCreate:");
+            console.log(error);
             await dumpDebug(logContext, "interaction-error", error);
             if ("replied" in interaction && (interaction.replied || interaction.deferred)) {
                 await interaction.followUp({
                     content: "There was an error while executing this command!",
-                    ephemeral: true,
+                    flags: [64],
                 });
             } else {
                 if ("reply" in interaction) {
                     await interaction.reply({
                         content: "There was an error while executing this command!",
-                        ephemeral: true,
+                        flags: [64],
                     });
                 }
             }
@@ -179,7 +180,6 @@ export class InteractionCreateHandler {
             await interaction.reply({
                 content: "Select a character to switch to:",
                 components: [selectMenu],
-                ephemeral: false,
             });
         }
     }
@@ -193,13 +193,12 @@ export class InteractionCreateHandler {
         await interaction.reply({
             content: "Are you sure you want to reset the conversation history?",
             components: [row],
-            ephemeral: false,
         });
     }
 
     private async handleListCommand(interaction: any, page: number) {
         const reply = await this.generateListReply(page, interaction.channel);
-        await interaction.reply({ ...reply, ephemeral: true });
+        await interaction.reply({ ...reply, flags: [64] });
     }
 
     private async handleReroll(interaction: ButtonInteraction, message: Message, logContext: string) {
@@ -264,7 +263,8 @@ export class InteractionCreateHandler {
             }
             this.logger.info(`${logContext} Re-roll successful for message ID ${message.id}`);
         } catch (error) {
-            this.logger.error(`${logContext} Failed to re-roll response for message ID ${message.id}:`, error);
+            this.logger.error(`${logContext} Failed to re-roll response for message ID ${message.id}:`);
+            console.log(error);
         } finally {
             if (typingInterval) {
                 clearInterval(typingInterval);
@@ -347,7 +347,8 @@ export class InteractionCreateHandler {
             }
             this.logger.info(`${logContext} Continuation successful for message ID ${message.id}`);
         } catch (error) {
-            this.logger.error(`${logContext} Failed to continue response for message ID ${message.id}:`, error);
+            this.logger.error(`${logContext} Failed to continue response for message ID ${message.id}:`);
+            console.log(error);
         } finally {
             if (typingInterval) {
                 clearInterval(typingInterval);
@@ -359,10 +360,11 @@ export class InteractionCreateHandler {
         try {
             await interaction.followUp({
                 content,
-                ephemeral: true,
+                flags: [64],
             });
         } catch (e) {
-            this.logger.error("Failed to send ephemeral error message:", e);
+            this.logger.error("Failed to send ephemeral error message:");
+            console.log(e);
         }
     }
 
