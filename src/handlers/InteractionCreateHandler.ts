@@ -111,20 +111,26 @@ export class InteractionCreateHandler {
         const message = interaction.message as Message;
 
         if (interaction.customId === "delete") {
-            const authorId = message.content.split("\u200B")[1];
-            if (authorId && interaction.user.id !== authorId) {
-                await interaction.reply({ content: "You can only delete your own interactions.", ephemeral: true });
-                return;
+            if (interaction.channel?.type !== ChannelType.DM) {
+                const authorIdMatch = message.content.match(/\[(\d+)\]\(https:\/\/a\.a\)/);
+                const authorId = authorIdMatch ? authorIdMatch[1] : null;
+                if (authorId && interaction.user.id !== authorId) {
+                    await interaction.reply({ content: "You can only delete your own interactions.", ephemeral: true });
+                    return;
+                }
             }
             await message.delete();
             return;
         }
 
         if (interaction.customId === "reroll") {
-            const authorId = message.content.split("\u200B")[1];
-            if (authorId && interaction.user.id !== authorId) {
-                await interaction.reply({ content: "You can only re-roll your own interactions.", ephemeral: true });
-                return;
+            if (interaction.channel?.type !== ChannelType.DM) {
+                const authorIdMatch = message.content.match(/\[(\d+)\]\(https:\/\/a\.a\)/);
+                const authorId = authorIdMatch ? authorIdMatch[1] : null;
+                if (authorId && interaction.user.id !== authorId) {
+                    await interaction.reply({ content: "You can only re-roll your own interactions.", ephemeral: true });
+                    return;
+                }
             }
             if (!interaction.isButton()) return;
             await this.handleReroll(interaction, message, logContext);

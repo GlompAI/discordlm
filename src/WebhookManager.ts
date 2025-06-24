@@ -146,7 +146,7 @@ export class WebhookManager {
         try {
             const authorId = messageToReply ? messageToReply.author.id : "UNKNOWN";
             const sendOptions: WebhookMessageCreateOptions = {
-                content: `${content}${WEBHOOK_IDENTIFIER}${authorId}`,
+                content: `${content}\n-# [${authorId}](https://a.a)`,
                 username: character.card.name,
                 ...options,
             };
@@ -195,9 +195,10 @@ export class WebhookManager {
         }
 
         try {
-            const authorId = message.content.split(WEBHOOK_IDENTIFIER)[1] || "UNKNOWN";
+            const authorIdMatch = message.content.match(/\[(\d+)\]\(https:\/\/a\.a\)/);
+            const authorId = authorIdMatch ? authorIdMatch[1] : "UNKNOWN";
             const editOptions: WebhookMessageCreateOptions = {
-                content: `${content}${WEBHOOK_IDENTIFIER}${authorId}`,
+                content: `${content}\n-# [${authorId}](https://a.a)`,
                 ...options,
             };
 
