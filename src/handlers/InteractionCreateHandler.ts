@@ -392,6 +392,7 @@ export class InteractionCreateHandler {
                     result,
                     { components: [this.componentService.createActionRow()] },
                     message,
+                    interaction.user,
                 );
                 if (sentMessage) {
                     this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
