@@ -6,6 +6,7 @@ COPY . .
 
 # Install dependencies and build binary
 RUN apt update && apt install -y unzip && rm -rf /var/lib/apt/lists/*
+RUN deno cache src/main.ts
 RUN deno task prepare
 
 # Production stage
