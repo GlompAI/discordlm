@@ -1,4 +1,11 @@
-import { Client, Message, TextChannel, Webhook, WebhookMessageCreateOptions, WebhookMessageEditOptions } from "npm:discord.js";
+import {
+    Client,
+    Message,
+    TextChannel,
+    Webhook,
+    WebhookMessageCreateOptions,
+    WebhookMessageEditOptions,
+} from "npm:discord.js";
 import { CharacterConfig } from "./CharacterCard.ts";
 import { getPublicAvatarBaseUrl } from "./env.ts";
 import adze from "npm:adze";

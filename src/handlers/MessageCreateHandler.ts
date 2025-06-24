@@ -243,6 +243,7 @@ export class MessageCreateHandler {
                             this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
                             await sentMessage.react("♻️");
                             await sentMessage.react("❌");
+                            await sentMessage.react("➡️");
                         }
                     } else {
                         const sentMessage = await message.reply({
@@ -252,6 +253,7 @@ export class MessageCreateHandler {
                         this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
                         await sentMessage.react("♻️");
                         await sentMessage.react("❌");
+                        await sentMessage.react("➡️");
                     }
                 } else {
                     const embed = {
@@ -266,6 +268,7 @@ export class MessageCreateHandler {
                     this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
                     await sentMessage.react("♻️");
                     await sentMessage.react("❌");
+                    await sentMessage.react("➡️");
                 }
             }
             this.logger.info(`${logContext} Reply sent!`);
