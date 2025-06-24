@@ -70,35 +70,8 @@ export class MessageCreateHandler {
 
         let character = null;
         if (isDM) {
-            character = this.characterService.getChannelCharacter(message.channel.id);
-            if (character === null && this.characterService.getCharacters().length > 0) {
-                this.logger.info(`No character set for DM channel ${message.channel.id}. Inferring from history...`);
-                const recentMessages = await message.channel.messages.fetch({ limit: 20 });
-                for (const recentMessage of recentMessages.values()) {
-                    if (recentMessage.id === message.id) continue;
-                    let characterName: string | null = null;
-                    if (recentMessage.webhookId && (recentMessage as Message).author?.username) {
-                        characterName = (recentMessage as Message).author.username;
-                    } else if (
-                        recentMessage.author.id === configService.getBotSelfId() && recentMessage.embeds.length > 0
-                    ) {
-                        const embed = recentMessage.embeds[0];
-                        if (embed.title && embed.title !== "Assistant") {
-                            characterName = embed.title;
-                        }
-                    }
-                    if (characterName) {
-                        const inferredChar = this.characterService.getCharacter(characterName);
-                        if (inferredChar) {
-                            this.logger.info(
-                                `Inferred character ${inferredChar.card.name} for DM channel ${message.channel.id}`,
-                            );
-                            this.characterService.setChannelCharacter(message.channel.id, inferredChar.card.name);
-                            character = inferredChar;
-                            break;
-                        }
-                    }
-                }
+            if (message.channel.isTextBased()) {
+                character = await this.characterService.inferCharacterFromHistory(message.channel);
             }
         } else {
             const isDirectPing = message.content.includes(`<@${configService.getBotSelfId()}>`);
@@ -106,12 +79,8 @@ export class MessageCreateHandler {
                 this.logger.info(`Forcing raw mode due to direct bot mention in message content.`);
             } else if (repliesToWebhookCharacter || mentionsCharacterByName) {
                 character = this.characterService.getCharacter(targetCharacterName);
-                if (character) {
-                    this.characterService.setChannelCharacter(message.channel.id, targetCharacterName);
-                    this.logger.info(`Switched character to ${targetCharacterName} in channel ${message.channel.id}`);
-                }
             } else {
-                character = this.characterService.getChannelCharacter(message.channel.id);
+                character = await this.characterService.inferCharacterFromHistory(message.channel);
             }
         }
 

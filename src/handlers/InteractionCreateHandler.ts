@@ -5,6 +5,7 @@ import {
     ChannelType,
     EmbedBuilder,
     Interaction,
+    TextBasedChannel,
     TextChannel,
 } from "npm:discord.js";
 import { CharacterService } from "../services/CharacterService.ts";
@@ -44,7 +45,7 @@ export class InteractionCreateHandler {
                 // Handle button clicks for list pagination
                 if (interaction.customId.startsWith("list-")) {
                     const currentPage = parseInt(interaction.customId.split("-")[1]);
-                    const newReply = this.generateListReply(currentPage);
+                    const newReply = await this.generateListReply(currentPage, interaction.channel as TextChannel);
                     await interaction.update(newReply);
                 }
                 return;
@@ -63,11 +64,9 @@ export class InteractionCreateHandler {
                     return;
                 }
 
-                const success = this.characterService.setChannelCharacter(channelId, characterName!);
-
-                if (success) {
-                    const character = this.characterService.getCharacter(characterName!);
-                    await interaction.reply(`Switched to ${character!.card.name}`);
+                const character = this.characterService.getCharacter(characterName!);
+                if (character) {
+                    await interaction.reply(`Switched to ${character.card.name}`);
                     if (interaction.channel?.type === ChannelType.DM) {
                         await interaction.channel.send(RESET_MESSAGE_CONTENT);
                     }
@@ -109,7 +108,7 @@ export class InteractionCreateHandler {
 
     private async handleListCommand(interaction: Interaction, page: number) {
         if (!interaction.isChatInputCommand()) return;
-        const reply = this.generateListReply(page, interaction.channel?.id);
+        const reply = await this.generateListReply(page, interaction.channel);
         const message = await interaction.reply({ ...reply, ephemeral: true, fetchReply: true });
 
         const collector = message.createMessageComponentCollector({ time: 60000 });
@@ -122,7 +121,7 @@ export class InteractionCreateHandler {
                 currentPage--;
             }
 
-            await i.update(this.generateListReply(currentPage, i.channel?.id));
+            await i.update(await this.generateListReply(currentPage, i.channel));
         });
 
         collector.on("end", async () => {
@@ -130,10 +129,9 @@ export class InteractionCreateHandler {
         });
     }
 
-    private generateListReply(page: number, channelId?: string) {
+    private async generateListReply(page: number, channel: TextBasedChannel | null) {
         const allCharacters = this.characterService.getCharacters();
-        const currentChar = channelId ? this.characterService.getChannelCharacter(channelId) : null;
-
+        const currentChar = await this.characterService.inferCharacterFromHistory(channel);
         const itemsPerPage = 4;
         const totalPages = Math.ceil(allCharacters.length / itemsPerPage);
         const start = (page - 1) * itemsPerPage;
