@@ -31,6 +31,10 @@ export const tools: FunctionDeclaration[] = [
     },
 ];
 
+interface Topic {
+    Text: string;
+}
+
 export async function search_web(query: string): Promise<string> {
     try {
         // Using a simple DuckDuckGo search URL, as it doesn't require an API key.
@@ -39,7 +43,7 @@ export async function search_web(query: string): Promise<string> {
         if (data.AbstractText) {
             return data.AbstractText;
         } else if (data.RelatedTopics && data.RelatedTopics.length > 0) {
-            return data.RelatedTopics.map((topic: any) => topic.Text).join("\n");
+            return data.RelatedTopics.map((topic: Topic) => topic.Text).join("\n");
         }
         return "No results found.";
     } catch (e) {

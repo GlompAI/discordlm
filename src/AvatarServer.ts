@@ -16,7 +16,7 @@ export class AvatarServer {
     /**
      * Start the avatar server
      */
-    async start(): Promise<void> {
+    start(): void {
         try {
             this.server = Deno.serve({ port: this.port }, this.handleRequest.bind(this));
             logger.info(`Avatar server started on http://localhost:${this.port}`);

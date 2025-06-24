@@ -1,0 +1,309 @@
+import { ChannelType, Client, Message, TextChannel } from "npm:discord.js";
+import { CharacterService } from "../services/CharacterService.ts";
+import { LLMService } from "../services/LLMService.ts";
+import { ConversationService } from "../services/ConversationService.ts";
+import { configService } from "../services/ConfigService.ts";
+import { smartSplit } from "../utils.ts";
+import adze from "npm:adze";
+import { getHelpText } from "../utils.ts";
+import { RESET_MESSAGE_CONTENT } from "../main.ts";
+import { Queue } from "../queue.ts";
+
+export class MessageCreateHandler {
+    private readonly logger = adze.withEmoji.timestamp.seal();
+    private readonly inferenceQueue: Queue;
+
+    constructor(
+        private readonly characterService: CharacterService,
+        private readonly llmService: LLMService,
+        private readonly conversationService: ConversationService,
+        private readonly client: Client,
+    ) {
+        this.inferenceQueue = new Queue(configService.getInferenceParallelism());
+    }
+
+    public async handle(message: Message): Promise<void> {
+        if (message.content === RESET_MESSAGE_CONTENT || message.interaction) {
+            return;
+        }
+        if (message.author.bot && !message.webhookId) {
+            return;
+        }
+        if (message.author.id === configService.getBotSelfId() && message.content.startsWith("Switched to ")) {
+            return;
+        }
+
+        const mentionsBot = message.mentions.has(configService.getBotSelfId());
+        const isDM = message.channel.type === ChannelType.DM;
+
+        let repliesToWebhookCharacter = false;
+        let targetCharacterName = "";
+
+        if (message.reference && message.reference.messageId) {
+            try {
+                const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
+                if (repliedMessage.webhookId) {
+                    targetCharacterName = (repliedMessage as Message).author?.username || "";
+                    repliesToWebhookCharacter = true;
+                }
+            } catch (_error) {
+                // Failed to fetch replied message, ignore
+            }
+        }
+
+        let mentionsCharacterByName = false;
+        const characters = this.characterService.getCharacters();
+        for (const char of characters) {
+            const characterNameRegex = new RegExp(`@${char.card.name}\\b`, "i");
+            if (characterNameRegex.test(message.content)) {
+                mentionsCharacterByName = true;
+                targetCharacterName = char.card.name;
+                break;
+            }
+        }
+
+        const shouldProcess = mentionsBot || repliesToWebhookCharacter || mentionsCharacterByName || isDM;
+
+        if (!shouldProcess) {
+            return;
+        }
+
+        let character = null;
+        if (isDM) {
+            character = this.characterService.getChannelCharacter(message.channel.id);
+            if (character === null && this.characterService.getCharacters().length > 0) {
+                this.logger.info(`No character set for DM channel ${message.channel.id}. Inferring from history...`);
+                const recentMessages = await message.channel.messages.fetch({ limit: 20 });
+                for (const recentMessage of recentMessages.values()) {
+                    if (recentMessage.id === message.id) continue;
+                    let characterName: string | null = null;
+                    if (recentMessage.webhookId && (recentMessage as Message).author?.username) {
+                        characterName = (recentMessage as Message).author.username;
+                    } else if (
+                        recentMessage.author.id === configService.getBotSelfId() && recentMessage.embeds.length > 0
+                    ) {
+                        const embed = recentMessage.embeds[0];
+                        if (embed.title && embed.title !== "Assistant") {
+                            characterName = embed.title;
+                        }
+                    }
+                    if (characterName) {
+                        const inferredChar = this.characterService.getCharacter(characterName);
+                        if (inferredChar) {
+                            this.logger.info(
+                                `Inferred character ${inferredChar.card.name} for DM channel ${message.channel.id}`,
+                            );
+                            this.characterService.setChannelCharacter(message.channel.id, inferredChar.card.name);
+                            character = inferredChar;
+                            break;
+                        }
+                    }
+                }
+            }
+        } else {
+            const isDirectPing = message.content.includes(`<@${configService.getBotSelfId()}>`);
+            if (isDirectPing) {
+                this.logger.info(`Forcing raw mode due to direct bot mention in message content.`);
+            } else if (repliesToWebhookCharacter || mentionsCharacterByName) {
+                character = this.characterService.getCharacter(targetCharacterName);
+                if (character) {
+                    this.characterService.setChannelCharacter(message.channel.id, targetCharacterName);
+                    this.logger.info(`Switched character to ${targetCharacterName} in channel ${message.channel.id}`);
+                }
+            } else {
+                character = this.characterService.getChannelCharacter(message.channel.id);
+            }
+        }
+
+        if (!character) {
+            if (message.channel.type === ChannelType.DM) {
+                await message.reply({ content: getHelpText(), allowedMentions: { repliedUser: true } });
+                return;
+            } else if (message.guild) {
+                const member = await message.guild.members.fetch(message.author.id);
+                const adminOverrideId = configService.getAdminOverrideId();
+                if (!member.permissions.has("Administrator") && member.id !== adminOverrideId) {
+                    await this.sendEphemeralError(
+                        message,
+                        "You must be an administrator to interact with the raw assistant.",
+                    );
+                    return;
+                }
+            }
+        }
+
+        const logContext = message.guild
+            ? `[Guild: ${message.guild.name} | Channel: ${
+                (message.channel as TextChannel).name
+            } | User: ${message.author.tag}]`
+            : `[DM from ${message.author.tag}]`;
+
+        this.logger.info(`${logContext} Using character: ${character ? character.card.name : "none"}`);
+        this.logger.info(`${logContext} Fetching message history...`);
+
+        const messages = Array.from((await message.channel.messages.fetch({ limit: 100 })).values());
+        if (!messages.includes(message)) {
+            messages.push(message);
+        }
+        messages.reverse();
+
+        let typingInterval: number | undefined;
+        const channel = message.channel;
+        if (channel.isTextBased() && "sendTyping" in channel) {
+            await channel.sendTyping();
+            typingInterval = setInterval(() => {
+                channel.sendTyping();
+            }, 9000);
+        }
+
+        try {
+            this.logger.info(`${logContext} Generating response...`);
+            const result = await this.inferenceQueue.push(
+                this.llmService.generateMessage.bind(this.llmService),
+                this.client,
+                messages,
+                configService.getBotSelfId(),
+                character ? character.card : null,
+                Math.floor(Math.random() * 1000000),
+            );
+
+            if (result.completion.promptFeedback?.blockReason) {
+                const reason = result.completion.promptFeedback.blockReason;
+                adze.error(`Response blocked due to: ${reason}`);
+                let userMessage =
+                    "Oops! It seems my response was blocked. This can happen for a variety of reasons, including if a message goes against our terms of service.";
+                if (reason === "SAFETY") {
+                    userMessage =
+                        "Oops! It seems my response was blocked for safety reasons. You could try deleting your last message and rephrasing, or use the `/reset` command to clear our conversation and start fresh.";
+                }
+                await this.sendEphemeralError(message, userMessage);
+                return;
+            }
+
+            const text = result.completion.text();
+            if (!text) {
+                adze.error("Empty response from API, but no block reason provided.");
+                await this.sendEphemeralError(
+                    message,
+                    "I received an empty response from the AI. Please try again.",
+                );
+                return;
+            }
+
+            const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const nameToRemove = character ? character.card.name : "Assistant";
+            const nameRegex = new RegExp(`^${escapeRegex(nameToRemove)}:\\s*`, "i");
+            const reply = text.replace(nameRegex, "");
+            this.logger.info(`${logContext} Replying...`);
+
+            const messageParts = smartSplit(reply);
+
+            for (const part of messageParts) {
+                let previousBotMessage = this.conversationService.getLastBotMessage(message.channel.id);
+
+                if (!previousBotMessage) {
+                    this.logger.info("previousBotMessage not found in cache, fetching history...");
+                    const messages = await message.channel.messages.fetch({ limit: 10 });
+                    const lastBotMsgInHistory = messages.filter((m) => m.author.bot).first();
+                    if (lastBotMsgInHistory) {
+                        this.logger.info(`Found previous bot message in history: ${lastBotMsgInHistory.id}`);
+                        previousBotMessage = lastBotMsgInHistory;
+                    } else {
+                        this.logger.info("No previous bot message found in recent history.");
+                    }
+                }
+
+                if (previousBotMessage && previousBotMessage.channel.type !== ChannelType.DM) {
+                    this.logger.info(
+                        `Attempting to remove previous bot reaction from message ${previousBotMessage.id}`,
+                    );
+                    try {
+                        const reaction = previousBotMessage.reactions.cache.get("♻️");
+                        if (reaction && reaction.me) {
+                            await reaction.remove();
+                            this.logger.info(`Successfully removed previous bot reaction.`);
+                        }
+                    } catch (error) {
+                        this.logger.error("Failed to remove previous bot reaction:", error);
+                    }
+                }
+
+                if (
+                    this.characterService.getWebhookManager() &&
+                    message.channel instanceof TextChannel &&
+                    message.channel.type === ChannelType.GuildText
+                ) {
+                    if (character) {
+                        const sentMessage = await this.characterService.getWebhookManager().sendAsCharacter(
+                            message.channel,
+                            character,
+                            part,
+                        );
+                        if (sentMessage) {
+                            this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
+                            await sentMessage.react("♻️");
+                            await sentMessage.react("❌");
+                        }
+                    } else {
+                        const sentMessage = await message.reply({
+                            content: part,
+                            allowedMentions: { repliedUser: true },
+                        });
+                        this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
+                        await sentMessage.react("♻️");
+                        await sentMessage.react("❌");
+                    }
+                } else {
+                    const embed = {
+                        title: character ? character.card.name : "Assistant",
+                        thumbnail: { url: character?.avatarUrl ?? "" },
+                        description: part,
+                    };
+                    const sentMessage = await message.reply({
+                        embeds: [embed],
+                        allowedMentions: { repliedUser: true },
+                    });
+                    this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
+                    await sentMessage.react("♻️");
+                    await sentMessage.react("❌");
+                }
+            }
+            this.logger.info(`${logContext} Reply sent!`);
+        } catch (exception: unknown) {
+            this.logger.error(`${logContext} Failed to generate or send response:`, exception);
+            if (exception && typeof exception === "object" && "status" in exception) {
+                const status = (exception as { status: number }).status;
+                if (status >= 400 && status < 500) {
+                    await this.sendEphemeralError(
+                        message,
+                        `The model returned a client error (HTTP ${status}). This could be an issue with the request.`,
+                    );
+                } else if (status >= 500) {
+                    await this.sendEphemeralError(
+                        message,
+                        `The model returned a server error (HTTP ${status}). The service may be down.`,
+                    );
+                }
+            } else {
+                await this.sendEphemeralError(message, "An unexpected error occurred while generating a response.");
+            }
+        } finally {
+            clearInterval(typingInterval);
+        }
+    }
+
+    private async sendEphemeralError(message: Message, content: string) {
+        try {
+            if (message.channel.isTextBased()) {
+                const reply = await message.reply({
+                    content,
+                });
+                setTimeout(() => {
+                    reply.delete().catch((e) => this.logger.error("Failed to delete error message:", e));
+                }, 10000);
+            }
+        } catch (e) {
+            this.logger.error("Failed to send ephemeral error message:", e);
+        }
+    }
+}

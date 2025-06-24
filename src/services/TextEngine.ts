@@ -1,26 +1,17 @@
 import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
-import { countTokens } from "./llm.ts";
-import { getApiKey, getTokenLimit } from "./env.ts";
-import { CharacterCard } from "./CharacterCard.ts";
-export interface MessageView {
-    message: string;
-    user: string;
-    role: "user" | "assistant" | "system" | "function";
-    tokens?: number;
-    messageId: string;
-    timestamp: string;
-    mediaContent?: any[];
-    name?: string;
-}
+import { countTokens } from "../llm.ts";
+import { configService } from "./ConfigService.ts";
+import { CharacterCard } from "../CharacterCard.ts";
+import { MessageView } from "../types.ts";
 
-export default class TextEngine {
+export class TextEngine {
     client: GoogleGenerativeAI;
 
     constructor() {
-        this.client = new GoogleGenerativeAI(getApiKey());
+        this.client = new GoogleGenerativeAI(configService.getApiKey());
     }
 
-    buildPrompt = async (messages: MessageView[], username: string = "user", character?: CharacterCard) => {
+    buildPrompt = (messages: MessageView[], username: string = "user", character?: CharacterCard) => {
         const card = character;
         const systemMessages: string[] = [];
 
@@ -88,8 +79,8 @@ Do not gender the user unless conversation context below implies it.
         const systemPromptText = systemMessages.join("\n\n").trim();
 
         // 2. Build and Prune the Chat History
-        let budget = getTokenLimit() - countTokens(systemPromptText);
-        const history: any[] = [];
+        let budget = configService.getTokenLimit() - countTokens(systemPromptText);
+        const history: { role: string; parts: unknown[] }[] = [];
         const reversedMessages = messages.slice().reverse();
 
         for (const message of reversedMessages) {
@@ -103,7 +94,7 @@ Do not gender the user unless conversation context below implies it.
             budget -= tokens;
 
             let role: "user" | "model" | "function";
-            let parts: any[];
+            let parts: unknown[];
 
             if (message.role === "assistant") {
                 role = "model";
