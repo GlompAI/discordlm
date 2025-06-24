@@ -220,6 +220,7 @@ export class MessageCreateHandler {
                             character,
                             part,
                             { components: [this.componentService.createActionRow()] },
+                            message,
                         );
                         if (sentMessage) {
                             this.conversationService.setLastBotMessage(message.channel.id, sentMessage);

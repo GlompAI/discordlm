@@ -7,12 +7,14 @@ import {
 } from "./CharacterCard.ts";
 import adze from "npm:adze";
 import { resolve } from "https://deno.land/std@0.224.0/path/mod.ts";
+import { configService } from "./services/ConfigService.ts";
 
 const logger = adze.withEmoji.timestamp.seal();
 
 export class CharacterManager {
     private characters: CharacterConfig[] = [];
     private defaultCharacter: CharacterConfig | null = null;
+    private assistantCharacter: CharacterConfig | null = null;
     private charactersDir: string = "./characters";
     private avatarBaseUrl?: string;
 
@@ -25,13 +27,38 @@ export class CharacterManager {
         this.charactersDir = charactersDir;
         this.avatarBaseUrl = avatarBaseUrl;
         try {
-            this.characters = await loadCharacterCards(this.charactersDir, this.avatarBaseUrl);
+            const allCharacters = await loadCharacterCards(this.charactersDir, this.avatarBaseUrl);
+            const assistantName = configService.getAssistantName();
+            this.characters = allCharacters.filter((c) => c.card.name !== assistantName);
             logger.info(`Loaded ${this.characters.length} characters`);
 
             // A default can be set later via the setDefaultCharacter method.
         } catch (error) {
             logger.error("Failed to load characters:", error);
         }
+    }
+
+    /**
+     * Load the assistant character
+     */
+    async loadAssistantCharacter(charactersDir: string = "./characters"): Promise<void> {
+        try {
+            const assistantCardPath = resolve(charactersDir, "Assistant.json");
+            const card = await parseCharacterCardFromJSON(assistantCardPath);
+            if (card) {
+                this.assistantCharacter = { card, filename: "Assistant.json", avatarUrl: undefined };
+                logger.info(`Loaded assistant character: ${card.name}`);
+            }
+        } catch (error) {
+            logger.error("Failed to load assistant character:", error);
+        }
+    }
+
+    /**
+     * Get the assistant character
+     */
+    getAssistantCharacter(): CharacterConfig | null {
+        return this.assistantCharacter;
     }
 
     /**
@@ -45,6 +72,9 @@ export class CharacterManager {
      * Get a character by name
      */
     getCharacter(name: string): CharacterConfig | null {
+        if (this.assistantCharacter && name === this.assistantCharacter.card.name) {
+            return this.assistantCharacter;
+        }
         return getCharacterByName(this.characters, name);
     }
 
@@ -67,6 +97,7 @@ export class CharacterManager {
     async reloadCharacters(charactersDir: string = "./characters", avatarBaseUrl?: string): Promise<void> {
         const oldCount = this.characters.length;
         await this.loadCharacters(charactersDir, avatarBaseUrl);
+        await this.loadAssistantCharacter(charactersDir);
         logger.info(`Reloaded characters: ${oldCount} -> ${this.characters.length}`);
     }
 
@@ -76,11 +107,18 @@ export class CharacterManager {
     async watchCharacters() {
         const watcher = Deno.watchFs(this.charactersDir);
         logger.info(`Watching for character changes in ${this.charactersDir}`);
+        const assistantName = configService.getAssistantName();
 
         for await (const event of watcher) {
             for (const path of event.paths) {
                 const filename = path.split("/").pop();
                 if (!filename || (!filename.endsWith(".png") && !filename.endsWith(".json"))) {
+                    continue;
+                }
+
+                if (filename === "Assistant.json") {
+                    logger.info(`Assistant file ${event.kind}, reloading.`);
+                    await this.loadAssistantCharacter(this.charactersDir);
                     continue;
                 }
 
@@ -127,6 +165,10 @@ export class CharacterManager {
         }
 
         if (card) {
+            if (card.name === configService.getAssistantName()) {
+                logger.info(`Skipping assistant character file during regular load: ${filename}`);
+                return;
+            }
             const existingIndex = this.characters.findIndex((c) => c.filename === filename);
             const newCharacter: CharacterConfig = { card, filename, avatarUrl };
 
