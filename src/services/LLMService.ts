@@ -277,7 +277,7 @@ export class LLMService {
 
         const model = this.textEngine.client.getGenerativeModel({
             model: configService.getModel(),
-            tools: character ? undefined : [{ functionDeclarations: tools }],
+            tools: [{ functionDeclarations: tools }],
             systemInstruction: prompt.systemInstruction,
             safetySettings: prompt.safetySettings,
         });
