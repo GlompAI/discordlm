@@ -216,6 +216,10 @@ export class MessageCreateHandler {
             allMessages.push(message);
         }
 
+        // IMPORTANT: Reverse the messages to be in chronological order (oldest first)
+        // This is critical for the LLM to understand the conversation flow
+        allMessages.reverse();
+
         const messages = allMessages;
         this.logger.info(`${logContext} Fetched ${messages.length} messages`);
 
