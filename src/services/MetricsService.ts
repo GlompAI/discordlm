@@ -33,20 +33,53 @@ export class MetricsService {
 
     public static async getMetricsHtml() {
         const metrics = await this.getMetrics();
+
+        const requestsPerCharacter = metrics.reduce((acc, m) => {
+            acc[m.character] = (acc[m.character] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+
+        const avgResponseTimePerCharacter = metrics.reduce((acc, m) => {
+            if (m.llmResponseTime) {
+                if (!acc[m.character]) {
+                    acc[m.character] = { total: 0, count: 0 };
+                }
+                acc[m.character].total += m.llmResponseTime;
+                acc[m.character].count++;
+            }
+            return acc;
+        }, {} as Record<string, { total: number; count: number }>);
+
+        const characterLabels = Object.keys(requestsPerCharacter);
+        const requestCounts = Object.values(requestsPerCharacter);
+        const avgResponseTimes = characterLabels.map(
+            (char) => (avgResponseTimePerCharacter[char].total / avgResponseTimePerCharacter[char].count).toFixed(2),
+        );
+
         return `
       <!DOCTYPE html>
       <html>
         <head>
           <title>Discord LM Metrics</title>
+          <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
           <style>
-            body { font-family: sans-serif; }
-            table { border-collapse: collapse; width: 100%; }
+            body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; }
+            table { border-collapse: collapse; width: 80%; margin-top: 20px; }
             th, td { border: 1px solid #ddd; padding: 8px; }
             th { background-color: #f2f2f2; }
+            .chart-container { width: 80%; margin-top: 20px; }
           </style>
         </head>
         <body>
           <h1>Discord LM Metrics</h1>
+
+          <div class="chart-container">
+            <canvas id="requestsPerCharacterChart"></canvas>
+          </div>
+          <div class="chart-container">
+            <canvas id="avgResponseTimePerCharacterChart"></canvas>
+          </div>
+
           <table>
             <tr>
               <th>Timestamp</th>
@@ -80,6 +113,51 @@ export class MetricsService {
         }
           </table>
         </body>
+        <script>
+          const requestsCtx = document.getElementById('requestsPerCharacterChart').getContext('2d');
+          new Chart(requestsCtx, {
+            type: 'bar',
+            data: {
+              labels: ${JSON.stringify(characterLabels)},
+              datasets: [{
+                label: '# of Requests per Character',
+                data: ${JSON.stringify(requestCounts)},
+                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                borderColor: 'rgba(75, 192, 192, 1)',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+
+          const responseTimeCtx = document.getElementById('avgResponseTimePerCharacterChart').getContext('2d');
+          new Chart(responseTimeCtx, {
+            type: 'bar',
+            data: {
+              labels: ${JSON.stringify(characterLabels)},
+              datasets: [{
+                label: 'Avg LLM Response Time (ms) per Character',
+                data: ${JSON.stringify(avgResponseTimes)},
+                backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+        </script>
       </html>
     `;
     }
