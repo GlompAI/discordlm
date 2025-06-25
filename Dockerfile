@@ -14,10 +14,8 @@ FROM debian:stable-slim
 WORKDIR /app
 
 # Copy the compiled binary from builder stage
-COPY --from=builder /app/dist/discordlm ./discordlm
-
-# Make binary executable
-RUN chmod +x ./discordlm
+# Copy source code
+COPY --from=builder /app .
 
 # Environment variables that need to be set:
 # BOT_TOKEN - Discord bot token (required)
@@ -33,4 +31,4 @@ RUN chmod +x ./discordlm
 # Create characters directory
 RUN mkdir -p /app/characters
 
-ENTRYPOINT ["./discordlm"]
+ENTRYPOINT ["deno", "run", "--unstable-kv", "--allow-net", "--allow-env", "--allow-read", "--allow-write", "src/main.ts"]
