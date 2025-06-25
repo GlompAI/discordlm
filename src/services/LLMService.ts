@@ -112,6 +112,22 @@ export class LLMService {
                     async (_, snowflake) => `@${await convertSnowflake(snowflake, message.guild)}`,
                 );
 
+                finalMessageText = await replaceAllAsync(
+                    finalMessageText,
+                    /<@&(\d+)>/g,
+                    async (_, snowflake) => {
+                        if (message.guild) {
+                            try {
+                                const role = await message.guild.roles.fetch(snowflake);
+                                return `@${role?.name ?? "Unknown Role"}`;
+                            } catch {
+                                return "@Unknown Role";
+                            }
+                        }
+                        return "@Unknown Role";
+                    },
+                );
+
                 const mediaContent: { inlineData: { mimeType: string; data: string } }[] = [];
 
                 if (message.attachments.size > 0) {
