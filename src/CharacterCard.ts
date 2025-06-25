@@ -157,18 +157,14 @@ export async function parseCharacterCardFromPNG(filePath: string): Promise<Chara
             if (chunkType === "tEXt") {
                 // Read chunk data
                 const chunkData = fileData.slice(offset, offset + chunkLength);
-                const textData = new TextDecoder().decode(chunkData);
+                const nullIndex = chunkData.indexOf(0); // Find the null separator in the byte array
 
-                // Find null separator between keyword and text
-                const nullIndex = textData.indexOf("\0");
                 if (nullIndex > -1) {
-                    const keyword = textData.substring(0, nullIndex);
-                    const text = textData.substring(nullIndex + 1);
-
+                    const keyword = new TextDecoder().decode(chunkData.slice(0, nullIndex));
                     if (keyword === "chara") {
                         try {
-                            // Character data is base64 encoded
-                            const decodedData = decodeBase64(text);
+                            const base64Text = new TextDecoder().decode(chunkData.slice(nullIndex + 1));
+                            const decodedData = decodeBase64(base64Text);
                             const jsonString = new TextDecoder().decode(decodedData);
                             return JSON.parse(jsonString) as CharacterCard;
                         } catch (e) {
