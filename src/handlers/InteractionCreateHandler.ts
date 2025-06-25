@@ -356,6 +356,9 @@ export class InteractionCreateHandler {
             let character = null;
             if (message.webhookId) {
                 character = this.characterService.getCharacter(message.author.username);
+                if (!character) {
+                    this.logger.warn(`Could not find character for webhook message re-roll: ${message.author.username}`);
+                }
             } else if (message.embeds.length > 0 && message.embeds[0].title) {
                 character = this.characterService.getCharacter(message.embeds[0].title);
             }
