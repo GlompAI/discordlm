@@ -35,8 +35,12 @@ export class ConfigService {
         return parseInt(this.getEnv("INFERENCE_PARALLELISM", false, "1"));
     }
 
-    getAdminOverrideId(): string | undefined {
-        return this.getEnv("ADMIN_OVERRIDE_ID", false, "");
+    getAdminOverrideList(): string[] {
+        const adminIds = this.getEnv("ADMIN_OVERRIDE_ID", false, "");
+        if (!adminIds) {
+            return [];
+        }
+        return adminIds.split(";").filter((id) => id.trim() !== "");
     }
 
     isAvatarServerEnabled(): boolean {

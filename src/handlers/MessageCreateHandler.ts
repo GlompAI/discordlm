@@ -141,8 +141,8 @@ export class MessageCreateHandler {
                 return;
             } else if (message.guild) {
                 const member = await message.guild.members.fetch(message.author.id);
-                const adminOverrideId = configService.getAdminOverrideId();
-                if (!member.permissions.has("Administrator") && member.id !== adminOverrideId) {
+                const adminOverrideList = configService.getAdminOverrideList();
+                if (!member.permissions.has("Administrator") && !adminOverrideList.includes(member.id)) {
                     sanitize = true;
                 }
             }

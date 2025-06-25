@@ -10,7 +10,7 @@ export const isAvatarServerEnabled = () => configService.isAvatarServerEnabled()
 export const getAvatarServerPort = () => configService.getAvatarServerPort();
 export const getInferenceParallelism = () => configService.getInferenceParallelism();
 export const isDebugEnabled = () => configService.isDebugEnabled();
-export const getAdminOverrideId = () => configService.getAdminOverrideId();
+export const getAdminOverrideList = () => configService.getAdminOverrideList();
 export const getRateLimitPerMinute = () => configService.getRateLimitPerMinute();
 export const getUserIdList = () => configService.getUserIdList();
 export const isWhitelistEnabled = () => configService.isWhitelistEnabled();
