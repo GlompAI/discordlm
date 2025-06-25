@@ -261,7 +261,10 @@ export class LLMService {
                         for (let attempt = 0; attempt < 3; attempt++) {
                             try {
                                 const response = await fetch(emojiUrl, {
-                                    headers: { "User-Agent": "DiscordLM-Bot/1.0" },
+                                    headers: {
+                                        "User-Agent": "DiscordLM-Bot/1.0",
+                                        "Accept": "image/gif,image/png,image/webp,*/*",
+                                    },
                                 });
                                 if (!response.ok) {
                                     throw new Error(`HTTP ${response.status} ${response.statusText}`);
