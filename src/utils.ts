@@ -24,7 +24,7 @@ Welcome to the bot! Here's a quick guide on how to interact:
 
 **Roleplaying:**
 *   Use asterisks for actions, like \`*I walk into the room*\`.
-*   For out-of-character (OOC) messages, use the format: \`{OOC: your message here}\`.
+*   For out-of-character (OOC) messages, use the format: \`{OOC: your message here}\`. This is intended to help steer the character's behavior, but may not always be effective depending on the character and the request.
 
 Have fun!
     `.trim();
