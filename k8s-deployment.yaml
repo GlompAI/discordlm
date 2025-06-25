@@ -18,10 +18,13 @@ spec:
     metadata:
       labels:
         app: discordlm
+      annotations:
+        discordlm.com/restartedAt: "1750888362"
     spec:
       containers:
       - name: discordlm
-        image: ghcr.io/aronson/discordlm:latest
+        image: ghcr.io/aronson/discordlm:{{IMAGE_TAG}}
+        imagePullPolicy: Always
         ports:
         - containerPort: 3334
         envFrom:
@@ -51,6 +54,7 @@ kind: Service
 metadata:
   name: discordlm-service
 spec:
+  type: NodePort
   selector:
     app: discordlm
   ports:
