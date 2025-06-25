@@ -56,6 +56,31 @@ export class MetricsService {
             (char) => (avgResponseTimePerCharacter[char].total / avgResponseTimePerCharacter[char].count).toFixed(2),
         );
 
+        const requestsPerUser = metrics.reduce((acc, m) => {
+            acc[m.username] = (acc[m.username] || 0) + 1;
+            return acc;
+        }, {} as Record<string, number>);
+        const userLabels = Object.keys(requestsPerUser);
+        const userRequestCounts = Object.values(requestsPerUser);
+
+        const requestsPerGuild = metrics.reduce((acc, m) => {
+            if (m.guildName) {
+                acc[m.guildName] = (acc[m.guildName] || 0) + 1;
+            }
+            return acc;
+        }, {} as Record<string, number>);
+        const guildLabels = Object.keys(requestsPerGuild);
+        const guildRequestCounts = Object.values(requestsPerGuild);
+
+        const requestsPerChannel = metrics.reduce((acc, m) => {
+            if (m.channelName) {
+                acc[m.channelName] = (acc[m.channelName] || 0) + 1;
+            }
+            return acc;
+        }, {} as Record<string, number>);
+        const channelLabels = Object.keys(requestsPerChannel);
+        const channelRequestCounts = Object.values(requestsPerChannel);
+
         return `
       <!DOCTYPE html>
       <html>
@@ -78,6 +103,15 @@ export class MetricsService {
           </div>
           <div class="chart-container">
             <canvas id="avgResponseTimePerCharacterChart"></canvas>
+          </div>
+          <div class="chart-container">
+            <canvas id="requestsPerUserChart"></canvas>
+          </div>
+          <div class="chart-container">
+            <canvas id="requestsPerGuildChart"></canvas>
+          </div>
+          <div class="chart-container">
+            <canvas id="requestsPerChannelChart"></canvas>
           </div>
 
           <table>
@@ -146,6 +180,72 @@ export class MetricsService {
                 data: ${JSON.stringify(avgResponseTimes)},
                 backgroundColor: 'rgba(255, 99, 132, 0.2)',
                 borderColor: 'rgba(255, 99, 132, 1)',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+
+          const userCtx = document.getElementById('requestsPerUserChart').getContext('2d');
+          new Chart(userCtx, {
+            type: 'bar',
+            data: {
+              labels: ${JSON.stringify(userLabels)},
+              datasets: [{
+                label: '# of Requests per User',
+                data: ${JSON.stringify(userRequestCounts)},
+                backgroundColor: 'rgba(153, 102, 255, 0.2)',
+                borderColor: 'rgba(153, 102, 255, 1)',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+
+          const guildCtx = document.getElementById('requestsPerGuildChart').getContext('2d');
+          new Chart(guildCtx, {
+            type: 'bar',
+            data: {
+              labels: ${JSON.stringify(guildLabels)},
+              datasets: [{
+                label: '# of Requests per Guild',
+                data: ${JSON.stringify(guildRequestCounts)},
+                backgroundColor: 'rgba(255, 159, 64, 0.2)',
+                borderColor: 'rgba(255, 159, 64, 1)',
+                borderWidth: 1
+              }]
+            },
+            options: {
+              scales: {
+                y: {
+                  beginAtZero: true
+                }
+              }
+            }
+          });
+
+          const channelCtx = document.getElementById('requestsPerChannelChart').getContext('2d');
+          new Chart(channelCtx, {
+            type: 'bar',
+            data: {
+              labels: ${JSON.stringify(channelLabels)},
+              datasets: [{
+                label: '# of Requests per Channel',
+                data: ${JSON.stringify(channelRequestCounts)},
+                backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                borderColor: 'rgba(54, 162, 235, 1)',
                 borderWidth: 1
               }]
             },
