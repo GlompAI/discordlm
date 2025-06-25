@@ -61,6 +61,14 @@ export class ConfigService {
     getRateLimitPerMinute(): number {
         return parseInt(this.getEnv("RATE_LIMIT_PER_MINUTE", false, "10"));
     }
+
+    getUserIdList(): string {
+        return this.getEnv("USER_ID_LIST", false, "");
+    }
+
+    isWhitelistEnabled(): boolean {
+        return this.getEnv("WHITELIST_ENABLE", false, "false") === "true";
+    }
 }
 
 export const configService = new ConfigService();

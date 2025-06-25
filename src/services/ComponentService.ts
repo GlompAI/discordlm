@@ -23,12 +23,6 @@ export class ComponentService {
                     .setStyle(ButtonStyle.Danger)
                     .setEmoji("❌")
                     .setDisabled(disabled),
-                new ButtonBuilder()
-                    .setCustomId("continue")
-                    .setLabel("Continue")
-                    .setStyle(ButtonStyle.Success)
-                    .setEmoji("➡️")
-                    .setDisabled(disabled),
             );
         return row;
     }

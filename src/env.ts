@@ -12,3 +12,5 @@ export const getInferenceParallelism = () => configService.getInferenceParalleli
 export const isDebugEnabled = () => configService.isDebugEnabled();
 export const getAdminOverrideId = () => configService.getAdminOverrideId();
 export const getRateLimitPerMinute = () => configService.getRateLimitPerMinute();
+export const getUserIdList = () => configService.getUserIdList();
+export const isWhitelistEnabled = () => configService.isWhitelistEnabled();
