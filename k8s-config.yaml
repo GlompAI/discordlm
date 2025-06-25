@@ -1,0 +1,26 @@
+apiVersion: v1
+kind: Secret
+metadata:
+  name: discordlm-secrets
+type: Opaque
+data:
+  BOT_TOKEN: TVRNME5qUTBNREc1TmpZd09UTTFNemMyT1EuR3FaUlJWLVpsX3NGZ1UtRU1oWXFaZmR3NHRIblZoYTNsUVluQml2SlYzZFk=
+  BOT_SELF_ID: MTM0NjQ4MDg5NjYwOTM1Mzc2OQ==
+  GEMINI_API_KEY: QUl6YVN5Q1VDcHJpUVBGV3JhNVBUTmdNblVKY28wNEFreHFFVVJZ
+  ADMIN_OVERRIDE_ID: MTM3Mjk1NzY5NTQxMzQ1MjkwMA==
+  USER_ID_LIST: MTA5MTYyNjc1MDgyOTY3ODYwMg==
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: discordlm-config
+data:
+  MODEL_NAME: "models/gemini-2.5-flash"
+  TOKEN_LIMIT: "1000000"
+  ENABLE_AVATAR_SERVER: "true"
+  AVATAR_PORT: "3334"
+  PUBLIC_AVATAR_BASE_URL: "https://cutie.pingas.org"
+  MAX_HISTORY_MESSAGES: "300"
+  RATE_LIMIT_PER_MINUTE: "4"
+  DEBUG: "true"
+  INFERENCE_PARALLELISM: "10"

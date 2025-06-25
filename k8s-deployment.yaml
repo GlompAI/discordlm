@@ -1,0 +1,55 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: discordlm-deployment
+  labels:
+    app: discordlm
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: discordlm
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 0
+      maxSurge: 1
+  template:
+    metadata:
+      labels:
+        app: discordlm
+    spec:
+      containers:
+      - name: discordlm
+        image: ghcr.io/aronson/discordlm:latest
+        ports:
+        - containerPort: 3334
+        envFrom:
+        - secretRef:
+            name: discordlm-secrets
+        - configMapRef:
+            name: discordlm-config
+        volumeMounts:
+        - name: characters-storage
+          mountPath: /app/characters
+        - name: logs-storage
+          mountPath: /app/logs
+      volumes:
+      - name: characters-storage
+        persistentVolumeClaim:
+          claimName: discordlm-pvc
+      - name: logs-storage
+        persistentVolumeClaim:
+          claimName: discordlm-logs-pvc
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: discordlm-service
+spec:
+  selector:
+    app: discordlm
+  ports:
+    - protocol: TCP
+      port: 3334
+      targetPort: 3334
