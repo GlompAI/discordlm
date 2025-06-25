@@ -340,8 +340,8 @@ export class MessageCreateHandler {
                     });
                 } else {
                     // For DMs, Assistant, or when no character is selected, use regular reply
-                    if (message.channel.type === ChannelType.DM) {
-                        // In DMs, use embeds
+                    if (message.channel.type === ChannelType.DM && !isAssistant) {
+                        // In DMs, use embeds, unless it's the assistant
                         const embed = new EmbedBuilder()
                             .setTitle(character ? character.card.name : "Assistant")
                             .setThumbnail(character?.avatarUrl ?? null)
