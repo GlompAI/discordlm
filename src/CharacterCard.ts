@@ -1,4 +1,5 @@
 import { unzlibSync } from "fflate";
+import { decodeBase64 } from "https://deno.land/std@0.224.0/encoding/base64.ts";
 
 export interface CharacterCardV2 {
     spec: "chara_card_v2";
@@ -167,8 +168,9 @@ export async function parseCharacterCardFromPNG(filePath: string): Promise<Chara
                     if (keyword === "chara") {
                         try {
                             // Character data is base64 encoded
-                            const decodedData = atob(text);
-                            return JSON.parse(decodedData) as CharacterCard;
+                            const decodedData = decodeBase64(text);
+                            const jsonString = new TextDecoder().decode(decodedData);
+                            return JSON.parse(jsonString) as CharacterCard;
                         } catch (e) {
                             console.warn(`Failed to parse character data from ${filePath}:`, e);
                         }
