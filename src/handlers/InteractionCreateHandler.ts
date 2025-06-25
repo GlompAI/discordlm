@@ -265,7 +265,7 @@ export class InteractionCreateHandler {
         const allMessages: Message[] = [];
         let lastMessageId: string | undefined = beforeId;
         let foundReset = false;
-        const maxMessages = 1000;
+        const maxMessages = configService.getMaxHistoryMessages();
         const batchSize = 100;
 
         if (includeMessage) {

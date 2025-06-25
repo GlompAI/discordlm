@@ -191,7 +191,7 @@ export class MessageCreateHandler {
         const allMessages: Message[] = [];
         let lastMessageId: string | undefined = message.id;
         let foundReset = false;
-        const maxMessages = 1000;
+        const maxMessages = configService.getMaxHistoryMessages();
         const batchSize = 100; // Discord API limit per request
 
         // First, add the current message
