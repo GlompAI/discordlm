@@ -72,7 +72,7 @@ export class MetricsService {
                 <td>${m.channelName || "N/A"} (${m.channelId || "N/A"})</td>
                 <td>${m.isNsfw}</td>
                 <td>${m.llmRequestTimestamp ? new Date(m.llmRequestTimestamp).toISOString() : "N/A"}</td>
-                <td>${m.llmResponseTime || "N/A"}</td>
+                <td>${m.llmResponseTime ? m.llmResponseTime.toFixed(2) : "N/A"}</td>
               </tr>
             `,
                 )
