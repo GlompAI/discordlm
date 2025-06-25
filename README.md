@@ -196,3 +196,6 @@ The bot needs the following Discord permissions:
 
 See LICENSE.md for licensing information.
 
+
+
+This is a test to verify that the CI/CD pipeline ignores changes to Markdown files.
