@@ -44,13 +44,19 @@ export function smartSplit(text: string, maxLength = 1980): string[] {
     const lines = text.split("\n");
 
     for (const line of lines) {
-        if (line.startsWith("```")) {
-            inCodeBlock = !inCodeBlock;
-            if (inCodeBlock) {
-                codeBlockLang = line.substring(3);
+        // Handle very long lines by splitting them immediately.
+        if (line.length > maxLength) {
+            if (currentPart.length > 0) {
+                parts.push(currentPart);
+                currentPart = "";
             }
+            for (let i = 0; i < line.length; i += maxLength) {
+                parts.push(line.substring(i, i + maxLength));
+            }
+            continue;
         }
 
+        // Check if adding the new line will exceed the max length.
         if (currentPart.length + line.length + 1 > maxLength) {
             if (inCodeBlock) {
                 currentPart += "\n```";
@@ -58,12 +64,23 @@ export function smartSplit(text: string, maxLength = 1980): string[] {
             parts.push(currentPart);
             currentPart = "";
             if (inCodeBlock) {
-                currentPart = "```" + codeBlockLang + "\n";
+                currentPart = "```" + codeBlockLang;
             }
         }
 
-        if (currentPart.length > 0 || line.trim().length > 0) {
-            currentPart += (currentPart.length > 0 ? "\n" : "") + line;
+        if (currentPart.length > 0) {
+            currentPart += "\n";
+        }
+        currentPart += line;
+
+        // Update code block status *after* processing the line.
+        if (line.startsWith("```")) {
+            inCodeBlock = !inCodeBlock;
+            if (inCodeBlock) {
+                codeBlockLang = line.substring(3);
+            } else {
+                codeBlockLang = "";
+            }
         }
     }
 
