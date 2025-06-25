@@ -88,6 +88,8 @@ export class CharacterService {
                 if (character) {
                     return character;
                 }
+                // If a "Switched to" message is found, we should not look further back.
+                return this.getAssistantCharacter();
             }
 
             if (message.webhookId) {
