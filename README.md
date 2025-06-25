@@ -1,13 +1,13 @@
 # Discord LLM Bot
 
-A Discord bot that integrates with OpenAI-compatible language model endpoints to provide AI responses in Discord channels and direct messages.
+A Discord bot that integrates with Google's Gemini API to provide AI responses in Discord channels and direct messages.
 
 > **Recent Updates**: Added development tasks (`prepare`, `dev`, `check`, `lint`, `fmt`) and cleaned up deno.json configuration for better DX.
 
 ## Features
 
 - Responds to mentions and direct messages
-- Supports any OpenAI-compatible API endpoint
+- Powered by Google's Gemini API
 - Configurable token limits for context management
 - Graceful typing indicators while generating responses
 - Automatic message history context
@@ -20,7 +20,7 @@ A Discord bot that integrates with OpenAI-compatible language model endpoints to
 
 - [Deno](https://deno.land/) runtime installed
 - A Discord bot token
-- Access to an OpenAI-compatible API endpoint
+- A Google Gemini API Key
 
 ### Installation
 
@@ -84,15 +84,18 @@ The following environment variables are required:
 |----------|-------------|----------|---------|
 | `BOT_TOKEN` | Discord bot token from Discord Developer Portal | Yes | - |
 | `BOT_SELF_ID` | Discord snowflake ID of the bot itself | Yes | - |
-| `OPENAI_URL` | Base URL for the OpenAI-compatible API endpoint | Yes | - |
-| `MODEL_NAME` | Model name to use on the API endpoint | Yes | - |
-| `OPENAI_KEY` | API key for the OpenAI-compatible endpoint | Yes | - |
-| `TOKEN_LIMIT` | Maximum token context to send to the API | No | 32600 |
-| `INFERENCE_PARALLELISM` | Number of parallel inference requests to allow | No | 1 |
-| `RATE_LIMIT_PER_MINUTE` | Maximum requests per user per minute | No | 10 |
+| `GEMINI_API_KEY` | Your Google Gemini API key | Yes | - |
+| `MODEL_NAME` | Gemini model name to use | Yes | `models/gemini-1.5-flash` |
+| `TOKEN_LIMIT` | Maximum token context to send to the API | No | `1000000` |
+| `MAX_HISTORY_MESSAGES` | Maximum number of messages to fetch for history | No | `300` |
+| `RATE_LIMIT_PER_MINUTE` | Maximum requests per user per minute | No | `4` |
+| `INFERENCE_PARALLELISM` | Number of parallel inference requests to allow | No | `10` |
+| `USER_ID_LIST` | Comma-separated list of user IDs allowed to interact with the bot | No | - |
 | `ADMIN_OVERRIDE_ID` | User ID to bypass administrator checks | No | - |
-| `MAX_HISTORY_MESSAGES` | Maximum number of messages to fetch for history | No | 200 |
-| `DEBUG` | Enable debug logging | No | false |
+| `ENABLE_AVATAR_SERVER` | Enable the avatar server for webhooks | No | `false` |
+| `AVATAR_PORT` | Port for the avatar server | No | `3334` |
+| `PUBLIC_AVATAR_BASE_URL` | Publicly accessible base URL for the avatar server | No | - |
+| `DEBUG` | Enable debug logging | No | `false` |
 
 ### Getting Discord Bot Information
 
@@ -108,10 +111,8 @@ Create a `.env` file or set environment variables:
 ```bash
 export BOT_TOKEN="your_discord_bot_token_here"
 export BOT_SELF_ID="1234567890123456789"
-export OPENAI_URL="https://api.openai.com/v1"
-export MODEL_NAME="gpt-4"
-export OPENAI_KEY="your_api_key_here"
-export TOKEN_LIMIT="32000"
+export GEMINI_API_KEY="your_gemini_api_key_here"
+export MODEL_NAME="models/gemini-1.5-flash"
 ```
 
 ### Docker
@@ -126,11 +127,12 @@ docker build -t discordlm .
 docker run -d \
   -e BOT_TOKEN="your_discord_bot_token" \
   -e BOT_SELF_ID="1234567890123456789" \
-  -e OPENAI_URL="https://api.openai.com/v1" \
-  -e MODEL_NAME="gpt-4" \
-  -e OPENAI_KEY="your_api_key" \
-  -e TOKEN_LIMIT="32000" \
+  -e GEMINI_API_KEY="your_gemini_api_key" \
+  -e MODEL_NAME="models/gemini-1.5-flash" \
+  -v /path/to/your/characters:/app/characters \
+  -v /path/to/your/logs:/app/logs \
   --name discordlm-bot \
+  --restart=always \
   discordlm
 ```
 
@@ -144,10 +146,11 @@ services:
     environment:
       - BOT_TOKEN=your_discord_bot_token
       - BOT_SELF_ID=1234567890123456789
-      - OPENAI_URL=https://api.openai.com/v1
-      - MODEL_NAME=gpt-4
-      - OPENAI_KEY=your_api_key
-      - TOKEN_LIMIT=32000
+      - GEMINI_API_KEY=your_gemini_api_key
+      - MODEL_NAME=models/gemini-1.5-flash
+    volumes:
+      - ./characters:/app/characters
+      - ./logs:/app/logs
     restart: unless-stopped
 ```
 
