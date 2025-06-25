@@ -250,7 +250,8 @@ export class LLMService {
                 for (const match of matches) {
                     const _emojiName = match[1];
                     const emojiId = match[2];
-                    const emojiUrl = `https://cdn.discordapp.com/emojis/${emojiId}.png`;
+                    const isAnimated = match[0].startsWith("<a:");
+                    const emojiUrl = `https://cdn.discordapp.com/emojis/${emojiId}.${isAnimated ? "gif" : "png"}`;
                     finalMessageText = finalMessageText.replace(match[0], "");
 
                     try {
@@ -284,13 +285,36 @@ export class LLMService {
 
                         if (!success || !buffer) continue;
 
-                        const base64 = Buffer.from(buffer).toString("base64");
-                        mediaContent.push({
-                            inlineData: {
-                                mimeType: "image/png",
-                                data: base64,
-                            },
-                        });
+                        if (isAnimated) {
+                            try {
+                                const reader = new GifReader(Buffer.from(buffer));
+                                const png = new PNG({
+                                    width: reader.width,
+                                    height: reader.height,
+                                });
+                                const frameData = Buffer.alloc(reader.width * reader.height * 4);
+                                reader.decodeAndBlitFrameRGBA(0, frameData);
+                                png.data = frameData;
+                                const pngBuffer = PNG.sync.write(png);
+                                const base64 = pngBuffer.toString("base64");
+                                mediaContent.push({
+                                    inlineData: {
+                                        mimeType: "image/png",
+                                        data: base64,
+                                    },
+                                });
+                            } catch (error) {
+                                adze.error(`Failed to process GIF emoji ${emojiUrl}:`, error);
+                            }
+                        } else {
+                            const base64 = Buffer.from(buffer).toString("base64");
+                            mediaContent.push({
+                                inlineData: {
+                                    mimeType: "image/png",
+                                    data: base64,
+                                },
+                            });
+                        }
                     } catch (error) {
                         adze.error(`Failed to fetch emoji URL ${emojiUrl}:`, error);
                     }
