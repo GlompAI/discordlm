@@ -353,14 +353,20 @@ export class InteractionCreateHandler {
             this.logger.info(`${logContext} Using character for re-roll: ${character ? character.card.name : "none"}`);
 
             this.logger.info(`${logContext} Generating new response...`);
-            const result = (await this.inferenceQueue.push(
-                this.llmService.generateMessage.bind(this.llmService),
+            const isSFW = message.channel.type !== ChannelType.DM &&
+                "nsfw" in message.channel &&
+                !message.channel.nsfw;
+            const result = ((await this.inferenceQueue.push(
+                this.llmService.generateMessage.bind(this.llmService) as any,
                 this.client,
                 messages,
                 configService.getBotSelfId(),
                 character ? character.card : null,
                 Math.floor(Math.random() * 1000000),
-            ))
+                false, // continuation
+                false, // sanitize
+                isSFW,
+            )) as any)
                 .completion.text();
 
             if (!result) {
