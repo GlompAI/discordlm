@@ -1,0 +1,66 @@
+name: CI/CD - Build, Push, and Deploy
+
+on:
+  push:
+    branches: [ "main" ]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Log in to the GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ghcr.io/${{ github.repository }}:${{ github.sha }}
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to remote server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
+            sudo podman pull ghcr.io/${{ github.repository }}:${{ github.sha }}
+            sudo podman run -d \
+              -e BOT_TOKEN="${{ secrets.BOT_TOKEN }}" \
+              -e MAX_HISTORY_MESSAGES="${{ secrets.MAX_HISTORY_MESSAGES }}" \
+              -e USER_ID_LIST="${{ secrets.USER_ID_LIST }}" \
+              -e BOT_SELF_ID="${{ secrets.BOT_SELF_ID }}" \
+              -e RATE_LIMIT_PER_MINUTE="${{ secrets.RATE_LIMIT_PER_MINUTE }}" \
+              -e PUBLIC_AVATAR_BASE_URL="${{ secrets.PUBLIC_AVATAR_BASE_URL }}" \
+              -e AVATAR_PORT=${{ secrets.AVATAR_PORT }} \
+              -e ENABLE_AVATAR_SERVER=${{ secrets.ENABLE_AVATAR_SERVER }} \
+              -e MODEL_NAME="${{ secrets.MODEL_NAME }}" \
+              -e GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}" \
+              -e TOKEN_LIMIT="${{ secrets.TOKEN_LIMIT }}" \
+              -e DEBUG=${{ secrets.DEBUG }} \
+              -e ADMIN_OVERRIDE_ID="${{ secrets.ADMIN_OVERRIDE_ID }}" \
+              -e INFERENCE_PARALLELISM=${{ secrets.INFERENCE_PARALLELISM }} \
+              -p 3334:3334 \
+              -v /home/luigi/discordlm/characters:/app/characters:ro \
+              -v /home/luigi/discordlm/logs:/app/logs:rw \
+              --name discordlm-cutie \
+              --restart=always \
+              --replace \
+              ghcr.io/${{ github.repository }}:${{ github.sha }}
