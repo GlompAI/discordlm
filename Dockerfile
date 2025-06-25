@@ -1,21 +1,11 @@
-FROM denoland/deno AS builder
+FROM denoland/deno
 WORKDIR /app
 
 # Copy source code
 COPY . .
 
-# Install dependencies and build binary
-RUN apt update && apt install -y unzip && rm -rf /var/lib/apt/lists/*
+# Install dependencies
 RUN deno cache --reload src/main.ts
-RUN deno task prepare
-
-# Production stage
-FROM debian:stable-slim
-WORKDIR /app
-
-# Copy the compiled binary from builder stage
-# Copy source code
-COPY --from=builder /app .
 
 # Environment variables that need to be set:
 # BOT_TOKEN - Discord bot token (required)
