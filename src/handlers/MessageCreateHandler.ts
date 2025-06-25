@@ -1,4 +1,5 @@
 import { ChannelType, Client, EmbedBuilder, hideLinkEmbed, hyperlink, Message, TextChannel } from "discord.js";
+import { CharacterConfig } from "../CharacterCard.ts";
 import { CharacterService } from "../services/CharacterService.ts";
 import { LLMService } from "../services/LLMService.ts";
 import { configService } from "../services/ConfigService.ts";
@@ -179,7 +180,7 @@ export class MessageCreateHandler {
 
     private async processMessage(
         message: Message,
-        character: any,
+        character: CharacterConfig | null,
         sanitize: boolean,
         logContext: string,
         typingInterval?: number,
