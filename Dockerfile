@@ -1,34 +1,19 @@
-FROM denoland/deno AS builder
+# Use the official Deno image as the base
+FROM denoland/deno:1.44.4
+
+# Set the working directory
 WORKDIR /app
 
-# Copy source code
+# Copy all source files
 COPY . .
 
-# Install dependencies and build binary
-RUN apt update && apt install -y unzip && rm -rf /var/lib/apt/lists/*
-RUN deno cache --reload src/main.ts
-RUN deno task prepare
+# Cache dependencies. The --reload flag is not necessary here
+# as Docker's layer caching will handle this. If deno.json changes,
+# this layer will be re-run.
+RUN deno cache src/main.ts
 
-# Production stage
-FROM debian:stable-slim
-WORKDIR /app
+# Expose the port the app runs on
+EXPOSE 3334
 
-# Copy the compiled binary from builder stage
-# Copy source code
-COPY --from=builder /app .
-
-# Environment variables that need to be set:
-# BOT_TOKEN - Discord bot token (required)
-# BOT_SELF_ID - Discord bot's user ID (required) 
-# OPENAI_URL - OpenAI-compatible API endpoint URL (required)
-# MODEL_NAME - Model name to use (required)
-# OPENAI_KEY - API key for the endpoint (required)
-# TOKEN_LIMIT - Maximum token context (optional, default: 32600)
-# ENABLE_AVATAR_SERVER - Enable avatar server (optional, default: false)
-# AVATAR_PORT - Avatar server port (optional, default: 8080)
-# PUBLIC_AVATAR_BASE_URL - Public URL for avatars (optional, for Discord webhooks)
-
-# Create characters directory
-RUN mkdir -p /app/characters
-
+# Define the entrypoint
 ENTRYPOINT ["deno", "run", "--unstable-kv", "--allow-net", "--allow-env", "--allow-read", "--allow-write", "src/main.ts"]
