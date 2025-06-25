@@ -43,5 +43,6 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            kubectl set image deployment/discordlm-deployment discordlm=ghcr.io/${{ github.repository }}:${{ github.sha }}
-            kubectl rollout status deployment/discordlm-deployment
+            sed -i "s/{{IMAGE_TAG}}/${{ github.sha }}/g" k8s-deployment.yaml
+            scp k8s-deployment.yaml ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }}:/root/discordlm/k8s-deployment.yaml
+            ssh ${{ secrets.SSH_USERNAME }}@${{ secrets.SSH_HOST }} "k3s kubectl apply -f /root/discordlm/k8s-deployment.yaml"
