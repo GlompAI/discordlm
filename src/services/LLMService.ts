@@ -68,9 +68,7 @@ export class LLMService {
             return null;
         }
 
-        const lastResetIndex = messages.map((m) => m.content).lastIndexOf(
-            RESET_MESSAGE_CONTENT,
-        );
+        const lastResetIndex = messages.map((m) => m.content).findLastIndex((c) => c.includes(RESET_MESSAGE_CONTENT));
 
         if (lastResetIndex !== -1) {
             messages = messages.slice(lastResetIndex + 1);
