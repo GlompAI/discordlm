@@ -73,6 +73,10 @@ export class ConfigService {
     isWhitelistEnabled(): boolean {
         return this.getEnv("WHITELIST_ENABLE", false, "false") === "true";
     }
+
+    getMaxHistoryMessages(): number {
+        return parseInt(this.getEnv("MAX_HISTORY_MESSAGES", false, "200"));
+    }
 }
 
 export const configService = new ConfigService();
