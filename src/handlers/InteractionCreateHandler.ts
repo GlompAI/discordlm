@@ -377,7 +377,7 @@ export class InteractionCreateHandler {
             if (!result) {
                 await this.sendEphemeralError(
                     interaction,
-                    "Oops! It seems my response was blocked again. Please try rephrasing your message or using `/reset`.",
+                    "Oops! It seems my response was blocked. This can happen for a variety of reasons, including if a message goes against our terms of service. You could try deleting your last message and rephrasing, re-rolling the last character message, or use the `/reset` command to clear our conversation and start fresh.",
                 );
                 return;
             }
