@@ -1,4 +1,5 @@
 import "https://deno.land/std@0.224.0/dotenv/load.ts";
+import adze from "adze";
 
 export class ConfigService {
     private getEnv(key: string, required: true): string;
@@ -12,7 +13,9 @@ export class ConfigService {
     }
 
     getBotToken(): string {
-        return this.getEnv("BOT_TOKEN", true);
+        const token = this.getEnv("BOT_TOKEN", true);
+        adze.debug("Retrieved Bot Token:", token);
+        return token;
     }
 
     getBotSelfId(): string {
