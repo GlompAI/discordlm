@@ -172,30 +172,61 @@ export async function parseCharacterCardFromPNG(filePath: string): Promise<Chara
                         }
                     }
                 }
-            } else if (chunkType === "zTXt") {
+            } else if (chunkType === "zTXt" || chunkType === "iTXt") {
                 // Read chunk data
                 const chunkData = fileData.slice(offset, offset + chunkLength);
+                let i = 0;
 
                 // Find null separator for keyword
-                const nullIndex = chunkData.indexOf(0);
+                const nullIndex = chunkData.indexOf(0, i);
                 if (nullIndex > -1) {
-                    const keyword = new TextDecoder().decode(chunkData.slice(0, nullIndex));
+                    const keyword = new TextDecoder().decode(chunkData.slice(i, nullIndex));
+                    i = nullIndex + 1;
 
                     if (keyword === "chara") {
                         try {
-                            // Skip keyword, null separator, and compression method byte
-                            const compressedData = chunkData.slice(nullIndex + 2);
-                            const decompressedData = unzlibSync(compressedData);
-                            const text = new TextDecoder().decode(decompressedData);
+                            let textData: Uint8Array;
+
+                            if (chunkType === "zTXt") {
+                                // zTXt: compressed data
+                                const compressedData = chunkData.slice(i + 1); // Skip compression method byte
+                                textData = unzlibSync(compressedData);
+                            } else {
+                                // iTXt: international text
+                                const compressionFlag = chunkData[i];
+                                i++;
+                                const compressionMethod = chunkData[i];
+                                i++;
+
+                                const langTagNull = chunkData.indexOf(0, i);
+                                i = langTagNull + 1;
+                                const transKeyNull = chunkData.indexOf(0, i);
+                                i = transKeyNull + 1;
+
+                                textData = chunkData.slice(i);
+
+                                if (compressionFlag === 1) {
+                                    if (compressionMethod === 0) {
+                                        textData = unzlibSync(textData);
+                                    } else {
+                                        console.warn(
+                                            `Unsupported compression method in iTXt chunk: ${compressionMethod}`,
+                                        );
+                                        continue;
+                                    }
+                                }
+                            }
+
+                            const text = new TextDecoder("utf-8").decode(textData);
                             const card = JSON.parse(text);
 
-                            // Check if it's a V2 card and adapt it
+                            // Check if it's a V2/V3 card and adapt it
                             if (card.spec === "chara_card_v2" || card.spec === "chara_card_v3") {
                                 return card;
                             }
                             return card as CharacterCard;
                         } catch (e) {
-                            console.warn(`Failed to parse compressed character data from ${filePath}:`, e);
+                            console.warn(`Failed to parse character data from ${filePath}:`, e);
                         }
                     }
                 }
