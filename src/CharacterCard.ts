@@ -219,7 +219,8 @@ export async function parseCharacterCardFromPNG(filePath: string): Promise<Chara
  */
 export async function parseCharacterCardFromJSON(filePath: string): Promise<CharacterCard | null> {
     try {
-        const fileData = await Deno.readTextFile(filePath);
+        const rawData = await Deno.readFile(filePath);
+        const fileData = new TextDecoder("utf-8").decode(rawData);
         const card = JSON.parse(fileData) as CharacterCard;
 
         // Validate required fields
