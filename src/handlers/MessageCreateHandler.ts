@@ -30,7 +30,11 @@ export class MessageCreateHandler {
 
     public async handle(message: Message): Promise<void> {
         if (!accessControlService.isUserAllowed(message.author.id)) {
-            await this.sendEphemeralError(message, "Interaction blocked.");
+            try {
+                await message.author.send("Interaction blocked.");
+            } catch (error) {
+                this.logger.error(`Failed to send DM to user ${message.author.id}:`, error);
+            }
             return;
         }
         if (message.content === RESET_MESSAGE_CONTENT || message.interaction) {
