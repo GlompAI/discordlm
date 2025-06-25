@@ -91,6 +91,7 @@ The following environment variables are required:
 | `INFERENCE_PARALLELISM` | Number of parallel inference requests to allow | No | 1 |
 | `RATE_LIMIT_PER_MINUTE` | Maximum requests per user per minute | No | 10 |
 | `ADMIN_OVERRIDE_ID` | User ID to bypass administrator checks | No | - |
+| `MAX_HISTORY_MESSAGES` | Maximum number of messages to fetch for history | No | 200 |
 | `DEBUG` | Enable debug logging | No | false |
 
 ### Getting Discord Bot Information
