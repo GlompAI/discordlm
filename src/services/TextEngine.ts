@@ -12,6 +12,7 @@ export class TextEngine {
         this.client = new GoogleGenerativeAI(configService.getApiKey());
     }
 
+
     setBotDiscordName(name: string) {
         this.botDiscordName = name;
     }

@@ -6,6 +6,7 @@ import { GifReader } from "npm:omggif";
 import { PNG } from "npm:pngjs";
 import { Buffer } from "node:buffer";
 import { CharacterCard } from "../CharacterCard.ts";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import adze from "npm:adze";
 import { dumpDebug } from "../debug.ts";
 import { retrieve_url, search_web, tools } from "../tools.ts";
@@ -349,7 +350,8 @@ export class LLMService {
             : `[DM from ${lastMessage.author.tag}]`;
         await dumpDebug(logContext, "prompt", prompt);
 
-        const model = this.textEngine.client.getGenerativeModel({
+        const generativeAi = new GoogleGenerativeAI(configService.getApiKey());
+        const model = generativeAi.getGenerativeModel({
             model: configService.getModel(),
             tools: [{ functionDeclarations: tools }],
             systemInstruction: prompt.systemInstruction,

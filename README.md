@@ -85,6 +85,7 @@ The following environment variables are required:
 | `BOT_TOKEN` | Discord bot token from Discord Developer Portal | Yes | - |
 | `BOT_SELF_ID` | Discord snowflake ID of the bot itself | Yes | - |
 | `GEMINI_API_KEY` | Your Google Gemini API key | Yes | - |
+| `GEMINI_BASE_URL` | Custom base URL for the Gemini API | No | - |
 | `MODEL_NAME` | Gemini model name to use | Yes | `models/gemini-1.5-flash` |
 | `TOKEN_LIMIT` | Maximum token context to send to the API | No | `1000000` |
 | `MAX_HISTORY_MESSAGES` | Maximum number of messages to fetch for history | No | `300` |
