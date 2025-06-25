@@ -12,6 +12,7 @@ import { ComponentService } from "../services/ComponentService.ts";
 import { WEBHOOK_IDENTIFIER } from "../WebhookManager.ts";
 import { RateLimitService } from "../services/RateLimitService.ts";
 import { accessControlService } from "../services/AccessControlService.ts";
+import { MetricsService } from "../services/MetricsService.ts";
 
 export class MessageCreateHandler {
     private readonly logger = adze.withEmoji.timestamp.seal();
@@ -251,6 +252,8 @@ export class MessageCreateHandler {
 
         try {
             this.logger.info(`${logContext} Generating response...`);
+            const llmRequestTimestamp = Date.now();
+            const startTime = performance.now();
             const result = await this.inferenceQueue.push(
                 this.llmService.generateMessage.bind(this.llmService) as any,
                 this.client,
@@ -262,6 +265,8 @@ export class MessageCreateHandler {
                 sanitize,
                 isSFW,
             ) as any;
+            const endTime = performance.now();
+            const llmResponseTime = endTime - startTime;
 
             if (result.completion.promptFeedback?.blockReason) {
                 const reason = result.completion.promptFeedback.blockReason;
@@ -360,6 +365,19 @@ export class MessageCreateHandler {
                 }
             }
             this.logger.info(`${logContext} Reply sent!`);
+
+            MetricsService.record({
+                username: message.author.username,
+                userId: message.author.id,
+                character: character?.card.name ?? "Assistant",
+                channelName: message.channel.type === ChannelType.DM ? "DM" : (message.channel as TextChannel).name,
+                channelId: message.channel.id,
+                guildName: message.guild?.name,
+                guildId: message.guild?.id,
+                isNsfw: !isSFW,
+                llmRequestTimestamp,
+                llmResponseTime,
+            });
         } catch (exception: unknown) {
             this.logger.error(`${logContext} Failed to generate or send response:`, exception);
             if (exception && typeof exception === "object" && "status" in exception) {

@@ -2,7 +2,8 @@
     "compilerOptions": {
         "lib": [
             "deno.ns",
-            "deno.window"
+            "deno.window",
+            "deno.unstable"
         ],
         "strict": true
     },
@@ -35,10 +36,10 @@
         ]
     },
     "tasks": {
-        "start": "deno run --allow-net --allow-env --allow-read --allow-write src/main.ts",
-        "dev": "deno run --allow-net --allow-env --allow-read --allow-write --watch src/main.ts",
-        "prepare": "deno compile --allow-net --allow-env --allow-read --allow-write --output dist/discordlm src/main.ts",
-        "check": "deno check src/main.ts",
+        "start": "deno run --unstable-kv --allow-net --allow-env --allow-read --allow-write src/main.ts",
+        "dev": "deno run --unstable-kv --allow-net --allow-env --allow-read --allow-write --watch src/main.ts",
+        "prepare": "deno compile --unstable-kv --allow-net --allow-env --allow-read --allow-write --output dist/discordlm src/main.ts",
+        "check": "deno check --unstable-kv src/main.ts",
         "lint": "deno lint",
         "fmt": "deno fmt",
         "fmt:check": "deno fmt --check"
