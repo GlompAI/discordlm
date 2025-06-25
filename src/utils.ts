@@ -31,57 +31,45 @@ Have fun!
     `.trim();
 }
 
-export function smartSplit(text: string, maxLength = 1980) {
+export function smartSplit(text: string, maxLength = 1980): string[] {
     if (text.length <= maxLength) {
         return [text];
     }
 
     const parts: string[] = [];
     let currentPart = "";
+    let inCodeBlock = false;
+    let codeBlockLang = "";
 
     const lines = text.split("\n");
-    let codeBlockFence: string | null = null;
 
-    for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
-
+    for (const line of lines) {
         if (line.startsWith("```")) {
-            if (codeBlockFence) {
-                codeBlockFence = null;
-            } else {
-                codeBlockFence = line.trim();
+            inCodeBlock = !inCodeBlock;
+            if (inCodeBlock) {
+                codeBlockLang = line.substring(3);
             }
         }
 
         if (currentPart.length + line.length + 1 > maxLength) {
-            if (codeBlockFence) {
+            if (inCodeBlock) {
                 currentPart += "\n```";
             }
             parts.push(currentPart);
             currentPart = "";
-            if (codeBlockFence) {
-                currentPart = codeBlockFence + "\n";
+            if (inCodeBlock) {
+                currentPart = "```" + codeBlockLang + "\n";
             }
         }
 
-        if (currentPart.length > 0) {
-            currentPart += "\n";
-        }
-        currentPart += line;
-    }
-
-    parts.push(currentPart);
-
-    const finalParts: string[] = [];
-    for (const part of parts) {
-        if (part.length > maxLength) {
-            for (let i = 0; i < part.length; i += maxLength) {
-                finalParts.push(part.substring(i, i + maxLength));
-            }
-        } else {
-            finalParts.push(part);
+        if (currentPart.length > 0 || line.trim().length > 0) {
+            currentPart += (currentPart.length > 0 ? "\n" : "") + line;
         }
     }
 
-    return finalParts;
+    if (currentPart.length > 0) {
+        parts.push(currentPart);
+    }
+
+    return parts;
 }
