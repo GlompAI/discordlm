@@ -252,6 +252,64 @@ export class InteractionCreateHandler {
         await interaction.reply({ ...reply, flags: [64] });
     }
 
+    private async fetchMessageHistory(
+        channel: TextBasedChannel,
+        beforeId?: string,
+        includeMessage?: Message,
+    ): Promise<Message[]> {
+        const allMessages: Message[] = [];
+        let lastMessageId: string | undefined = beforeId;
+        let foundReset = false;
+        const maxMessages = 1000;
+        const batchSize = 100;
+
+        if (includeMessage) {
+            allMessages.push(includeMessage);
+        }
+
+        while (allMessages.length < maxMessages && !foundReset) {
+            const fetchOptions: { limit: number; before?: string } = {
+                limit: batchSize,
+                before: lastMessageId,
+            };
+
+            const batch = await channel.messages.fetch(fetchOptions);
+            const batchArray = Array.from(batch.values());
+
+            if (batchArray.length === 0) {
+                break;
+            }
+
+            batchArray.reverse();
+
+            let resetIndex = -1;
+            for (let i = 0; i < batchArray.length; i++) {
+                const msg = batchArray[i];
+                if (msg.content === RESET_MESSAGE_CONTENT) {
+                    foundReset = true;
+                    resetIndex = i;
+                    break;
+                }
+            }
+
+            if (foundReset && resetIndex !== -1) {
+                const messagesAfterReset = batchArray.slice(resetIndex + 1);
+                allMessages.unshift(...messagesAfterReset);
+            } else {
+                allMessages.unshift(...batchArray);
+            }
+
+            lastMessageId = batchArray[0].id;
+
+            if (allMessages.length >= maxMessages) {
+                allMessages.splice(0, allMessages.length - maxMessages);
+                break;
+            }
+        }
+
+        return allMessages;
+    }
+
     private async handleReroll(interaction: ButtonInteraction, message: Message, logContext: string) {
         this.logger.info(`${logContext} Re-rolling message ID ${message.id}...`);
 
@@ -271,13 +329,8 @@ export class InteractionCreateHandler {
         }
 
         try {
-            const channel = message.channel;
-
             this.logger.info(`${logContext} Fetching message history for re-roll...`);
-            const messages = Array.from(
-                (await message.channel.messages.fetch({ limit: 100, before: message.id })).values(),
-            );
-            messages.reverse();
+            const messages = await this.fetchMessageHistory(message.channel, message.id);
 
             let character = null;
             if (message.webhookId) {
@@ -373,13 +426,7 @@ export class InteractionCreateHandler {
         }
 
         try {
-            const channel = message.channel;
-
-            const messages = Array.from(
-                (await message.channel.messages.fetch({ limit: 100, before: message.id })).values(),
-            );
-            messages.push(message);
-            messages.reverse();
+            const messages = await this.fetchMessageHistory(message.channel, message.id, message);
 
             let character = null;
             if (message.webhookId) {
