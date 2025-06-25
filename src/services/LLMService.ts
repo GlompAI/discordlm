@@ -14,6 +14,7 @@ import { RESET_MESSAGE_CONTENT } from "../main.ts";
 
 export class LLMService {
     private readonly textEngine: TextEngine;
+    private activeGenerations = 0;
 
     constructor() {
         this.textEngine = new TextEngine();
@@ -33,6 +34,8 @@ export class LLMService {
         sanitize = false,
         isSFW = false,
     ) {
+        this.activeGenerations++;
+        try {
         async function convertSnowflake(userId: string, guild: Guild | null) {
             let returnString: string;
             if (guild) {
@@ -393,5 +396,12 @@ export class LLMService {
         return {
             completion: response,
         };
+        } finally {
+            this.activeGenerations--;
+        }
+    }
+
+    public getActiveGenerations(): number {
+        return this.activeGenerations;
     }
 }

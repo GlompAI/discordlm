@@ -17,22 +17,25 @@ export class App {
     private readonly webhookManager: WebhookManager;
     private readonly interactionCreateHandler: InteractionCreateHandler;
     private readonly messageCreateHandler: MessageCreateHandler;
+    private isShuttingDown = false;
 
     constructor() {
         this.discordService = new DiscordService();
         this.webhookManager = new WebhookManager(this.discordService.client, []);
-        this.characterService = new CharacterService(this.discordService.client);
+        this.characterService = new CharacterService(this.discordService.client, this.webhookManager);
         this.llmService = new LLMService();
         this.conversationService = new ConversationService();
         this.interactionCreateHandler = new InteractionCreateHandler(
             this.characterService,
             this.llmService,
             this.discordService.client,
+            this.webhookManager,
         );
         this.messageCreateHandler = new MessageCreateHandler(
             this.characterService,
             this.llmService,
             this.discordService.client,
+            this.webhookManager,
         );
     }
 
@@ -50,9 +53,15 @@ export class App {
 
         this.discordService.client.on(
             Events.InteractionCreate,
-            (interaction) => this.interactionCreateHandler.handle(interaction),
+            (interaction) => {
+                if (this.isShuttingDown) return;
+                this.interactionCreateHandler.handle(interaction);
+            },
         );
-        this.discordService.client.on(Events.MessageCreate, (message) => this.messageCreateHandler.handle(message));
+        this.discordService.client.on(Events.MessageCreate, (message) => {
+            if (this.isShuttingDown) return;
+            this.messageCreateHandler.handle(message);
+        });
 
         await this.discordService.login();
 
@@ -62,6 +71,13 @@ export class App {
 
     public async stop(): Promise<void> {
         this.logger.log("Shutting down...");
+        this.isShuttingDown = true;
+
+        while (this.llmService.getActiveGenerations() > 0) {
+            this.logger.log(`Waiting for ${this.llmService.getActiveGenerations()} active generations to complete...`);
+            await new Promise((resolve) => setTimeout(resolve, 1000));
+        }
+
         await this.characterService.stop();
         await this.discordService.destroy();
         Deno.exit();

@@ -9,10 +9,9 @@ import { CharacterConfig } from "../CharacterCard.ts";
 export class CharacterService {
     private readonly logger = adze.withEmoji.timestamp.seal();
     private readonly characterManager: CharacterManager;
-    private webhookManager!: WebhookManager;
     private avatarServer: AvatarServer | null = null;
 
-    constructor(private readonly client: Client) {
+    constructor(private readonly client: Client, private readonly webhookManager: WebhookManager) {
         this.characterManager = new CharacterManager();
     }
 
@@ -48,7 +47,7 @@ export class CharacterService {
         this.characterManager.watchCharacters();
 
         this.logger.log(`Initializing webhook manager...`);
-        this.webhookManager = new WebhookManager(this.client, this.characterManager.getCharacters());
+        this.webhookManager.setCharacters(this.characterManager.getCharacters());
         this.logger.log(`Webhook manager initialized`);
     }
 
@@ -111,7 +110,4 @@ export class CharacterService {
         return this.getAssistantCharacter();
     }
 
-    public getWebhookManager(): WebhookManager {
-        return this.webhookManager;
-    }
 }
