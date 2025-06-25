@@ -21,7 +21,6 @@ Welcome to the bot! Here's a quick guide on how to interact:
 **Message Actions:**
 *   **Reroll (♻️):** Re-generates the bot's last response.
 *   **Delete (❌):** Deletes the bot's message.
-*   **Continue (➡️):** Prompts the bot to continue its last message.
 
 **Roleplaying:**
 *   Use asterisks for actions, like \`*I walk into the room*\`.
