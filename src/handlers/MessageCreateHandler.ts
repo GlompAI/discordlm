@@ -163,12 +163,18 @@ export class MessageCreateHandler {
 
             // Queue the task for later execution
             this.rateLimitService.queueTask(message.author.id, async () => {
-                await this.processMessage(message, character, sanitize, logContext, typingInterval);
+                const isSFW = message.channel.type !== ChannelType.DM &&
+                    "nsfw" in message.channel &&
+                    !message.channel.nsfw;
+                await this.processMessage(message, character, sanitize, logContext, typingInterval, isSFW);
             });
             return;
         }
 
-        await this.processMessage(message, character, sanitize, logContext, typingInterval);
+        const isSFW = message.channel.type !== ChannelType.DM &&
+            "nsfw" in message.channel &&
+            !message.channel.nsfw;
+        await this.processMessage(message, character, sanitize, logContext, typingInterval, isSFW);
     }
 
     private async processMessage(
@@ -177,6 +183,7 @@ export class MessageCreateHandler {
         sanitize: boolean,
         logContext: string,
         typingInterval?: number,
+        isSFW: boolean = false,
     ): Promise<void> {
         this.logger.info(`${logContext} Fetching message history...`);
 
@@ -252,6 +259,7 @@ export class MessageCreateHandler {
                 Math.floor(Math.random() * 1000000),
                 false,
                 sanitize,
+                isSFW,
             ) as any;
 
             if (result.completion.promptFeedback?.blockReason) {

@@ -31,6 +31,7 @@ export class LLMService {
         _seed?: number,
         continuation: { user: string; prompt: string } | false = false,
         sanitize = false,
+        isSFW = false,
     ) {
         async function convertSnowflake(userId: string, guild: Guild | null) {
             let returnString: string;
@@ -322,7 +323,7 @@ export class LLMService {
         const lastHumanMessage = history.slice().reverse().find((msg) => msg.role === "user");
         const username = lastHumanMessage?.user || "user";
 
-        const prompt = this.textEngine.buildPrompt(history, username, character ?? undefined);
+        const prompt = this.textEngine.buildPrompt(history, username, character ?? undefined, isSFW);
         const lastMessage = messages[messages.length - 1];
         const logContext = lastMessage.guild
             ? `[Guild: ${lastMessage.guild.name} | Channel: ${
@@ -365,7 +366,7 @@ export class LLMService {
                     user: "Tool",
                 });
             }
-            const finalPrompt = this.textEngine.buildPrompt(history, username, character ?? undefined);
+            const finalPrompt = this.textEngine.buildPrompt(history, username, character ?? undefined, isSFW);
             const finalChat = model.startChat({
                 history: finalPrompt.history as any,
             });
