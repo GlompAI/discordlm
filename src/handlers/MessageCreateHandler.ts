@@ -218,7 +218,7 @@ export class MessageCreateHandler {
             let resetIndex = -1;
             for (let i = 0; i < batchArray.length; i++) {
                 const msg = batchArray[i];
-                if (msg.content === RESET_MESSAGE_CONTENT) {
+                if (msg.content.includes(RESET_MESSAGE_CONTENT)) {
                     foundReset = true;
                     resetIndex = i;
                     break;
