@@ -328,10 +328,14 @@ export class InteractionCreateHandler {
             });
         }
 
+        let typingInterval: number | undefined;
         try {
             const channel = message.channel;
             if (channel.isTextBased() && "sendTyping" in channel) {
                 await channel.sendTyping();
+                typingInterval = setInterval(() => {
+                    channel.sendTyping();
+                }, 9000);
             }
 
             this.logger.info(`${logContext} Fetching message history for re-roll...`);
@@ -385,6 +389,7 @@ export class InteractionCreateHandler {
             this.logger.error(`${logContext} Failed to re-roll response for message ID ${message.id}:`);
             console.log(error);
         } finally {
+            clearInterval(typingInterval);
             const fetchedMessage = await message.channel.messages.fetch(message.id).catch(() => null);
             if (fetchedMessage) {
                 if (fetchedMessage.webhookId) {
@@ -430,12 +435,17 @@ export class InteractionCreateHandler {
             });
         }
 
+        let typingInterval: number | undefined;
         try {
             const channel = message.channel;
             if (channel.isTextBased() && "sendTyping" in channel) {
                 await channel.sendTyping();
+                typingInterval = setInterval(() => {
+                    channel.sendTyping();
+                }, 9000);
             }
 
+            this.logger.info(`${logContext} Fetching message history for continue...`);
             const messages = await this.fetchMessageHistory(message.channel, message.id, message);
 
             let character = null;
@@ -444,7 +454,9 @@ export class InteractionCreateHandler {
             } else if (message.embeds.length > 0 && message.embeds[0].title) {
                 character = this.characterService.getCharacter(message.embeds[0].title);
             }
+            this.logger.info(`${logContext} Using character for continue: ${character ? character.card.name : "none"}`);
 
+            this.logger.info(`${logContext} Generating new response...`);
             const result = (await this.inferenceQueue.push(
                 this.llmService.generateMessage.bind(this.llmService),
                 this.client,
@@ -511,6 +523,7 @@ export class InteractionCreateHandler {
             this.logger.error(`${logContext} Failed to continue response for message ID ${message.id}:`);
             console.log(error);
         } finally {
+            clearInterval(typingInterval);
             const fetchedMessage = await message.channel.messages.fetch(message.id).catch(() => null);
             if (fetchedMessage) {
                 if (fetchedMessage.webhookId) {
