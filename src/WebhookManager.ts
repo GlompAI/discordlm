@@ -233,7 +233,7 @@ export class WebhookManager {
     /**
      * Update characters list (call this when characters are reloaded)
      */
-    updateCharacters(characters: CharacterConfig[]): void {
+    setCharacters(characters: CharacterConfig[]): void {
         this.characters = characters;
         // Optionally clear webhook cache to force recreation with new character data
         this.webhooks.clear();

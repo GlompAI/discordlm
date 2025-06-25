@@ -20,6 +20,7 @@ import { dumpDebug } from "../debug.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";
 import { getHelpText } from "../utils.ts";
 import adze from "npm:adze";
+import { WebhookManager } from "../WebhookManager.ts";
 import { ComponentService } from "../services/ComponentService.ts";
 import { LLMService } from "../services/LLMService.ts";
 import { Queue } from "../queue.ts";
@@ -35,6 +36,7 @@ export class InteractionCreateHandler {
         private readonly characterService: CharacterService,
         private readonly llmService: LLMService,
         private readonly client: Client,
+        private readonly webhookManager: WebhookManager,
     ) {
         this.componentService = new ComponentService();
         this.inferenceQueue = new Queue(configService.getInferenceParallelism());
@@ -394,7 +396,7 @@ export class InteractionCreateHandler {
                 finalContent = `${reply}\n${link}`;
             }
 
-            const webhookManager = this.characterService.getWebhookManager();
+            const webhookManager = this.webhookManager;
             if (message.webhookId && webhookManager && character) {
                 await webhookManager.editAsCharacter(message, character, finalContent, {
                     components: [this.componentService.createActionRow()],
@@ -423,7 +425,7 @@ export class InteractionCreateHandler {
             if (fetchedMessage) {
                 if (fetchedMessage.webhookId) {
                     const character = this.characterService.getCharacter(fetchedMessage.author.username);
-                    const webhookManager = this.characterService.getWebhookManager();
+                    const webhookManager = this.webhookManager;
                     if (character && webhookManager) {
                         await webhookManager.editAsCharacter(fetchedMessage, character, fetchedMessage.content, {
                             components: [this.componentService.createActionRow(false)],

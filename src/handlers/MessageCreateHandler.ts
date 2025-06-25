@@ -9,7 +9,7 @@ import { getHelpText } from "../utils.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";
 import { Queue } from "../queue.ts";
 import { ComponentService } from "../services/ComponentService.ts";
-import { WEBHOOK_IDENTIFIER } from "../WebhookManager.ts";
+import { WebhookManager, WEBHOOK_IDENTIFIER } from "../WebhookManager.ts";
 import { RateLimitService } from "../services/RateLimitService.ts";
 import { accessControlService } from "../services/AccessControlService.ts";
 import { MetricsService } from "../services/MetricsService.ts";
@@ -24,6 +24,7 @@ export class MessageCreateHandler {
         private readonly characterService: CharacterService,
         private readonly llmService: LLMService,
         private readonly client: Client,
+        private readonly webhookManager: WebhookManager,
     ) {
         this.inferenceQueue = new Queue(configService.getInferenceParallelism());
         this.componentService = new ComponentService();
@@ -300,8 +301,7 @@ export class MessageCreateHandler {
             const messageParts = smartSplit(reply);
 
             for (const part of messageParts) {
-                // Get webhook manager from character service
-                const webhookManager = this.characterService.getWebhookManager();
+                const webhookManager = this.webhookManager;
 
                 // Check if this is the Assistant character (should not use webhooks)
                 const isAssistant = character && character.card.name === configService.getAssistantName();
