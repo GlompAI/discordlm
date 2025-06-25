@@ -31,6 +31,7 @@ export class InteractionCreateHandler {
     private readonly logger = adze.withEmoji.timestamp.seal();
     private readonly componentService: ComponentService;
     private readonly inferenceQueue: Queue;
+    private isShuttingDown = false;
 
     constructor(
         private readonly characterService: CharacterService,
@@ -43,6 +44,7 @@ export class InteractionCreateHandler {
     }
 
     public async handle(interaction: Interaction): Promise<void> {
+        if (this.isShuttingDown) return;
         if (!accessControlService.isUserAllowed(interaction.user.id)) {
             if (interaction.isRepliable()) {
                 await interaction.reply({ content: "Interaction blocked.", ephemeral: true });
@@ -401,6 +403,16 @@ export class InteractionCreateHandler {
                 await webhookManager.editAsCharacter(message, character, finalContent, {
                     components: [this.componentService.createActionRow()],
                 });
+            } else if (webhookManager && character && message.guild) {
+                await webhookManager.sendAsCharacter(
+                    message.channel as TextChannel,
+                    character,
+                    finalContent,
+                    { components: [this.componentService.createActionRow()] },
+                    message,
+                    interaction.user,
+                );
+                await message.delete();
             } else {
                 if (message.embeds.length > 0) {
                     const embed = new EmbedBuilder()
