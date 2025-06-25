@@ -326,10 +326,8 @@ export class MessageCreateHandler {
                     // Fallback to regular reply
                     if (character) {
                         const embed = new EmbedBuilder()
-                            .setAuthor({
-                                name: character.card.name,
-                                iconURL: character.avatarUrl,
-                            })
+                            .setAuthor({ name: character.card.name })
+                            .setThumbnail(character.avatarUrl ?? null)
                             .setColor(0x5865F2)
                             .setDescription(part);
                         await message.reply({
