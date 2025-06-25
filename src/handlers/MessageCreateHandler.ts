@@ -281,7 +281,7 @@ export class MessageCreateHandler {
                 adze.error("Empty response from API, but no block reason provided.");
                 await this.sendEphemeralError(
                     message,
-                    "I received an empty response from the AI. Please try again.",
+                    "Oops! It seems my response was blocked. This can happen for a variety of reasons, including if a message goes against our terms of service. You could try deleting your last message and rephrasing, re-rolling the last character message, or use the `/reset` command to clear our conversation and start fresh.",
                 );
                 return;
             }
