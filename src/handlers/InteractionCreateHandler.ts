@@ -377,9 +377,14 @@ export class InteractionCreateHandler {
                 return;
             }
 
+            const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+            const nameToRemove = character ? character.card.name : "Assistant";
+            const nameRegex = new RegExp(`^${escapeRegex(nameToRemove)}:\\s*`, "i");
+            const reply = result.replace(nameRegex, "");
+
             const webhookManager = this.characterService.getWebhookManager();
             if (message.webhookId && webhookManager && character) {
-                await webhookManager.editAsCharacter(message, character, result, {
+                await webhookManager.editAsCharacter(message, character, reply, {
                     components: [this.componentService.createActionRow()],
                 });
             } else {
@@ -387,10 +392,10 @@ export class InteractionCreateHandler {
                     const embed = new EmbedBuilder()
                         .setTitle(character ? character.card.name : "Assistant")
                         .setThumbnail(character?.avatarUrl ?? null)
-                        .setDescription(result);
+                        .setDescription(reply);
                     await message.edit({ embeds: [embed], components: [this.componentService.createActionRow()] });
                 } else {
-                    await message.edit({ content: result, components: [this.componentService.createActionRow()] });
+                    await message.edit({ content: reply, components: [this.componentService.createActionRow()] });
                 }
             }
             this.logger.info(`${logContext} Re-roll successful for message ID ${message.id}`);
