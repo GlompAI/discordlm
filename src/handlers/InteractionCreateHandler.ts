@@ -329,6 +329,11 @@ export class InteractionCreateHandler {
         }
 
         try {
+            const channel = message.channel;
+            if (channel.isTextBased() && "sendTyping" in channel) {
+                await channel.sendTyping();
+            }
+
             this.logger.info(`${logContext} Fetching message history for re-roll...`);
             const messages = await this.fetchMessageHistory(message.channel, message.id);
 
@@ -426,6 +431,11 @@ export class InteractionCreateHandler {
         }
 
         try {
+            const channel = message.channel;
+            if (channel.isTextBased() && "sendTyping" in channel) {
+                await channel.sendTyping();
+            }
+
             const messages = await this.fetchMessageHistory(message.channel, message.id, message);
 
             let character = null;
