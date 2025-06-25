@@ -163,10 +163,16 @@ export async function parseCharacterCardFromPNG(filePath: string): Promise<Chara
                     const keyword = new TextDecoder().decode(chunkData.slice(0, nullIndex));
                     if (keyword === "chara") {
                         try {
-                            const base64Text = new TextDecoder().decode(chunkData.slice(nullIndex + 1));
-                            const decodedData = decodeBase64(base64Text);
-                            const jsonString = new TextDecoder().decode(decodedData);
-                            return JSON.parse(jsonString) as CharacterCard;
+                            const text = new TextDecoder().decode(chunkData.slice(nullIndex + 1));
+                            try {
+                                // First, try to parse as plain JSON
+                                return JSON.parse(text) as CharacterCard;
+                            } catch {
+                                // If that fails, try to decode from Base64
+                                const decodedData = decodeBase64(text);
+                                const jsonString = new TextDecoder().decode(decodedData);
+                                return JSON.parse(jsonString) as CharacterCard;
+                            }
                         } catch (e) {
                             console.warn(`Failed to parse character data from ${filePath}:`, e);
                         }
