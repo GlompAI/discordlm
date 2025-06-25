@@ -21,6 +21,7 @@ import { ComponentService } from "../services/ComponentService.ts";
 import { LLMService } from "../services/LLMService.ts";
 import { Queue } from "../queue.ts";
 import { configService } from "../services/ConfigService.ts";
+import { accessControlService } from "../services/AccessControlService.ts";
 
 export class InteractionCreateHandler {
     private readonly logger = adze.withEmoji.timestamp.seal();
@@ -37,6 +38,13 @@ export class InteractionCreateHandler {
     }
 
     public async handle(interaction: Interaction): Promise<void> {
+        if (!accessControlService.isUserAllowed(interaction.user.id)) {
+            if (interaction.isRepliable()) {
+                await interaction.reply({ content: "Interaction blocked.", ephemeral: true });
+            }
+            return;
+        }
+
         const logContext = interaction.guild
             ? `[Guild: ${interaction.guild.name} | Channel: ${
                 (interaction.channel as TextChannel).name
@@ -171,11 +179,6 @@ export class InteractionCreateHandler {
             }
             if (!interaction.isButton()) return;
             await this.handleReroll(interaction, message, logContext);
-        }
-
-        if (interaction.customId === "continue") {
-            if (!interaction.isButton()) return;
-            await this.handleContinue(interaction, message, logContext);
         }
 
         if (interaction.customId === "character-select") {
@@ -397,141 +400,6 @@ export class InteractionCreateHandler {
                     const webhookManager = this.characterService.getWebhookManager();
                     if (character && webhookManager) {
                         await webhookManager.editAsCharacter(fetchedMessage, character, fetchedMessage.content, {
-                            components: [this.componentService.createActionRow(false)],
-                        });
-                    }
-                } else if (fetchedMessage.embeds.length > 0) {
-                    const originalEmbed = new EmbedBuilder(fetchedMessage.embeds[0].toJSON());
-                    const newEmbed = originalEmbed.setFooter(null);
-                    await fetchedMessage.edit({
-                        embeds: [newEmbed],
-                        components: [this.componentService.createActionRow(false)],
-                    });
-                } else {
-                    await fetchedMessage.edit({
-                        content: fetchedMessage.content.replace(/\n\n> Generating.../, ""),
-                        components: [this.componentService.createActionRow(false)],
-                    });
-                }
-            }
-        }
-    }
-
-    private async handleContinue(interaction: ButtonInteraction, message: Message, logContext: string) {
-        this.logger.info(`${logContext} Continue interaction on message ID ${message.id}...`);
-
-        const continueActionRow = this.componentService.createActionRow(true);
-
-        if (message.webhookId) {
-            await interaction.update({ components: [continueActionRow] });
-        } else if (message.embeds.length > 0) {
-            const originalContinueEmbed = new EmbedBuilder(message.embeds[0].toJSON());
-            const newContinueEmbed = originalContinueEmbed.setFooter({ text: "Generating..." });
-            await interaction.update({ embeds: [newContinueEmbed], components: [continueActionRow] });
-        } else {
-            await interaction.update({
-                content: `${message.content}\n\n> Generating...`,
-                components: [continueActionRow],
-            });
-        }
-
-        let typingInterval: number | undefined;
-        try {
-            const channel = message.channel;
-            if (channel.isTextBased() && "sendTyping" in channel) {
-                await channel.sendTyping();
-                typingInterval = setInterval(() => {
-                    channel.sendTyping();
-                }, 9000);
-            }
-
-            this.logger.info(`${logContext} Fetching message history for continue...`);
-            const messages = await this.fetchMessageHistory(message.channel, message.id, message);
-
-            let character = null;
-            if (message.webhookId) {
-                character = this.characterService.getCharacter(message.author.username);
-            } else if (message.embeds.length > 0 && message.embeds[0].title) {
-                character = this.characterService.getCharacter(message.embeds[0].title);
-            }
-            this.logger.info(`${logContext} Using character for continue: ${character ? character.card.name : "none"}`);
-
-            this.logger.info(`${logContext} Generating new response...`);
-            const result = (await this.inferenceQueue.push(
-                this.llmService.generateMessage.bind(this.llmService),
-                this.client,
-                messages,
-                configService.getBotSelfId(),
-                character ? character.card : null,
-                Math.floor(Math.random() * 1000000), // seed
-                {
-                    user: interaction.user.username,
-                    prompt: "{OOC: Please continue the roleplay interaction. Your last message was great.}",
-                },
-            ))
-                .completion.text();
-
-            if (!result) {
-                await this.sendEphemeralError(
-                    interaction,
-                    "Oops! It seems my response was blocked. Please try again.",
-                );
-                return;
-            }
-
-            const webhookManager = this.characterService.getWebhookManager();
-            if (webhookManager && character && message.channel instanceof TextChannel) {
-                const sentMessage = await webhookManager.sendAsCharacter(
-                    message.channel,
-                    character,
-                    result,
-                    { components: [this.componentService.createActionRow()] },
-                    message,
-                    interaction.user,
-                );
-                if (sentMessage) {
-                    // this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
-                }
-            } else if (message.channel.isTextBased()) {
-                // Check if we're in a DM or a guild channel
-                if (message.channel.type === ChannelType.DM) {
-                    // In DMs, use embeds
-                    const embed = new EmbedBuilder()
-                        .setTitle(character ? character.card.name : "Assistant")
-                        .setThumbnail(character?.avatarUrl ?? null)
-                        .setDescription(result);
-                    if ("send" in message.channel) {
-                        const sentMessage = await message.channel.send({
-                            embeds: [embed],
-                            components: [this.componentService.createActionRow()],
-                        });
-                        // this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
-                    }
-                } else {
-                    // In guild channels, send plain text
-                    if ("send" in message.channel) {
-                        const sentMessage = await message.channel.send({
-                            content: result,
-                            components: [this.componentService.createActionRow()],
-                        });
-                        // this.conversationService.setLastBotMessage(message.channel.id, sentMessage);
-                    }
-                }
-            }
-            this.logger.info(`${logContext} Continuation successful for message ID ${message.id}`);
-        } catch (error) {
-            this.logger.error(`${logContext} Failed to continue response for message ID ${message.id}:`);
-            console.log(error);
-        } finally {
-            clearInterval(typingInterval);
-            const fetchedMessage = await message.channel.messages.fetch(message.id).catch(() => null);
-            if (fetchedMessage) {
-                if (fetchedMessage.webhookId) {
-                    const character = this.characterService.getCharacter(fetchedMessage.author.username);
-                    const webhookManager = this.characterService.getWebhookManager();
-                    if (character && webhookManager) {
-                        const finalContent = fetchedMessage.content.replace(/\n\n> Generating.../, "");
-                        await webhookManager.editAsCharacter(fetchedMessage, character, finalContent, {
                             components: [this.componentService.createActionRow(false)],
                         });
                     }

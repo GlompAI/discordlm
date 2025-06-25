@@ -10,6 +10,7 @@ import { Queue } from "../queue.ts";
 import { ComponentService } from "../services/ComponentService.ts";
 import { WEBHOOK_IDENTIFIER } from "../WebhookManager.ts";
 import { RateLimitService } from "../services/RateLimitService.ts";
+import { accessControlService } from "../services/AccessControlService.ts";
 
 export class MessageCreateHandler {
     private readonly logger = adze.withEmoji.timestamp.seal();
@@ -28,6 +29,10 @@ export class MessageCreateHandler {
     }
 
     public async handle(message: Message): Promise<void> {
+        if (!accessControlService.isUserAllowed(message.author.id)) {
+            await this.sendEphemeralError(message, "Interaction blocked.");
+            return;
+        }
         if (message.content === RESET_MESSAGE_CONTENT || message.interaction) {
             return;
         }
