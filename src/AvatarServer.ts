@@ -1,4 +1,5 @@
 import adze from "npm:adze";
+import { MetricsService } from "./services/MetricsService.ts";
 
 const logger = adze.withEmoji.timestamp.seal();
 
@@ -42,6 +43,21 @@ export class AvatarServer {
      */
     private async handleRequest(request: Request): Promise<Response> {
         const url = new URL(request.url);
+
+        if (url.pathname === "/metrics") {
+            const html = await MetricsService.getMetricsHtml();
+            return new Response(html, {
+                status: 200,
+                headers: { "Content-Type": "text/html" },
+            });
+        }
+
+        if (url.pathname === "/") {
+            return new Response(null, {
+                status: 302,
+                headers: { "Location": "/metrics" },
+            });
+        }
 
         // Only handle avatar requests
         if (!url.pathname.startsWith("/avatars/")) {
