@@ -103,6 +103,15 @@ export class MessageCreateHandler {
             return;
         }
 
+        let typingInterval: number | undefined;
+        const channel = message.channel;
+        if (channel.isTextBased() && "sendTyping" in channel) {
+            await channel.sendTyping();
+            typingInterval = setInterval(() => {
+                channel.sendTyping();
+            }, 9000);
+        }
+
         let character = null;
         const isDirectPing = message.content.includes(`<@${configService.getBotSelfId()}>`);
 
@@ -154,12 +163,12 @@ export class MessageCreateHandler {
 
             // Queue the task for later execution
             this.rateLimitService.queueTask(message.author.id, async () => {
-                await this.processMessage(message, character, sanitize, logContext);
+                await this.processMessage(message, character, sanitize, logContext, typingInterval);
             });
             return;
         }
 
-        await this.processMessage(message, character, sanitize, logContext);
+        await this.processMessage(message, character, sanitize, logContext, typingInterval);
     }
 
     private async processMessage(
@@ -167,6 +176,7 @@ export class MessageCreateHandler {
         character: any,
         sanitize: boolean,
         logContext: string,
+        typingInterval?: number,
     ): Promise<void> {
         this.logger.info(`${logContext} Fetching message history...`);
 
@@ -230,15 +240,6 @@ export class MessageCreateHandler {
 
         const messages = allMessages;
         this.logger.info(`${logContext} Fetched ${messages.length} messages in chronological order`);
-
-        let typingInterval: number | undefined;
-        const channel = message.channel;
-        if (channel.isTextBased() && "sendTyping" in channel) {
-            await channel.sendTyping();
-            typingInterval = setInterval(() => {
-                channel.sendTyping();
-            }, 9000);
-        }
 
         try {
             this.logger.info(`${logContext} Generating response...`);

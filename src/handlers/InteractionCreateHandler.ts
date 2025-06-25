@@ -316,6 +316,15 @@ export class InteractionCreateHandler {
     private async handleReroll(interaction: ButtonInteraction, message: Message, logContext: string) {
         this.logger.info(`${logContext} Re-rolling message ID ${message.id}...`);
 
+        let typingInterval: number | undefined;
+        const channel = message.channel;
+        if (channel.isTextBased() && "sendTyping" in channel) {
+            await channel.sendTyping();
+            typingInterval = setInterval(() => {
+                channel.sendTyping();
+            }, 9000);
+        }
+
         const actionRow = this.componentService.createActionRow(true);
 
         if (message.webhookId) {
@@ -331,16 +340,7 @@ export class InteractionCreateHandler {
             });
         }
 
-        let typingInterval: number | undefined;
         try {
-            const channel = message.channel;
-            if (channel.isTextBased() && "sendTyping" in channel) {
-                await channel.sendTyping();
-                typingInterval = setInterval(() => {
-                    channel.sendTyping();
-                }, 9000);
-            }
-
             this.logger.info(`${logContext} Fetching message history for re-roll...`);
             const messages = await this.fetchMessageHistory(message.channel, message.id);
 
