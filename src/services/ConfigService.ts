@@ -26,6 +26,10 @@ export class ConfigService {
         return this.getEnv("GEMINI_API_KEY", true);
     }
 
+    getGeminiBaseUrl(): string | undefined {
+        return this.getEnv("GEMINI_BASE_URL", false, "");
+    }
+
     getModel(): string {
         return this.getEnv("MODEL_NAME", false, "gemini-1.5-flash");
     }
