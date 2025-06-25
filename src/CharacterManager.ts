@@ -107,8 +107,6 @@ export class CharacterManager {
     async watchCharacters() {
         const watcher = Deno.watchFs(this.charactersDir);
         logger.info(`Watching for character changes in ${this.charactersDir}`);
-        const assistantName = configService.getAssistantName();
-
         for await (const event of watcher) {
             for (const path of event.paths) {
                 const filename = path.split("/").pop();

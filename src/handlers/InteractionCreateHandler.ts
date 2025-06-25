@@ -1,16 +1,17 @@
 import {
     ActionRowBuilder,
+    AutocompleteInteraction,
     ButtonBuilder,
     ButtonInteraction,
     ButtonStyle,
     ChannelType,
+    ChatInputCommandInteraction,
     Client,
     EmbedBuilder,
     hideLinkEmbed,
     hyperlink,
     Interaction,
     Message,
-    StringSelectMenuInteraction,
     TextBasedChannel,
     TextChannel,
 } from "discord.js";
@@ -98,7 +99,7 @@ export class InteractionCreateHandler {
         }
     }
 
-    private async handleAutocomplete(interaction: any) {
+    private async handleAutocomplete(interaction: AutocompleteInteraction) {
         if (interaction.commandName === "switch") {
             const focusedValue = interaction.options.getFocused().toLowerCase();
             const characters = this.characterService.getCharacters();
@@ -136,30 +137,32 @@ export class InteractionCreateHandler {
                 if (interaction.channel?.type === ChannelType.DM) {
                     await interaction.reply({ content: "Message deleted.", ephemeral: true });
                 }
-            } catch (error: any) {
+            } catch (error) {
                 this.logger.error(`Failed to delete message ${message.id}:`, error);
 
                 // Handle specific error cases
-                if (error.code === 10008) {
-                    // Unknown Message - already deleted
-                    await interaction.reply({ content: "This message has already been deleted.", ephemeral: true });
-                } else if (error.message?.includes("connection reset") || error.message?.includes("ECONNRESET")) {
-                    // Network error - try to acknowledge the interaction at least
-                    await interaction.reply({
-                        content: "Network error while deleting message. Please try again.",
-                        ephemeral: true,
-                    }).catch(() => {
-                        // If we can't even reply, just log it
-                        this.logger.error("Could not send error response to user");
-                    });
-                } else {
-                    // Generic error
-                    await interaction.reply({
-                        content: "Failed to delete message. Please try again later.",
-                        ephemeral: true,
-                    }).catch(() => {
-                        this.logger.error("Could not send error response to user");
-                    });
+                if (error instanceof Error && "code" in error) {
+                    if ((error as any).code === 10008) {
+                        // Unknown Message - already deleted
+                        await interaction.reply({ content: "This message has already been deleted.", ephemeral: true });
+                    } else if (error.message?.includes("connection reset") || error.message?.includes("ECONNRESET")) {
+                        // Network error - try to acknowledge the interaction at least
+                        await interaction.reply({
+                            content: "Network error while deleting message. Please try again.",
+                            ephemeral: true,
+                        }).catch(() => {
+                            // If we can't even reply, just log it
+                            this.logger.error("Could not send error response to user");
+                        });
+                    } else {
+                        // Generic error
+                        await interaction.reply({
+                            content: "Failed to delete message. Please try again later.",
+                            ephemeral: true,
+                        }).catch(() => {
+                            this.logger.error("Could not send error response to user");
+                        });
+                    }
                 }
             }
             return;
@@ -206,11 +209,11 @@ export class InteractionCreateHandler {
         if (interaction.customId.startsWith("list-")) {
             const currentPage = parseInt(interaction.customId.split("-")[2]);
             const newReply = await this.generateListReply(currentPage, interaction.channel as TextChannel);
-            await (interaction as any).update(newReply);
+            await (interaction as ButtonInteraction).update(newReply);
         }
     }
 
-    private async handleSwitchCommand(interaction: any) {
+    private async handleSwitchCommand(interaction: ChatInputCommandInteraction) {
         const characterName = interaction.options.getString("character");
         if (characterName) {
             // Handle old command format
@@ -240,7 +243,7 @@ export class InteractionCreateHandler {
         }
     }
 
-    private async handleResetCommand(interaction: any) {
+    private async handleResetCommand(interaction: ChatInputCommandInteraction) {
         const confirmButton = new ButtonBuilder()
             .setCustomId("confirm-reset")
             .setLabel("Confirm Reset")
@@ -252,7 +255,7 @@ export class InteractionCreateHandler {
         });
     }
 
-    private async handleListCommand(interaction: any, page: number) {
+    private async handleListCommand(interaction: ChatInputCommandInteraction, page: number) {
         const reply = await this.generateListReply(page, interaction.channel);
         await interaction.reply({ ...reply, flags: [64] });
     }

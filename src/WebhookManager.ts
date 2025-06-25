@@ -1,7 +1,5 @@
 import {
-    ActionRowBuilder,
     Client,
-    ComponentType,
     hideLinkEmbed,
     hyperlink,
     Message,
@@ -14,7 +12,6 @@ import {
 import { CharacterConfig } from "./CharacterCard.ts";
 import { getPublicAvatarBaseUrl } from "./env.ts";
 import adze from "npm:adze";
-import { componentService } from "./services/ComponentService.ts";
 
 const logger = adze.withEmoji.timestamp.seal();
 export const WEBHOOK_IDENTIFIER = "\u200B";
