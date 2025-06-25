@@ -128,7 +128,9 @@ export class LLMService {
                                     let lastError;
                                     for (let attempt = 0; attempt < 3; attempt++) {
                                         try {
-                                            const response = await fetch(a.url);
+                                            const response = await fetch(a.url, {
+                                                headers: { "User-Agent": "DiscordLM-Bot/1.0" },
+                                            });
                                             if (!response.ok) {
                                                 throw new Error(`HTTP ${response.status} ${response.statusText}`);
                                             }
@@ -206,7 +208,9 @@ export class LLMService {
                         let lastError;
                         for (let attempt = 0; attempt < 3; attempt++) {
                             try {
-                                const response = await fetch(sticker.url);
+                                const response = await fetch(sticker.url, {
+                                    headers: { "User-Agent": "DiscordLM-Bot/1.0" },
+                                });
                                 if (!response.ok) {
                                     throw new Error(`HTTP ${response.status} ${response.statusText}`);
                                 }
@@ -234,7 +238,7 @@ export class LLMService {
                             }
                         }
                         if (lastError) {
-                            throw lastError;
+                            adze.error(`Failed to fetch sticker ${sticker.url} after 3 attempts:`, lastError);
                         }
                     } catch (error) {
                         adze.error(`Failed to fetch sticker ${sticker.url} after 3 attempts:`, error);
@@ -256,7 +260,9 @@ export class LLMService {
                         let success = false;
                         for (let attempt = 0; attempt < 3; attempt++) {
                             try {
-                                const response = await fetch(emojiUrl);
+                                const response = await fetch(emojiUrl, {
+                                    headers: { "User-Agent": "DiscordLM-Bot/1.0" },
+                                });
                                 if (!response.ok) {
                                     throw new Error(`HTTP ${response.status} ${response.statusText}`);
                                 }
