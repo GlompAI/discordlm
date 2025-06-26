@@ -65,6 +65,7 @@ jobs:
               --docker-username=${{ github.actor }} \
               --docker-password=${{ secrets.GITHUB_TOKEN }} \
               --dry-run=client -o yaml | k3s kubectl apply -f - --overwrite --force
+            k3s kubectl delete secret discordlm-secrets --ignore-not-found
             k3s kubectl create secret generic discordlm-secrets \
               --from-literal=BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
               --from-literal=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
