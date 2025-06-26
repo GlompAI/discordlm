@@ -51,7 +51,7 @@ export class ConfigService {
         if (provider === "openai") {
             return this.getEnv("OPENAI_MODEL_NAME", false, "gpt-4-turbo");
         }
-        return this.getEnv("GEMINI_MODEL_NAME", false, "gemini-1.5-flash");
+        return this.getEnv("GEMINI_MODEL_NAME", false, "gemini-2.5-flash");
     }
 
     getTokenLimit(): number {
