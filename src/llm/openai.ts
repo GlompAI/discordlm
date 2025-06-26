@@ -87,7 +87,7 @@ export class OpenAIProvider implements LLMProvider {
         apiMessages.push(...adaptedHistory);
 
         const request: OpenAI.Chat.Completions.ChatCompletionCreateParams = {
-            model: configService.getModel(),
+            model: configService.getModel("openai"),
             messages: apiMessages,
         };
 
