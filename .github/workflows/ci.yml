@@ -76,7 +76,7 @@ jobs:
               -o yaml | k3s kubectl apply -f - --overwrite
             k3s kubectl delete configmap discordlm-config --ignore-not-found
             k3s kubectl create configmap discordlm-config \
-              --from-literal=OPEN_BASE_URL=${{ vars.OPEN_BASE_URL }} \
+              --from-literal=OPENAI_BASE_URL=${{ vars.OPENAI_BASE_URL }} \
               --from-literal=ADMIN_OVERRIDE_ID=${{ vars.ADMIN_OVERRIDE_ID }} \
               --from-literal=USER_ID_LIST=${{ vars.USER_ID_LIST }} \
               --from-literal=LIMIT_USER_IDS=${{ vars.LIMIT_USER_IDS }} \
