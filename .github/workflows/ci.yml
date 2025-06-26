@@ -69,5 +69,7 @@ jobs:
               --from-literal=OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
               --dry-run=client -o yaml | k3s kubectl apply -f -
             k3s kubectl apply -f /root/discordlm/k8s-config.yaml
+            k3s kubectl get configmap discordlm-config -o yaml
             k3s kubectl apply -f /root/discordlm/k8s-deployment.yaml
             k3s kubectl rollout status deployment/discordlm-deployment
+            k3s kubectl exec deployment/discordlm-deployment -- printenv
