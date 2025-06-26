@@ -422,8 +422,9 @@ export class InteractionCreateHandler {
             } else {
                 if (message.embeds.length > 0) {
                     const embed = new EmbedBuilder()
-                        .setTitle(character ? character.card.name : "Assistant")
+                        .setAuthor({ name: character ? character.card.name : "Assistant" })
                         .setThumbnail(character?.avatarUrl ?? null)
+                        .setColor(0x5865F2)
                         .setDescription(reply);
                     await message.edit({ embeds: [embed], components: [this.componentService.createActionRow()] });
                 } else {
