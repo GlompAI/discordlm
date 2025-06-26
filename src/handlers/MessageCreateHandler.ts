@@ -287,7 +287,8 @@ export class MessageCreateHandler {
             const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
             const nameToRemove = character ? character.card.name : "Assistant";
             const nameRegex = new RegExp(`^${escapeRegex(nameToRemove)}:\\s*`, "i");
-            const reply = text.replace(nameRegex, "");
+            let reply = text.replace(nameRegex, "");
+            reply = reply.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
             this.logger.info(`${logContext} Replying...`);
 
             const messageParts = smartSplit(reply);

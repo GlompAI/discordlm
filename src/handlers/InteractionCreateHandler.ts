@@ -395,7 +395,8 @@ export class InteractionCreateHandler {
             const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
             const nameToRemove = character ? character.card.name : "Assistant";
             const nameRegex = new RegExp(`^${escapeRegex(nameToRemove)}:\\s*`, "i");
-            const reply = result.replace(nameRegex, "");
+            let reply = result.replace(nameRegex, "");
+            reply = reply.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
 
             let finalContent = reply;
             if (message.guild) {
