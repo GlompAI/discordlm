@@ -6,6 +6,7 @@ type: Opaque
 data:
   BOT_SELF_ID: MTM0NjQ4MDg5NjYwOTM1Mzc2OQ==
   GEMINI_API_KEY: QUl6YVN5Q1VDcHJpUVBGV3JhNVBUTmdNblVKY28wNEFreHFFVVJZ
+  OPENAI_API_KEY: YWNkY2EwMWZjZDM4MWI4YmI1ZjYxNmYzYTA3YmFkOTM=
   ADMIN_OVERRIDE_ID: MTM3Mjk1NzY5NTQxMzQ1MjkwMA==
   USER_ID_LIST: MTA5MTYyNjc1MDgyOTY3ODYwMg==
 ---
@@ -14,7 +15,10 @@ kind: ConfigMap
 metadata:
   name: discordlm-config
 data:
-  MODEL_NAME: "models/gemini-2.5-flash"
+  LLM_PROVIDER: "openai"
+  MODEL_NAME: "allura-org_Q3-30B-A3B-Designant_EXL3_8.0bpw_H8"
+  OPENAI_BASE_URL: "https://be.pingas.org/v1"
+  OPENAI_VISION_SUPPORT: "false"
   TOKEN_LIMIT: "1000000"
   ENABLE_AVATAR_SERVER: "true"
   AVATAR_PORT: "3334"
@@ -23,4 +27,3 @@ data:
   RATE_LIMIT_PER_MINUTE: "4"
   DEBUG: "true"
   INFERENCE_PARALLELISM: "10"
-  GEMINI_BASE_URL: ""
