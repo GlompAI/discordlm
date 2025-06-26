@@ -58,6 +58,7 @@ export class GeminiProvider implements LLMProvider {
         character?: CharacterCard,
         isSFW = false,
     ): Promise<LLMResponse> {
+        console.log("Using GeminiProvider");
         const lastHumanMessage = messages.slice().reverse().find((msg) => msg.role === "user");
         const username = lastHumanMessage?.user || "user";
 

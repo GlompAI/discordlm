@@ -26,6 +26,7 @@ export class OllamaProvider implements LLMProvider {
         character?: CharacterCard,
         isSFW = false,
     ): Promise<LLMResponse> {
+        console.log("Using OllamaProvider");
         const lastHumanMessage = messages.slice().reverse().find((msg) => msg.role === "user");
         const username = lastHumanMessage?.user || "user";
 
