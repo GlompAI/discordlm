@@ -2,7 +2,7 @@ import { userMention } from "discord.js";
 import { configService } from "./services/ConfigService.ts";
 
 export function getHelpText() {
-    const botId = configService.getBotSelfId();
+    const botId = configService.botSelfId!;
     return `
 Welcome to the bot! Here's a quick guide on how to interact:
 

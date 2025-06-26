@@ -8,6 +8,7 @@ import { WebhookManager } from "./WebhookManager.ts";
 import { Events, SlashCommandBuilder } from "discord.js";
 import adze from "npm:adze";
 import { createHash } from "node:crypto";
+import { configService } from "./services/ConfigService.ts";
 
 export class App {
     private readonly logger = adze.withEmoji.timestamp.seal();
@@ -47,6 +48,7 @@ export class App {
                 this.logger.log(`Ready! Logged in as ${client.user.tag}`);
                 // Set the bot's Discord name in the LLM service
                 this.llmService.setBotDiscordName(client.user.username);
+                configService.botSelfId = client.user.id;
             }
             await this.characterService.start();
             await this.registerSlashCommands();
@@ -123,11 +125,14 @@ export class App {
     private logSecretHashes(): void {
         const secretsToHash = [
             "BOT_TOKEN",
-            "BOT_SELF_ID",
             "GEMINI_API_KEY",
+            "OPENAI_API_KEY",
+        ];
+
+        const secretsToLog = [
             "ADMIN_OVERRIDE_ID",
             "USER_ID_LIST",
-            "OPENAI_API_KEY",
+            "LIMIT_USER_IDS",
         ];
 
         for (const secret of secretsToHash) {
@@ -135,6 +140,13 @@ export class App {
             if (value) {
                 const hash = createHash("sha256").update(value).digest("hex");
                 this.logger.info(`Secret ${secret} hash: ${hash}`);
+            }
+        }
+
+        for (const secret of secretsToLog) {
+            const value = Deno.env.get(secret);
+            if (value) {
+                this.logger.info(`Value ${secret}: ${value}`);
             }
         }
     }

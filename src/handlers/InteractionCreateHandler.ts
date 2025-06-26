@@ -372,7 +372,7 @@ export class InteractionCreateHandler {
                 this.llmService.generateMessage.bind(this.llmService) as any,
                 this.client,
                 messages,
-                configService.getBotSelfId(),
+                configService.botSelfId!,
                 character ? character.card : null,
                 Math.floor(Math.random() * 1000000),
                 false, // continuation
