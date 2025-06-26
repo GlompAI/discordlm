@@ -16,6 +16,9 @@ export class OpenAIProvider implements LLMProvider {
         this.openai = new OpenAI({
             apiKey: configService.getOpenAIKey(),
             baseURL: configService.getOpenAIBaseUrl(),
+            defaultHeaders: {
+                [configService.getOpenAICustomHeaderKey()]: configService.getOpenAIKey(),
+            },
         });
     }
 

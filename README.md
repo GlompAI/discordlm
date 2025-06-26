@@ -91,6 +91,7 @@ The following environment variables are required:
 | `OPENAI_API_KEY` | Your OpenAI API key | Yes (if provider is `openai`) | - |
 | `OPENAI_BASE_URL` | Custom base URL for the OpenAI API | No | `https://api.openai.com/v1` |
 | `OPENAI_VISION_SUPPORT` | Enable vision support for OpenAI-compatible APIs | No | `false` |
+| `OPENAI_CUSTOM_HEADER_KEY` | Custom header for OpenAI-compatible APIs | No | `x-api-key` |
 | `OLLAMA_HOST` | The host for the Ollama API | No | `http://localhost:11434` |
 | `TOKEN_LIMIT` | Maximum token context to send to the API | No | `1000000` |
 | `MAX_HISTORY_MESSAGES` | Maximum number of messages to fetch for history | No | `300` |

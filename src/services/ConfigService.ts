@@ -45,6 +45,10 @@ export class ConfigService {
         return this.getEnv("OPENAI_VISION_SUPPORT", false, "false") === "true";
     }
 
+    getOpenAICustomHeaderKey(): string {
+        return this.getEnv("OPENAI_CUSTOM_HEADER_KEY", false, "x-api-key");
+    }
+
     getOllamaHost(): string {
         return this.getEnv("OLLAMA_HOST", false, "http://localhost:11434");
     }
