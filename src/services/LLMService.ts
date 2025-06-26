@@ -12,6 +12,7 @@ import { dumpDebug } from "../debug.ts";
 import { retrieve_url, search_web, tools } from "../tools.ts";
 import { MessageView } from "../types.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";
+import { nodewhisper } from "npm:nodejs-whisper";
 
 export class LLMService {
     private readonly textEngine: TextEngine;
@@ -139,30 +140,14 @@ export class LLMService {
                         // Check if it's an audio file for transcription
                         if (a.contentType?.startsWith("audio/")) {
                             try {
-                                const audioResponse = await fetch(a.url);
-                                if (audioResponse.ok) {
-                                    const audioBlob = await audioResponse.blob();
-                                    const formData = new FormData();
-                                    formData.append("file", audioBlob, a.name);
-                                    formData.append("model", "whisper-1");
-
-                                    const whisperResponse = await fetch("https://api.openai.com/v1/audio/transcriptions", {
-                                        method: "POST",
-                                        headers: {
-                                            "Authorization": `Bearer ${configService.getOpenaiApiKey()}`,
-                                        },
-                                        body: formData,
-                                    });
-
-                                    if (whisperResponse.ok) {
-                                        const data = await whisperResponse.json();
-                                        return { type: "transcription", name: a.name, content: data.text };
-                                    } else {
-                                        const errorText = await whisperResponse.text();
-                                        adze.error(
-                                            `Whisper API request failed with status ${whisperResponse.status}: ${errorText}`,
-                                        );
-                                    }
+                                const response = await fetch(a.url);
+                                if (response.ok) {
+                                    const audioBuffer = await response.arrayBuffer();
+                                    const tempPath = `/tmp/${a.name}`;
+                                    await Deno.writeFile(tempPath, new Uint8Array(audioBuffer));
+                                    const transcription = await nodewhisper(tempPath, { modelName: "tiny.en" });
+                                    await Deno.remove(tempPath);
+                                    return { type: "transcription", name: a.name, content: transcription };
                                 }
                             } catch (error) {
                                 adze.error(`Failed to transcribe audio attachment ${a.name}:`, error);
