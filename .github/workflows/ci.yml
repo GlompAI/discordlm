@@ -67,7 +67,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: cp "/home/luigi/discordlm/characters/*" /root/discordlm/characters/
+          script: cp /home/luigi/discordlm/characters/* /root/discordlm/characters/
 
       - name: Deploy to remote server
         uses: appleboy/ssh-action@master
