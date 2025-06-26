@@ -360,8 +360,8 @@ export class InteractionCreateHandler {
                 if (!character) {
                     this.logger.warn(`Could not find character for webhook message re-roll: ${message.author.username}`);
                 }
-            } else if (message.embeds.length > 0 && message.embeds[0].author?.name) {
-                character = this.characterService.getCharacter(message.embeds[0].author.name);
+            } else if (message.embeds.length > 0 && (message.embeds[0].author?.name || message.embeds[0].title)) {
+                character = this.characterService.getCharacter(message.embeds[0].author?.name || message.embeds[0].title!);
             } else if (interaction.channel?.type === ChannelType.DM) {
                 character = await this.characterService.inferCharacterFromHistory(interaction.channel);
             }
