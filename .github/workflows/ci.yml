@@ -62,12 +62,14 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            k3s kubectl create secret docker-registry regcred \
-              --docker-server=ghcr.io \
-              --docker-username=${{ github.actor }} \
-              --docker-password=${{ secrets.GITHUB_TOKEN }} \
+            k3s kubectl create secret generic discordlm-secrets \
+              --from-literal=BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
+              --from-literal=BOT_SELF_ID=${{ secrets.BOT_SELF_ID }} \
+              --from-literal=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
+              --from-literal=ADMIN_OVERRIDE_ID=${{ secrets.ADMIN_OVERRIDE_ID }} \
+              --from-literal=USER_ID_LIST=${{ secrets.USER_ID_LIST }} \
+              --from-literal=OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
               --dry-run=client -o yaml | k3s kubectl apply -f - --overwrite
-            k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
             k3s kubectl apply -f /root/discordlm/k8s-config.yaml
             sleep 5
             k3s kubectl delete deployment discordlm-deployment
