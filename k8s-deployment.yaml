@@ -21,6 +21,8 @@ spec:
       annotations:
         discordlm.com/restartedAt: "1750888362"
     spec:
+      imagePullSecrets:
+      - name: regcred
       containers:
       - name: discordlm
         image: ghcr.io/aronson/discordlm:{{IMAGE_TAG}}
