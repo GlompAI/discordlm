@@ -62,7 +62,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            k3s kubectl delete secret docker-registry --ignore-not-found
+            k3s kubectl delete secret docker-registry regcred --ignore-not-found
             k3s kubectl create secret docker-registry regcred \
               --docker-server=ghcr.io \
               --docker-username=${{ github.actor }} \
