@@ -12,6 +12,7 @@ import { dumpDebug } from "../debug.ts";
 import { retrieve_url, search_web, tools } from "../tools.ts";
 import { MessageView } from "../types.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";
+import { nodewhisper } from "npm:nodejs-whisper";
 
 const TEXT_MIMETYPES = ["text/"];
 const TEXT_EXTENSIONS = [
@@ -166,12 +167,26 @@ export class LLMService {
                             return null;
                         }
 
-                        // Check if it's media
-                        if (
-                            a.contentType?.startsWith("image/") ||
-                            a.contentType?.startsWith("video/") ||
-                            a.contentType?.startsWith("audio/")
-                        ) {
+                        // Check if it's an audio file for transcription
+                        if (a.contentType?.startsWith("audio/")) {
+                            try {
+                                const response = await fetch(a.url);
+                                if (response.ok) {
+                                    const audioBuffer = await response.arrayBuffer();
+                                    const tempPath = `/tmp/${a.name}`;
+                                    await Deno.writeFile(tempPath, new Uint8Array(audioBuffer));
+                                    const transcription = await nodewhisper(tempPath, { modelName: "tiny.en" });
+                                    await Deno.remove(tempPath);
+                                    return { type: "transcription", name: a.name, content: transcription };
+                                }
+                            } catch (error) {
+                                adze.error(`Failed to transcribe audio attachment ${a.name}:`, error);
+                            }
+                            return null;
+                        }
+
+                        // Check if it's other media
+                        if (a.contentType?.startsWith("image/") || a.contentType?.startsWith("video/")) {
                             try {
                                 // Retry logic with exponential backoff
                                 let lastError;
@@ -240,7 +255,7 @@ export class LLMService {
                     });
 
                     const processedAttachments = (await Promise.all(attachmentProcessingPromises)).filter(
-                        (a): a is { type: "text"; name: string; content: string } | {
+                        (a): a is { type: "text" | "transcription"; name: string; content: string } | {
                             type: "media";
                             data: { inlineData: { mimeType: string; data: string } };
                         } => a !== null,
@@ -249,6 +264,8 @@ export class LLMService {
                     for (const attachment of processedAttachments) {
                         if (attachment.type === "text") {
                             finalMessageText += `\n\n--- Attachment: ${attachment.name} ---\n${attachment.content}\n--- End Attachment ---`;
+                        } else if (attachment.type === "transcription") {
+                            finalMessageText += `\n\n--- Transcribed Audio Attachment: ${attachment.name} ---\n${attachment.content}\n--- End Transcription ---`;
                         } else if (attachment.type === "media") {
                             mediaContent.push(attachment.data);
                         }
