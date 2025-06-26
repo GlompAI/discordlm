@@ -68,5 +68,6 @@ jobs:
               --from-literal=USER_ID_LIST=${{ secrets.USER_ID_LIST }} \
               --from-literal=OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
               --dry-run=client -o yaml | k3s kubectl apply -f -
+            k3s kubectl apply -f /root/discordlm/k8s-config.yaml
             k3s kubectl apply -f /root/discordlm/k8s-deployment.yaml
             k3s kubectl rollout status deployment/discordlm-deployment
