@@ -23,10 +23,7 @@ export class ConfigService {
     }
 
     getGeminiApiKey(): string {
-        if (this.getProvider() === "gemini") {
-            return this.getEnv("GEMINI_API_KEY", true);
-        }
-        return "";
+        return this.getEnv("GEMINI_API_KEY", false, "");
     }
 
     getGeminiBaseUrl(): string | undefined {
