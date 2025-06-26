@@ -37,7 +37,6 @@ export class OpenAIProvider implements LLMProvider {
 
         const prompt = this.textEngine.buildPrompt(messages, username, character, isSFW);
         
-        await dumpDebug("openai-prompt", "prompt", prompt);
 
         const apiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
 
