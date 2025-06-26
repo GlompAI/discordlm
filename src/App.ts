@@ -7,6 +7,7 @@ import { MessageCreateHandler } from "./handlers/MessageCreateHandler.ts";
 import { WebhookManager } from "./WebhookManager.ts";
 import { Events, SlashCommandBuilder } from "discord.js";
 import adze from "npm:adze";
+import { createHash } from "node:crypto";
 
 export class App {
     private readonly logger = adze.withEmoji.timestamp.seal();
@@ -40,6 +41,7 @@ export class App {
     }
 
     public async start(): Promise<void> {
+        this.logSecretHashes();
         this.discordService.onReady(async (client) => {
             if (client.user) {
                 this.logger.log(`Ready! Logged in as ${client.user.tag}`);
@@ -115,6 +117,25 @@ export class App {
             this.logger.info("Successfully registered slash commands");
         } catch (error) {
             this.logger.error("Failed to register slash commands:", error);
+        }
+    }
+
+    private logSecretHashes(): void {
+        const secretsToHash = [
+            "BOT_TOKEN",
+            "BOT_SELF_ID",
+            "GEMINI_API_KEY",
+            "ADMIN_OVERRIDE_ID",
+            "USER_ID_LIST",
+            "OPENAI_API_KEY",
+        ];
+
+        for (const secret of secretsToHash) {
+            const value = Deno.env.get(secret);
+            if (value) {
+                const hash = createHash("sha256").update(value).digest("hex");
+                this.logger.info(`Secret ${secret} hash: ${hash}`);
+            }
         }
     }
 }
