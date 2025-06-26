@@ -51,7 +51,7 @@ export class WebhookManager {
 
         try {
             // Look for existing webhook with this character's name
-            const existingWebhooks = await channel.fetchWebhooks();
+            let existingWebhooks = await channel.fetchWebhooks();
             let webhook = existingWebhooks.find((wh) => wh.name === character.card.name);
 
             if (!webhook) {
@@ -68,6 +68,15 @@ export class WebhookManager {
                     if (oldestWebhook) {
                         logger.info(`Deleting oldest webhook "${oldestWebhook.name}" to make room for new one.`);
                         await oldestWebhook.delete("Rotating out old webhook to make room for a new one.");
+
+                        // Re-fetch webhooks to ensure the list is up-to-date
+                        existingWebhooks = await channel.fetchWebhooks();
+                        if (existingWebhooks.size >= 15) {
+                            logger.error(
+                                `Failed to free up a webhook slot in channel ${channel.name}. Aborting creation.`,
+                            );
+                            return null;
+                        }
                     } else {
                         // This case should be impossible if existingWebhooks.size >= 15, but we'll log it.
                         logger.error(
