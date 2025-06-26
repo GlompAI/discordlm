@@ -30,6 +30,8 @@ spec:
         envFrom:
         - configMapRef:
             name: discordlm-config
+        - secretRef:
+            name: discordlm-secrets
         volumeMounts:
         - name: characters-storage
           mountPath: /app/characters
