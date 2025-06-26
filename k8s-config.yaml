@@ -19,7 +19,7 @@ data:
   MODEL_NAME: "allura-org_Q3-30B-A3B-Designant_EXL3_8.0bpw_H8"
   OPENAI_BASE_URL: "https://be.pingas.org/v1"
   OPENAI_VISION_SUPPORT: "false"
-  TOKEN_LIMIT: "1000000"
+  TOKEN_LIMIT: "32000"
   ENABLE_AVATAR_SERVER: "true"
   AVATAR_PORT: "3334"
   PUBLIC_AVATAR_BASE_URL: "https://cutie.pingas.org"
