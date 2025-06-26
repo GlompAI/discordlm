@@ -60,5 +60,8 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
+            k3s kubectl create secret generic discordlm-secrets \
+              --from-literal=BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
+              --dry-run=client -o yaml | k3s kubectl apply -f -
             k3s kubectl apply -f /root/discordlm/k8s-deployment.yaml
             k3s kubectl rollout status deployment/discordlm-deployment
