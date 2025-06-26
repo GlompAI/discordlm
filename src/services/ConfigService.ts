@@ -79,7 +79,7 @@ export class ConfigService {
     }
 
     getAvatarServerPort(): number {
-        return parseInt(this.getEnv("AVATAR_PORT", false, "8080"));
+        return parseInt(this.getEnv("AVATAR_PORT", false, "3334"));
     }
 
     getPublicAvatarBaseUrl(): string | undefined {
