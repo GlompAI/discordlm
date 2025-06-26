@@ -4,7 +4,7 @@ metadata:
   name: discordlm-config
 data:
   LLM_PROVIDER: "gemini"
-  MODEL_NAME: "models/gemini-2.5"
+  MODEL_NAME: "models/gemini-2.5-pro"
   OPENAI_BASE_URL: "https://be.pingas.org/v1"
   OPENAI_VISION_SUPPORT: "false"
   TOKEN_LIMIT: "32000"
