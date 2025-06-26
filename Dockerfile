@@ -10,7 +10,7 @@ COPY . .
 # Cache dependencies. The --reload flag is not necessary here
 # as Docker's layer caching will handle this. If deno.json changes,
 # this layer will be re-run.
-RUN deno cache src/main.ts
+RUN deno cache --node-modules-dir src/main.ts
 
 # Expose the port the app runs on
 EXPOSE 3334
