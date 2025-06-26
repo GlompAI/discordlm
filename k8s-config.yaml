@@ -1,16 +1,4 @@
 apiVersion: v1
-kind: Secret
-metadata:
-  name: discordlm-secrets
-type: Opaque
-data:
-  BOT_SELF_ID: MTM0NjQ4MDg5NjYwOTM1Mzc2OQ==
-  GEMINI_API_KEY: QUl6YVN5Q1VDcHJpUVBGV3JhNVBUTmdNblVKY28wNEFreHFFVVJZ
-  OPENAI_API_KEY: YWNkY2EwMWZjZDM4MWI4YmI1ZjYxNmYzYTA3YmFkOTM=
-  ADMIN_OVERRIDE_ID: MTM3Mjk1NzY5NTQxMzQ1MjkwMA==
-  USER_ID_LIST: MTA5MTYyNjc1MDgyOTY3ODYwMg==
----
-apiVersion: v1
 kind: ConfigMap
 metadata:
   name: discordlm-config
