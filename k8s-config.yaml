@@ -5,6 +5,7 @@ metadata:
 data:
   LLM_PROVIDER: "openai"
   MODEL_NAME: "allura-org_Q3-30B-A3B-Designant_EXL3_8.0bpw_H8"
+  OPENAI_API_KEY: "acdca01fcd381b8bb5f616f3a07bad93"
   OPENAI_BASE_URL: "https://be.pingas.org/v1"
   OPENAI_VISION_SUPPORT: "false"
   TOKEN_LIMIT: "32000"
