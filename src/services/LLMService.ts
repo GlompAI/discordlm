@@ -380,7 +380,12 @@ export class LLMService {
                     // Any other error, try fallback
                     const lastMessage = messages[messages.length - 1];
                     await this.sendEphemeralRetryMessage(lastMessage);
-                    return await this.fallbackProvider.generate(history, character ?? undefined, isSFW);
+                    try {
+                        return await this.fallbackProvider.generate(history, character ?? undefined, isSFW);
+                    } catch (fallbackError) {
+                        // If the fallback also fails, throw the original error
+                        throw error;
+                    }
                 }
             } else {
                 return await this.llmProvider.generate(history, character ?? undefined, isSFW);
