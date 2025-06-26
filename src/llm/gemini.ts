@@ -62,7 +62,7 @@ export class GeminiProvider implements LLMProvider {
         const lastHumanMessage = messages.slice().reverse().find((msg) => msg.role === "user");
         const username = lastHumanMessage?.user || "user";
 
-        const prompt = this.textEngine.buildPrompt(messages, username, character, isSFW);
+        const prompt = this.textEngine.buildPrompt(messages, username, character, isSFW, "gemini");
         const adaptedPrompt = this.adaptPrompt(prompt, character);
 
         await dumpDebug("gemini-prompt", "prompt", adaptedPrompt);

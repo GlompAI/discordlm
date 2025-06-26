@@ -54,8 +54,12 @@ export class ConfigService {
         return this.getEnv("GEMINI_MODEL_NAME", false, "gemini-2.5-flash");
     }
 
-    getTokenLimit(): number {
-        return parseInt(this.getEnv("TOKEN_LIMIT", false, "32600"));
+    getGeminiTokenLimit(): number {
+        return parseInt(this.getEnv("GEMINI_TOKEN_LIMIT", false, "1000000"));
+    }
+
+    getOpenAITokenLimit(): number {
+        return parseInt(this.getEnv("OPENAI_TOKEN_LIMIT", false, "32768"));
     }
 
     getInferenceParallelism(): number {
