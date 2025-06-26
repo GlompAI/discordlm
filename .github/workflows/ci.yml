@@ -73,7 +73,7 @@ jobs:
               --from-literal=GEMINI_BASE_URL=${{ secrets.GEMINI_BASE_URL }} \
               --from-literal=OPENAI_BASE_URL=${{ secrets.OPENAI_BASE_URL }} \
               --from-literal=OPENAI_BASE_URL=${{ secrets.OPENAI_BASE_URL }} \
-              --dry-run=client -o yaml | k3s kubectl apply -f - --overwrite
+              -o yaml | k3s kubectl apply -f - --overwrite
             k3s kubectl create configmap discordlm-config \
               --from-literal=ADMIN_OVERRIDE_ID=${{ vars.ADMIN_OVERRIDE_ID }} \
               --from-literal=USER_ID_LIST=${{ vars.USER_ID_LIST }} \
@@ -87,7 +87,7 @@ jobs:
               --from-literal=MAX_HISTORY_MESSAGES=${{ vars.MAX_HISTORY_MESSAGES }} \
               --from-literal=OPENAI_BASE_URL=${{ vars.OPENAI_BASE_URL }} \
               --from-literal=AVATAR_PORT=${{ vars.AVATAR_PORT }} \
-              --dry-run=client -o yaml | k3s kubectl apply -f - --overwrite
+              -o yaml | k3s kubectl apply -f - --overwrite
             sleep 5
             k3s kubectl delete deployment discordlm-deployment
             k3s kubectl apply -f /root/discordlm/k8s-deployment.yaml
