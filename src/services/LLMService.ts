@@ -138,7 +138,11 @@ export class LLMService {
                     const attachmentMedia = await Promise.all(
                         message.attachments
                             .map(async (a) => {
-                                if (!a.contentType?.startsWith("image/") && !a.contentType?.startsWith("video/")) {
+                                if (
+                                    !a.contentType?.startsWith("image/") &&
+                                    !a.contentType?.startsWith("video/") &&
+                                    !a.contentType?.startsWith("audio/")
+                                ) {
                                     return null;
                                 }
 
