@@ -40,6 +40,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+      - name: Pull latest changes
+        run: git pull
 
       - name: Replace image tag in deployment yaml
         run: sed -i "s/{{IMAGE_TAG}}/${{ github.sha }}/g" k8s-deployment.yaml
