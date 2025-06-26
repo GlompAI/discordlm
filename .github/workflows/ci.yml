@@ -60,7 +60,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-            k3s kubectl patch secret discordlm-secrets -p "{\"data\":{\"BOT_TOKEN\":\"$(echo -n ${{ secrets.BOT_TOKEN }} | base64)\"}}"
+            k3s kubectl patch secret discordlm-secrets --type='json' -p='[{"op": "add", "path": "/data/BOT_TOKEN", "value":"$(echo -n ${{ secrets.BOT_TOKEN }} | base64)"}]'
             k3s kubectl apply -f /root/discordlm/k8s-config.yaml
             k3s kubectl apply -f /root/discordlm/k8s-deployment.yaml
             k3s kubectl rollout status deployment/discordlm-deployment
