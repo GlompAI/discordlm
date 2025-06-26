@@ -65,14 +65,16 @@ Note: The bot currently only reads from `/app/characters`, so you'd need to orga
 ### Required Variables
 ```env
 BOT_TOKEN=your_discord_bot_token
-OPENAI_URL=https://api.openai.com/v1
-OPENAI_KEY=your_openai_api_key
-MODEL_NAME=gpt-4o-mini
+GEMINI_API_KEY=your_gemini_api_key
+OPENAI_API_KEY=your_openai_api_key
+GEMINI_MODEL_NAME=gemini-2.5-flash
+OPENAI_MODEL_NAME=gpt-4-turbo
 ```
 
 ### Optional Variables
 ```env
-TOKEN_LIMIT=32600
+GEMINI_TOKEN_LIMIT=1000000
+OPENAI_TOKEN_LIMIT=32768
 ENABLE_AVATAR_SERVER=true
 AVATAR_PORT=8080
 PUBLIC_AVATAR_BASE_URL=https://your-domain.com/avatars

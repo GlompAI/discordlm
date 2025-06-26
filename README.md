@@ -84,7 +84,8 @@ The following environment variables are required:
 |----------|-------------|----------|---------|
 | `BOT_TOKEN` | Discord bot token from Discord Developer Portal | Yes | - |
 | `LLM_PROVIDER` | The LLM provider to use (`gemini`, `openai`, `ollama`) | No | `gemini` |
-| `MODEL_NAME` | The model name to use for the selected provider | Yes | `models/gemini-1.5-flash` |
+| `GEMINI_MODEL_NAME` | The model name to use for the Gemini provider | No | `gemini-2.5-flash` |
+| `OPENAI_MODEL_NAME` | The model name to use for the OpenAI provider | No | `gpt-4-turbo` |
 | `GEMINI_API_KEY` | Your Google Gemini API key | Yes (if provider is `gemini`) | - |
 | `GEMINI_BASE_URL` | Custom base URL for the Gemini API | No | - |
 | `OPENAI_API_KEY` | Your OpenAI API key | Yes (if provider is `openai`) | - |
@@ -92,23 +93,19 @@ The following environment variables are required:
 | `OPENAI_VISION_SUPPORT` | Enable vision support for OpenAI-compatible APIs | No | `false` |
 | `OPENAI_CUSTOM_HEADER_KEY` | Custom header for OpenAI-compatible APIs | No | `x-api-key` |
 | `OLLAMA_HOST` | The host for the Ollama API | No | `http://localhost:11434` |
-| `TOKEN_LIMIT` | Maximum token context to send to the API | No | `1000000` |
+| `GEMINI_TOKEN_LIMIT` | Maximum token context to send to the Gemini API | No | `1000000` |
+| `OPENAI_TOKEN_LIMIT` | Maximum token context to send to the OpenAI API | No | `32768` |
 | `MAX_HISTORY_MESSAGES` | Maximum number of messages to fetch for history | No | `300` |
 | `RATE_LIMIT_PER_MINUTE` | Maximum requests per user per minute | No | `4` |
+| `LIMIT_USER_IDS` | Semicolon-separated list of user IDs to apply a lower rate limit to | No | - |
 | `INFERENCE_PARALLELISM` | Number of parallel inference requests to allow | No | `10` |
 | `USER_ID_LIST` | Comma-separated list of user IDs allowed to interact with the bot | No | - |
 | `ADMIN_OVERRIDE_ID` | User ID to bypass administrator checks | No | - |
 | `ENABLE_AVATAR_SERVER` | Enable the avatar server for webhooks | No | `false` |
-| `AVATAR_PORT` | Port for the avatar server | No | `3334` |
+| `AVATAR_PORT` | Port for the avatar server | No | `8080` |
 | `PUBLIC_AVATAR_BASE_URL` | Publicly accessible base URL for the avatar server | No | - |
 | `DEBUG` | Enable debug logging | No | `false` |
 
-### Getting Discord Bot Information
-
-1. **Bot Token**: Create a bot at [Discord Developer Portal](https://discord.com/developers/applications)
-2. **Bot Self ID**: You can get this by:
-   - Right-clicking on your bot in Discord and selecting "Copy ID" (requires Developer Mode enabled)
-   - Or from the Discord Developer Portal under your bot's General Information
 
 ### Example Environment Setup
 
@@ -117,7 +114,7 @@ Create a `.env` file or set environment variables:
 ```bash
 export BOT_TOKEN="your_discord_bot_token_here"
 export GEMINI_API_KEY="your_gemini_api_key_here"
-export MODEL_NAME="models/gemini-1.5-flash"
+export GEMINI_MODEL_NAME="models/gemini-2.5-flash"
 ```
 
 ### Docker
@@ -132,7 +129,7 @@ docker build -t discordlm .
 docker run -d \
   -e BOT_TOKEN="your_discord_bot_token" \
   -e GEMINI_API_KEY="your_gemini_api_key" \
-  -e MODEL_NAME="models/gemini-1.5-flash" \
+  -e GEMINI_MODEL_NAME="models/gemini-2.5-flash" \
   -v /path/to/your/characters:/app/characters \
   -v /path/to/your/logs:/app/logs \
   --name discordlm-bot \
@@ -150,7 +147,7 @@ services:
     environment:
       - BOT_TOKEN=your_discord_bot_token
       - GEMINI_API_KEY=your_gemini_api_key
-      - MODEL_NAME=models/gemini-1.5-flash
+      - GEMINI_MODEL_NAME=models/gemini-2.5-flash
     volumes:
       - ./characters:/app/characters
       - ./logs:/app/logs
@@ -173,8 +170,9 @@ docker-compose up -d
 
 The bot includes a per-user rate limiting system to prevent abuse:
 
-- **Default limit**: 10 requests per minute per user
+- **Default limit**: 4 requests per minute per user
 - **Configurable**: Set `RATE_LIMIT_PER_MINUTE` environment variable
+- **Special Limit**: A lower rate limit (half of the default) can be applied to a list of user IDs set in the `LIMIT_USER_IDS` environment variable.
 - **User feedback**: Users receive a temporary message when rate limited
 - **Automatic queuing**: Rate-limited requests are queued and processed when the limit resets
 - **In-memory storage**: Rate limits are stored in memory and reset on bot restart
