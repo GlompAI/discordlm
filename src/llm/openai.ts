@@ -8,18 +8,11 @@ import { dumpDebug } from "../debug.ts";
 
 export class OpenAIProvider implements LLMProvider {
     private textEngine: TextEngine;
-    private openai: OpenAI;
+    private openai: OpenAI | null = null;
     private toolsSupported = true;
 
     constructor() {
         this.textEngine = new TextEngine();
-        this.openai = new OpenAI({
-            apiKey: configService.getOpenAIKey(),
-            baseURL: configService.getOpenAIBaseUrl(),
-            defaultHeaders: {
-                [configService.getOpenAICustomHeaderKey()]: configService.getOpenAIKey(),
-            },
-        });
     }
 
     public setBotDiscordName(name: string) {
@@ -31,6 +24,15 @@ export class OpenAIProvider implements LLMProvider {
         character?: CharacterCard,
         isSFW = false,
     ): Promise<LLMResponse> {
+        if (!this.openai) {
+            this.openai = new OpenAI({
+                apiKey: configService.getOpenAIKey(),
+                baseURL: configService.getOpenAIBaseUrl(),
+                defaultHeaders: {
+                    [configService.getOpenAICustomHeaderKey()]: configService.getOpenAIKey(),
+                },
+            });
+        }
         console.log("Using OpenAIProvider");
         const lastHumanMessage = messages.slice().reverse().find((msg) => msg.role === "user");
         const username = lastHumanMessage?.user || "user";
