@@ -72,5 +72,6 @@ jobs:
               --dry-run=client -o yaml | k3s kubectl apply -f - --overwrite
             k3s kubectl apply -f /root/discordlm/k8s-config.yaml
             sleep 5
+            k3s kubectl delete deployment discordlm-deployment
             k3s kubectl apply -f /root/discordlm/k8s-deployment.yaml
             k3s kubectl rollout status deployment/discordlm-deployment
