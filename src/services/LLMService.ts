@@ -16,9 +16,13 @@ import { configService } from "./ConfigService.ts";
 export class LLMService {
     private activeGenerations = 0;
     private llmProvider: LLMProvider;
+    private fallbackProvider: LLMProvider | null = null;
 
     constructor() {
         this.llmProvider = this.createProvider();
+        if (configService.getProvider() === "gemini") {
+            this.fallbackProvider = new OpenAIProvider();
+        }
     }
 
     private createProvider(): LLMProvider {
@@ -357,9 +361,45 @@ export class LLMService {
                 });
             }
 
-            return await this.llmProvider.generate(history, character ?? undefined, isSFW);
+            if (configService.getProvider() === "gemini" && this.fallbackProvider) {
+                try {
+                    const result = await this.llmProvider.generate(history, character ?? undefined, isSFW);
+                    // Check for censorship
+                    if (!result.text()) {
+                        // This is a censorship case, do not fallback
+                        return result;
+                    }
+                    return result;
+                } catch (error) {
+                    const anyError = error as any;
+                    if (anyError?.finishReason === "SAFETY") {
+                        // This is a censorship case, do not fallback
+                        throw error;
+                    }
+
+                    // Any other error, try fallback
+                    const lastMessage = messages[messages.length - 1];
+                    await this.sendEphemeralRetryMessage(lastMessage);
+                    return await this.fallbackProvider.generate(history, character ?? undefined, isSFW);
+                }
+            } else {
+                return await this.llmProvider.generate(history, character ?? undefined, isSFW);
+            }
         } finally {
             this.activeGenerations--;
+        }
+    }
+
+    private async sendEphemeralRetryMessage(message: Message): Promise<void> {
+        try {
+            const reply = await message.reply({
+                content: "A remote server error occurred, retrying with a fallback. Please wait.",
+            });
+            setTimeout(() => {
+                reply.delete().catch(() => {});
+            }, 5000);
+        } catch (e) {
+            adze.error("Failed to send ephemeral retry message:", e);
         }
     }
 
