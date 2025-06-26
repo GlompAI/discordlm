@@ -28,7 +28,7 @@ spec:
         image: ghcr.io/aronson/discordlm:{{IMAGE_TAG}}
         imagePullPolicy: Always
         ports:
-        - containerPort: 3334
+        - containerPort: 8080
         envFrom:
         - configMapRef:
             name: discordlm-config
@@ -58,4 +58,4 @@ spec:
   ports:
     - protocol: TCP
       port: 3334
-      targetPort: 3334
+      targetPort: 8080
