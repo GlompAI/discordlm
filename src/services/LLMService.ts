@@ -12,7 +12,6 @@ import { dumpDebug } from "../debug.ts";
 import { retrieve_url, search_web, tools } from "../tools.ts";
 import { MessageView } from "../types.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";
-import { pipeline } from "npm:@huggingface/transformers";
 
 export class LLMService {
     private readonly textEngine: TextEngine;
@@ -136,103 +135,88 @@ export class LLMService {
                 const mediaContent: { inlineData: { mimeType: string; data: string } }[] = [];
 
                 if (message.attachments.size > 0) {
-                    const attachmentProcessingPromises = message.attachments.map(async (a) => {
-                        // Check if it's an audio file for transcription
-                        if (a.contentType?.startsWith("audio/")) {
-                            try {
-                                const transcriber = await pipeline('automatic-speech-recognition', 'Xenova/whisper-tiny');
-                                const output = await transcriber(a.url);
-                                const content = Array.isArray(output) ? output.map(s => s.text).join(" ") : output.text;
-                                return { type: "transcription", name: a.name, content: content };
-                            } catch (error) {
-                                adze.error(`Failed to transcribe audio attachment ${a.name}:`, error);
-                            }
-                            return null;
-                        }
+                    const attachmentMedia = await Promise.all(
+                        message.attachments
+                            .map(async (a) => {
+                                if (
+                                    !a.contentType?.startsWith("image/") &&
+                                    !a.contentType?.startsWith("video/") &&
+                                    !a.contentType?.startsWith("audio/")
+                                ) {
+                                    return null;
+                                }
 
-                        // Check if it's other media
-                        if (a.contentType?.startsWith("image/") || a.contentType?.startsWith("video/")) {
-                            try {
-                                // Retry logic with exponential backoff
-                                let lastError;
-                                for (let attempt = 0; attempt < 3; attempt++) {
-                                    try {
-                                        const response = await fetch(a.url, {
-                                            headers: { "User-Agent": "DiscordLM-Bot/1.0" },
-                                        });
-                                        if (!response.ok) {
-                                            throw new Error(`HTTP ${response.status} ${response.statusText}`);
-                                        }
-                                        const buffer = await response.arrayBuffer();
-
-                                        if (a.contentType === "image/gif") {
-                                            try {
-                                                const reader = new GifReader(Buffer.from(buffer));
-                                                const png = new PNG({
-                                                    width: reader.width,
-                                                    height: reader.height,
-                                                });
-                                                const frameData = Buffer.alloc(reader.width * reader.height * 4);
-                                                reader.decodeAndBlitFrameRGBA(0, frameData);
-                                                png.data = frameData;
-                                                const pngBuffer = PNG.sync.write(png);
-                                                const base64 = pngBuffer.toString("base64");
-                                                return {
-                                                    type: "media",
-                                                    data: { inlineData: { mimeType: "image/png", data: base64 } },
-                                                };
-                                            } catch (error) {
-                                                adze.error("Failed to process GIF attachment:", error);
-                                                return null;
+                                try {
+                                    // Retry logic with exponential backoff
+                                    let lastError;
+                                    for (let attempt = 0; attempt < 3; attempt++) {
+                                        try {
+                                            const response = await fetch(a.url, {
+                                                headers: { "User-Agent": "DiscordLM-Bot/1.0" },
+                                            });
+                                            if (!response.ok) {
+                                                throw new Error(`HTTP ${response.status} ${response.statusText}`);
                                             }
-                                        } else {
-                                            const base64 = Buffer.from(buffer).toString("base64");
-                                            return {
-                                                type: "media",
-                                                data: { inlineData: { mimeType: a.contentType!, data: base64 } },
-                                            };
-                                        }
-                                    } catch (error) {
-                                        lastError = error;
-                                        if (attempt < 2) {
-                                            const delay = Math.pow(2, attempt) * 1000; // 1s, 2s
-                                            adze.warn(
-                                                `Attempt ${
-                                                    attempt + 1
-                                                } failed for attachment, retrying in ${delay}ms:`,
-                                                error,
-                                            );
-                                            await new Promise((resolve) => setTimeout(resolve, delay));
+                                            const buffer = await response.arrayBuffer();
+
+                                            if (a.contentType === "image/gif") {
+                                                try {
+                                                    const reader = new GifReader(Buffer.from(buffer));
+                                                    const png = new PNG({
+                                                        width: reader.width,
+                                                        height: reader.height,
+                                                    });
+                                                    const frameData = Buffer.alloc(reader.width * reader.height * 4);
+                                                    reader.decodeAndBlitFrameRGBA(0, frameData);
+                                                    png.data = frameData;
+                                                    const pngBuffer = PNG.sync.write(png);
+                                                    const base64 = pngBuffer.toString("base64");
+                                                    return {
+                                                        inlineData: {
+                                                            mimeType: "image/png",
+                                                            data: base64,
+                                                        },
+                                                    };
+                                                } catch (error) {
+                                                    adze.error("Failed to process GIF attachment:", error);
+                                                    return null;
+                                                }
+                                            } else {
+                                                const base64 = Buffer.from(buffer).toString("base64");
+                                                return {
+                                                    inlineData: {
+                                                        mimeType: a.contentType!,
+                                                        data: base64,
+                                                    },
+                                                };
+                                            }
+                                        } catch (error) {
+                                            lastError = error;
+                                            if (attempt < 2) {
+                                                const delay = Math.pow(2, attempt) * 1000; // 1s, 2s
+                                                adze.warn(
+                                                    `Attempt ${
+                                                        attempt + 1
+                                                    } failed for attachment, retrying in ${delay}ms:`,
+                                                    error,
+                                                );
+                                                await new Promise((resolve) => setTimeout(resolve, delay));
+                                            }
                                         }
                                     }
+                                    if (lastError) {
+                                        throw lastError;
+                                    }
+                                } catch (error) {
+                                    adze.error(`Failed to fetch attachment from ${a.url} after 3 attempts:`, error);
+                                    return null;
                                 }
-                                if (lastError) {
-                                    throw lastError;
-                                }
-                            } catch (error) {
-                                adze.error(`Failed to fetch attachment from ${a.url} after 3 attempts:`, error);
-                                return null;
-                            }
-                        }
-
-                        // Otherwise, ignore
-                        return null;
-                    });
-
-                    const processedAttachments = (await Promise.all(attachmentProcessingPromises)).filter(
-                        (a): a is { type: "transcription"; name: string; content: string } | {
-                            type: "media";
-                            data: { inlineData: { mimeType: string; data: string } };
-                        } => a !== null,
+                            }),
                     );
-
-                    for (const attachment of processedAttachments) {
-                        if (attachment.type === "transcription") {
-                            finalMessageText += `\n\n--- Transcribed Audio Attachment: ${attachment.name} ---\n${attachment.content}\n--- End Transcription ---`;
-                        } else if (attachment.type === "media") {
-                            mediaContent.push(attachment.data);
-                        }
-                    }
+                    const filteredAttachmentMedia = attachmentMedia.filter((item) => item !== null) as {
+                        inlineData: { mimeType: string; data: string };
+                    }[];
+                    mediaContent.push(...filteredAttachmentMedia);
                 }
 
                 if (message.stickers.size > 0) {

@@ -50,8 +50,7 @@
         "@google/generative-ai": "npm:@google/generative-ai@^0.21.0",
         "omggif": "npm:omggif",
         "pngjs": "npm:pngjs",
-        "adze": "npm:adze",
-        "@huggingface/transformers": "npm:@huggingface/transformers@^3.5.2"
+        "adze": "npm:adze"
     },
     "exclude": [
         "dist/",
