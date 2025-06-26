@@ -48,8 +48,21 @@ export function smartSplit(text: string, maxLength = 1980): string[] {
                 parts.push(currentPart);
                 currentPart = "";
             }
-            for (let i = 0; i < line.length; i += maxLength) {
-                parts.push(line.substring(i, i + maxLength));
+            // Split the long line itself
+            const words = line.split(' ');
+            let tempLine = '';
+            for (const word of words) {
+                if (tempLine.length + word.length + 1 > maxLength) {
+                    parts.push(tempLine);
+                    tempLine = '';
+                }
+                if (tempLine.length > 0) {
+                    tempLine += ' ';
+                }
+                tempLine += word;
+            }
+            if (tempLine.length > 0) {
+                parts.push(tempLine);
             }
             continue;
         }
