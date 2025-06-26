@@ -50,7 +50,8 @@
         "@google/generative-ai": "npm:@google/generative-ai@^0.21.0",
         "omggif": "npm:omggif",
         "pngjs": "npm:pngjs",
-        "adze": "npm:adze"
+        "adze": "npm:adze",
+        "whisper-turbo": "npm:whisper-turbo@^0.11.0"
     },
     "exclude": [
         "dist/",
