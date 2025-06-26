@@ -32,7 +32,7 @@ The application is deployed to a single-node K3s cluster running on the user's s
 
 *   **`Deployment`**: The `discordlm-deployment` deployment manages the application's pods. It is configured with a rolling update strategy to ensure zero downtime during updates.
 *   **`Service`**: The `discordlm-service` service exposes the application on a `NodePort`, making it accessible to the Caddy reverse proxy.
-*   **`ConfigMap`**: The `discordlm-config` configmap stores the application's configuration, such as the bot token and API keys. To use the multi-provider support, you will need to update this `ConfigMap` to include the necessary environment variables for the desired provider.
+*   **`ConfigMap`**: The `discordlm-config` configmap stores the application's configuration. These values are populated from GitHub repository variables during the CI/CD process.
 *   **`PersistentVolumeClaim`**: The `discordlm-pvc` and `discordlm-logs-pvc` persistent volume claims provide persistent storage for the application's character data and logs.
 
 ### 2.2. Networking
@@ -58,7 +58,7 @@ The application's data and configuration are stored in the following locations o
 The application is built, pushed, and deployed using a GitHub Actions workflow defined in `.github/workflows/ci.yml`. The workflow is triggered on every push to the `main` branch and consists of two jobs:
 
 *   **`build-and-push`**: This job builds the Docker image, tags it with the commit SHA and `:latest`, and pushes it to the GitHub Container Registry.
-*   **`deploy`**: This job deploys the application to the Kubernetes cluster. It uses `sed` to replace a placeholder in the `k8s-deployment.yaml` file with the commit SHA, copies the modified manifest to the server, and then applies it using `kubectl`. To switch between LLM providers, you will need to update the `discordlm-config` `ConfigMap` on your server and restart the deployment.
+*   **`deploy`**: This job deploys the application to the Kubernetes cluster. It uses `envsubst` to replace a placeholder in the `k8s-deployment.yaml` file with the commit SHA, copies the modified manifest to the server, and then applies it using `kubectl`. It also creates the `discordlm-secrets` and `discordlm-config` Kubernetes objects from GitHub secrets and variables.
 
 ## 5. Debugging Journey
 
