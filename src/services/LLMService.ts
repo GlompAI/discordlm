@@ -12,7 +12,6 @@ import { dumpDebug } from "../debug.ts";
 import { retrieve_url, search_web, tools } from "../tools.ts";
 import { MessageView } from "../types.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";
-import { Whisper, decodeAudio, WhisperFullParams, WhisperSamplingStrategy } from "npm:@napi-rs/whisper";
 import { SessionManager, AvailableModels } from "npm:whisper-turbo";
 
 export class LLMService {
