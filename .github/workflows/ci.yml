@@ -89,6 +89,7 @@ jobs:
               --from-literal=AVATAR_PORT=${{ vars.AVATAR_PORT }} \
               --from-literal=PUBLIC_AVATAR_BASE_URL=${{ vars.PUBLIC_AVATAR_BASE_URL }} \
               -o yaml | k3s kubectl apply -f - --overwrite
+            k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
             sleep 5
             k3s kubectl delete deployment discordlm-deployment
             k3s kubectl apply -f /root/discordlm/k8s-deployment.yaml
