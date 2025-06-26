@@ -22,8 +22,11 @@ export class ConfigService {
         return this.getEnv("BOT_SELF_ID", true);
     }
 
-    getApiKey(): string {
-        return this.getEnv("GEMINI_API_KEY", true);
+    getGeminiApiKey(): string {
+        if (this.getProvider() === "gemini") {
+            return this.getEnv("GEMINI_API_KEY", true);
+        }
+        return "";
     }
 
     getGeminiBaseUrl(): string | undefined {
