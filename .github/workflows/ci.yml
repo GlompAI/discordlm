@@ -82,11 +82,11 @@ jobs:
               --from-literal=OPENAI_TOKEN_LIMIT=${{ vars.OPENAI_TOKEN_LIMIT }} \
               --from-literal=RATE_LIMIT_PER_MINUTE=${{ vars.RATE_LIMIT_PER_MINUTE }} \
               --from-literal=ENABLE_AVATAR_SERVER=${{ vars.ENABLE_AVATAR_SERVER }} \
-              --from-literal=PUBLIC_AVATAR_BASE_URL=${{ vars.PUBLIC_AVATAR_BASE_URL }} \
               --from-literal=DEBUG=${{ vars.DEBUG }} \
               --from-literal=MAX_HISTORY_MESSAGES=${{ vars.MAX_HISTORY_MESSAGES }} \
               --from-literal=OPENAI_BASE_URL=${{ vars.OPENAI_BASE_URL }} \
               --from-literal=AVATAR_PORT=${{ vars.AVATAR_PORT }} \
+              --from-literal=PUBLIC_AVATAR_BASE_URL=${{ vars.PUBLIC_AVATAR_BASE_URL }} \
               -o yaml | k3s kubectl apply -f - --overwrite
             sleep 5
             k3s kubectl delete deployment discordlm-deployment

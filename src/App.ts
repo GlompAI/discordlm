@@ -141,6 +141,7 @@ export class App {
             "DEBUG",
             "MAX_HISTORY_MESSAGES",
             "OPENAI_BASE_URL",
+            "PUBLIC_AVATAR_BASE_URL",
             "GEMINI_BASE_URL",
             "OPENAI_BASE_URL",
         ];
