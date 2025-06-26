@@ -35,8 +35,6 @@ spec:
           mountPath: /app/characters
         - name: logs-storage
           mountPath: /app/logs
-        - name: env-file
-          mountPath: /app/.env
       volumes:
       - name: characters-storage
         persistentVolumeClaim:
@@ -44,10 +42,6 @@ spec:
       - name: logs-storage
         persistentVolumeClaim:
           claimName: discordlm-logs-pvc
-      - name: env-file
-        hostPath:
-          path: /root/.env
-          type: File
 ---
 apiVersion: v1
 kind: Service
