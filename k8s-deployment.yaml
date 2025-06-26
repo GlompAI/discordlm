@@ -29,6 +29,19 @@ spec:
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
+        - containerPort: 8081
+        readinessProbe:
+          httpGet:
+            path: /readyz
+            port: 8081
+          initialDelaySeconds: 5
+          periodSeconds: 5
+        livenessProbe:
+          httpGet:
+            path: /healthz
+            port: 8081
+          initialDelaySeconds: 15
+          periodSeconds: 20
         envFrom:
         - configMapRef:
             name: discordlm-config
