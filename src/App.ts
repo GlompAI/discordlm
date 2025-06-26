@@ -140,6 +140,8 @@ export class App {
             "PUBLIC_AVATAR_BASE_URL",
             "DEBUG",
             "MAX_HISTORY_MESSAGES",
+            "GEMINI_BASE_URL",
+            "OPENAI_BASE_URL",
         ];
 
         for (const secret of secretsToHash) {
