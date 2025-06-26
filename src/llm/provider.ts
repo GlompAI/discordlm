@@ -9,7 +9,7 @@ export interface Prompt {
 }
 
 export interface LLMResponse {
-    completion: any;
+    text: () => string;
 }
 
 export interface LLMProvider {

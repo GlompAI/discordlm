@@ -379,7 +379,7 @@ export class InteractionCreateHandler {
                 false, // sanitize
                 isSFW,
             )) as any)
-                .completion.text();
+                .text();
 
             if (!result) {
                 await this.sendEphemeralError(

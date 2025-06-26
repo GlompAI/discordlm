@@ -64,7 +64,7 @@ export class OllamaProvider implements LLMProvider {
         });
 
         return {
-            completion: response,
+            text: () => response.message.content,
         };
     }
 }

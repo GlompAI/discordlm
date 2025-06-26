@@ -109,12 +109,12 @@ export class GeminiProvider implements LLMProvider {
             });
             const finalResult = await finalChat.sendMessage("");
             return {
-                completion: finalResult.response,
+                text: () => finalResult.response.text(),
             };
         }
 
         return {
-            completion: response,
+            text: () => response.text(),
         };
     }
 }

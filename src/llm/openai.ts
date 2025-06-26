@@ -99,7 +99,7 @@ export class OpenAIProvider implements LLMProvider {
         try {
             const response = await this.openai.chat.completions.create(request);
             return {
-                completion: response,
+                text: () => response.choices[0].message.content ?? "",
             };
         } catch (error) {
             const anyError = error as any;
@@ -108,7 +108,7 @@ export class OpenAIProvider implements LLMProvider {
                 delete request.tools;
                 const response = await this.openai.chat.completions.create(request);
                 return {
-                    completion: response,
+                    text: () => response.choices[0].message.content ?? "",
                 };
             }
             throw error;
