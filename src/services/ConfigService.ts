@@ -30,6 +30,22 @@ export class ConfigService {
         return this.getEnv("GEMINI_BASE_URL", false, "");
     }
 
+    getOpenAIKey(): string {
+        return this.getEnv("OPENAI_API_KEY", false, "");
+    }
+
+    getOpenAIBaseUrl(): string {
+        return this.getEnv("OPENAI_BASE_URL", false, "https://api.openai.com/v1");
+    }
+
+    isOpenAIVisionEnabled(): boolean {
+        return this.getEnv("OPENAI_VISION_SUPPORT", false, "false") === "true";
+    }
+
+    getOllamaHost(): string {
+        return this.getEnv("OLLAMA_HOST", false, "http://localhost:11434");
+    }
+
     getModel(): string {
         return this.getEnv("MODEL_NAME", false, "gemini-1.5-flash");
     }
@@ -83,6 +99,10 @@ export class ConfigService {
 
     getMaxHistoryMessages(): number {
         return parseInt(this.getEnv("MAX_HISTORY_MESSAGES", false, "200"));
+    }
+
+    getProvider(): "gemini" | "openai" | "ollama" {
+        return this.getEnv("LLM_PROVIDER", false, "gemini") as "gemini" | "openai" | "ollama";
     }
 }
 

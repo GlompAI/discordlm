@@ -4,7 +4,7 @@ This document provides a concise summary of the Discord LM project's context. It
 
 ## 1. Project Overview
 
-Discord LM is a Deno-based Discord bot that provides a platform for creating and interacting with AI-powered characters. The primary goal of the project is to provide a highly customizable and extensible platform for creating unique and engaging AI experiences.
+Discord LM is a Deno-based Discord bot that provides a platform for creating and interacting with AI-powered characters. The bot supports multiple LLM providers, including Gemini, OpenAI, and Ollama, and is designed to be a highly customizable and extensible platform for creating unique and engaging AI experiences.
 
 ## 2. Technical Stack
 
@@ -12,6 +12,8 @@ Discord LM is a Deno-based Discord bot that provides a platform for creating and
 *   **Libraries**:
     *   `discord.js`: For interacting with the Discord API.
     *   `@google/generative-ai`: For interacting with the Google Generative AI API.
+    *   `openai`: For interacting with OpenAI-compatible APIs.
+    *   `ollama`: For interacting with the Ollama API.
 *   **Containerization**: Docker
 *   **Orchestration**: Kubernetes (K3s)
 *   **CI/CD**: GitHub Actions
