@@ -28,6 +28,7 @@ export class OpenAIProvider implements LLMProvider {
         character?: CharacterCard,
         isSFW = false,
     ): Promise<LLMResponse> {
+        console.log("Using OpenAIProvider");
         const lastHumanMessage = messages.slice().reverse().find((msg) => msg.role === "user");
         const username = lastHumanMessage?.user || "user";
 
