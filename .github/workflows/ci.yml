@@ -88,6 +88,7 @@ jobs:
               --from-literal=DEBUG="${{ vars.DEBUG }}" \
               --from-literal=MAX_HISTORY_MESSAGES="${{ vars.MAX_HISTORY_MESSAGES }}" \
               --from-literal=PUBLIC_AVATAR_BASE_URL="${{ vars.PUBLIC_AVATAR_BASE_URL }}" \
+              --from-literal=AVATAR_PORT="${{ vars.AVATAR_PORT }}" \
               -o yaml | k3s kubectl apply -f - --overwrite
             k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
             sleep 5
