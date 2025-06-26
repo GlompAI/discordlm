@@ -1,13 +1,13 @@
 # Discord LLM Bot
 
-A Discord bot that integrates with Google's Gemini API to provide AI responses in Discord channels and direct messages.
+A Discord bot that integrates with multiple LLM providers, including Google's Gemini, OpenAI-compatible APIs, and Ollama, to provide AI responses in Discord channels and direct messages.
 
 > **Recent Updates**: Added development tasks (`prepare`, `dev`, `check`, `lint`, `fmt`) and cleaned up deno.json configuration for better DX.
 
 ## Features
 
 - Responds to mentions and direct messages
-- Powered by Google's Gemini API
+- Powered by multiple LLM providers (Gemini, OpenAI, Ollama)
 - Configurable token limits for context management
 - Graceful typing indicators while generating responses
 - Automatic message history context
@@ -84,9 +84,14 @@ The following environment variables are required:
 |----------|-------------|----------|---------|
 | `BOT_TOKEN` | Discord bot token from Discord Developer Portal | Yes | - |
 | `BOT_SELF_ID` | Discord snowflake ID of the bot itself | Yes | - |
-| `GEMINI_API_KEY` | Your Google Gemini API key | Yes | - |
+| `LLM_PROVIDER` | The LLM provider to use (`gemini`, `openai`, `ollama`) | No | `gemini` |
+| `MODEL_NAME` | The model name to use for the selected provider | Yes | `models/gemini-1.5-flash` |
+| `GEMINI_API_KEY` | Your Google Gemini API key | Yes (if provider is `gemini`) | - |
 | `GEMINI_BASE_URL` | Custom base URL for the Gemini API | No | - |
-| `MODEL_NAME` | Gemini model name to use | Yes | `models/gemini-1.5-flash` |
+| `OPENAI_API_KEY` | Your OpenAI API key | Yes (if provider is `openai`) | - |
+| `OPENAI_BASE_URL` | Custom base URL for the OpenAI API | No | `https://api.openai.com/v1` |
+| `OPENAI_VISION_SUPPORT` | Enable vision support for OpenAI-compatible APIs | No | `false` |
+| `OLLAMA_HOST` | The host for the Ollama API | No | `http://localhost:11434` |
 | `TOKEN_LIMIT` | Maximum token context to send to the API | No | `1000000` |
 | `MAX_HISTORY_MESSAGES` | Maximum number of messages to fetch for history | No | `300` |
 | `RATE_LIMIT_PER_MINUTE` | Maximum requests per user per minute | No | `4` |

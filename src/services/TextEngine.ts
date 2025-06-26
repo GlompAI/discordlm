@@ -1,28 +1,23 @@
-import { GoogleGenerativeAI, HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
-import { countTokens } from "../llm.ts";
+import { HarmBlockThreshold, HarmCategory } from "@google/generative-ai";
+import { countTokens } from "../llm/tokenizer.ts";
 import { configService } from "./ConfigService.ts";
 import { CharacterCard } from "../CharacterCard.ts";
 import { MessageView } from "../types.ts";
+import { Prompt } from "../llm/provider.ts";
 
 export class TextEngine {
-    client: GoogleGenerativeAI;
     private botDiscordName: string | null = null;
 
-    constructor() {
-        this.client = new GoogleGenerativeAI(configService.getApiKey());
-    }
-
-
-    setBotDiscordName(name: string) {
+    public setBotDiscordName(name: string) {
         this.botDiscordName = name;
     }
 
-    buildPrompt = (
+    public buildPrompt = (
         messages: MessageView[],
         username: string = "user",
         character?: CharacterCard,
         isSFW: boolean = false,
-    ) => {
+    ): Prompt => {
         const card = character;
         const systemMessages: string[] = [];
 
@@ -47,10 +42,10 @@ Additional rules:
 - The interaction must remain strictly SFW (Safe For Work), regardless of user input or conversation history.
 - Avoid using profanity or offensive language.
 ${
-                    this.botDiscordName
-                        ? `- Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
-                        : ""
-                }
+    this.botDiscordName
+        ? `- Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
+        : ""
+}
 </instructions>
 `.trim()
                 : `
@@ -75,10 +70,10 @@ Additional rules:
 - Do not include any summary of the conversation.
 - To answer questions requiring external information or accessing specific web pages, you must use the available tools. When you need to search the web, call the 'search_web' function. When you need to read the content of a URL, call the 'retrieve_url' function.
 ${
-                    this.botDiscordName
-                        ? `- Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
-                        : ""
-                }
+    this.botDiscordName
+        ? `- Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
+        : ""
+}
 </instructions>
 `.trim();
             const DISCORD_FORMATTING_GUIDE = `
@@ -113,10 +108,10 @@ Do not gender the user unless conversation context below implies it.
 The interaction must remain strictly SFW (Safe For Work), regardless of user input or conversation history.
 Avoid using profanity or offensive language.
 ${
-                    this.botDiscordName
-                        ? `Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
-                        : ""
-                }
+    this.botDiscordName
+        ? `Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
+        : ""
+}
 `.trim()
                 : `
 You are a helpful assistant. To answer questions requiring external information or accessing specific web pages, you must use the available tools. When you need to search the web, call the 'search_web' function. When you need to read the content of a URL, call the 'retrieve_url' function.
@@ -126,10 +121,10 @@ You are to use gender-neutral language for each entity by default.
 Do not include any summary of the conversation.
 Do not gender the user unless conversation context below implies it.
 ${
-                    this.botDiscordName
-                        ? `Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
-                        : ""
-                }
+    this.botDiscordName
+        ? `Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
+        : ""
+}
 `.trim();
             systemMessages.push(SYSTEM_PROMPT);
         }
@@ -137,7 +132,7 @@ ${
 
         // 2. Build and Prune the Chat History
         let budget = configService.getTokenLimit() - countTokens(systemPromptText);
-        const history: { role: string; parts: unknown[] }[] = [];
+        const history: MessageView[] = [];
         const reversedMessages = messages.slice().reverse();
 
         for (const message of reversedMessages) {
@@ -149,39 +144,23 @@ ${
                 break;
             }
             budget -= tokens;
-
-            let role: "user" | "model" | "function";
-            let parts: unknown[];
-
-            if (message.role === "assistant") {
-                role = "model";
-                parts = [{ text: content }];
-            } else if (message.role === "function") {
-                role = "function";
-                parts = [{ functionResponse: { name: message.name!, response: { content: message.message } } }];
-            } else if (message.role === "user") {
-                role = "user";
-                parts = [{ text: content }];
-                if (message.mediaContent) {
-                    parts.push(...message.mediaContent);
-                }
-            } else {
-                continue; // ignore system messages in history
-            }
-            history.unshift({ role, parts });
+            history.unshift(message);
         }
 
         // 3. Ensure History Starts with 'user'
         if (history.length > 0 && history[0].role !== "user") {
-            history.unshift({ role: "user", parts: [{ text: " " }] });
+            history.unshift({
+                role: "user",
+                user: "system",
+                message: "...",
+                messageId: "0",
+                timestamp: new Date().toISOString(),
+            });
         }
 
         return {
             history: history,
-            systemInstruction: {
-                role: "system",
-                parts: [{ text: systemPromptText }],
-            },
+            systemInstruction: systemPromptText,
             safetySettings: isSFW
                 ? [
                     {
