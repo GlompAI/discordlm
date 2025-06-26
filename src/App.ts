@@ -8,6 +8,7 @@ import { WebhookManager } from "./WebhookManager.ts";
 import { Events, SlashCommandBuilder } from "discord.js";
 import adze from "npm:adze";
 import { createHash } from "node:crypto";
+import { HealthServer } from "./HealthServer.ts";
 import { configService } from "./services/ConfigService.ts";
 
 export class App {
@@ -19,6 +20,7 @@ export class App {
     private readonly webhookManager: WebhookManager;
     private readonly interactionCreateHandler: InteractionCreateHandler;
     private readonly messageCreateHandler: MessageCreateHandler;
+    private readonly healthServer: HealthServer;
     private isShuttingDown = false;
 
     constructor() {
@@ -39,9 +41,11 @@ export class App {
             this.discordService.client,
             this.webhookManager,
         );
+        this.healthServer = new HealthServer();
     }
 
     public async start(): Promise<void> {
+        this.healthServer.start();
         this.logSecretHashes();
         this.discordService.onReady(async (client) => {
             if (client.user) {
@@ -52,6 +56,7 @@ export class App {
             }
             await this.characterService.start();
             await this.registerSlashCommands();
+            this.healthServer.setReady(true);
             this.logger.log("Bot startup complete!");
         });
 
@@ -76,6 +81,7 @@ export class App {
     public async stop(): Promise<void> {
         this.logger.log("Shutting down...");
         this.isShuttingDown = true;
+        this.healthServer.setReady(false);
 
         while (this.llmService.getActiveGenerations() > 0) {
             this.logger.log(`Waiting for ${this.llmService.getActiveGenerations()} active generations to complete...`);
