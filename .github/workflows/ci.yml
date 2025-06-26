@@ -50,7 +50,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "k8s-deployment.yaml"
+          source: "k8s-deployment.yaml,k8s-config.yaml"
           target: "/root/discordlm/"
 
       - name: Deploy to remote server
