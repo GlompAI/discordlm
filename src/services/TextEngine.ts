@@ -17,6 +17,7 @@ export class TextEngine {
         username: string = "user",
         character?: CharacterCard,
         isSFW: boolean = false,
+        provider: "gemini" | "openai" | "ollama" = "gemini",
     ): Prompt => {
         const card = character;
         const systemMessages: string[] = [];
@@ -131,7 +132,12 @@ ${
         const systemPromptText = systemMessages.join("\n\n").trim();
 
         // 2. Build and Prune the Chat History
-        let budget = configService.getTokenLimit() - countTokens(systemPromptText);
+        let budget = 0;
+        if (provider === "gemini") {
+            budget = configService.getGeminiTokenLimit() - countTokens(systemPromptText);
+        } else {
+            budget = configService.getOpenAITokenLimit() - countTokens(systemPromptText);
+        }
         const history: MessageView[] = [];
         const reversedMessages = messages.slice().reverse();
 

@@ -133,6 +133,13 @@ export class App {
             "ADMIN_OVERRIDE_ID",
             "USER_ID_LIST",
             "LIMIT_USER_IDS",
+            "GEMINI_TOKEN_LIMIT",
+            "OPENAI_TOKEN_LIMIT",
+            "RATE_LIMIT_PER_MINUTE",
+            "ENABLE_AVATAR_SERVER",
+            "PUBLIC_AVATAR_BASE_URL",
+            "DEBUG",
+            "MAX_HISTORY_MESSAGES",
         ];
 
         for (const secret of secretsToHash) {
