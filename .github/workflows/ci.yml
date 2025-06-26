@@ -43,11 +43,8 @@ jobs:
 
       - name: Replace image tag in deployment yaml
         run: |
-          echo "GITHUB_SHA: ${{ github.sha }}"
-          sed -i "s/{{IMAGE_TAG}}/${{ github.sha }}/g" k8s-deployment.yaml
-          echo "--- k8s-deployment.yaml after sed ---"
-          cat k8s-deployment.yaml
-          echo "------------------------------------"
+          export IMAGE_TAG=${{ github.sha }}
+          envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
 
       - name: Copy deployment file to server
         uses: appleboy/scp-action@master
@@ -69,14 +66,13 @@ jobs:
               --docker-server=ghcr.io \
               --docker-username=${{ github.actor }} \
               --docker-password=${{ secrets.GITHUB_TOKEN }} \
-              --dry-run=client -o yaml | k3s kubectl apply -f - --overwrite --force
+              -o yaml | k3s kubectl apply -f - --overwrite --force
             k3s kubectl delete secret discordlm-secrets --ignore-not-found
             k3s kubectl create secret generic discordlm-secrets \
               --from-literal=BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
               --from-literal=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
               --from-literal=OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
               --from-literal=GEMINI_BASE_URL=${{ secrets.GEMINI_BASE_URL }} \
-              --from-literal=OPENAI_BASE_URL=${{ secrets.OPENAI_BASE_URL }} \
               -o yaml | k3s kubectl apply -f - --overwrite
             k3s kubectl delete configmap discordlm-config --ignore-not-found
             k3s kubectl create configmap discordlm-config \
