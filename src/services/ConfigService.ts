@@ -26,10 +26,6 @@ export class ConfigService {
         return this.getEnv("GEMINI_API_KEY", true);
     }
 
-    getOpenaiApiKey(): string {
-        return this.getEnv("OPENAI_API_KEY", true);
-    }
-
     getGeminiBaseUrl(): string | undefined {
         return this.getEnv("GEMINI_BASE_URL", false, "");
     }
