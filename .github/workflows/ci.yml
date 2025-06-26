@@ -54,6 +54,13 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "k8s-deployment.yaml,k8s-config.yaml"
           target: "/root/discordlm/"
+      - name: Create characters directory on server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: mkdir -p /root/discordlm/characters/
       - name: Copy character files to server
         uses: appleboy/scp-action@master
         with:
