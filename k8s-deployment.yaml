@@ -25,7 +25,7 @@ spec:
       - name: regcred
       containers:
       - name: discordlm
-        image: ghcr.io/aronson/discordlm:{{IMAGE_TAG}}
+        image: ghcr.io/aronson/discordlm:$IMAGE_TAG
         imagePullPolicy: Always
         ports:
         - containerPort: 8080
