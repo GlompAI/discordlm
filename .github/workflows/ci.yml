@@ -72,8 +72,8 @@ jobs:
               --from-literal=OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
               --from-literal=GEMINI_BASE_URL=${{ secrets.GEMINI_BASE_URL }} \
               --from-literal=OPENAI_BASE_URL=${{ secrets.OPENAI_BASE_URL }} \
-              --from-literal=OPENAI_BASE_URL=${{ secrets.OPENAI_BASE_URL }} \
               -o yaml | k3s kubectl apply -f - --overwrite
+            k3s kubectl delete configmap discordlm-config --ignore-not-found
             k3s kubectl create configmap discordlm-config \
               --from-literal=ADMIN_OVERRIDE_ID=${{ vars.ADMIN_OVERRIDE_ID }} \
               --from-literal=USER_ID_LIST=${{ vars.USER_ID_LIST }} \
