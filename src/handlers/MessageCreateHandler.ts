@@ -120,17 +120,17 @@ export class MessageCreateHandler {
         let character = null;
         const isDirectPing = message.content.includes(`<@${configService.getBotSelfId()}>`);
 
-        if (isDM) {
-            if (message.channel.isTextBased()) {
-                character = await this.characterService.inferCharacterFromHistory(message.channel);
-            }
-        } else if (isDirectPing || repliesToAssistant) {
+        if (isDirectPing || repliesToAssistant) {
             this.logger.info(
                 `Forcing assistant character due to ${
                     isDirectPing ? "direct bot mention" : "reply to Assistant message"
                 }.`,
             );
             character = this.characterService.getAssistantCharacter();
+        } else if (isDM) {
+            if (message.channel.isTextBased()) {
+                character = await this.characterService.inferCharacterFromHistory(message.channel);
+            }
         } else {
             if (repliesToWebhookCharacter || mentionsCharacterByName || repliesToSwitchMessage) {
                 character = this.characterService.getCharacter(targetCharacterName);
