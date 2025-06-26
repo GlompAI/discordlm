@@ -54,6 +54,14 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "k8s-deployment.yaml,k8s-config.yaml"
           target: "/root/discordlm/"
+      - name: Copy character files to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "/home/luigi/discordlm/characters/*"
+          target: "/root/discordlm/characters/"
 
       - name: Deploy to remote server
         uses: appleboy/ssh-action@master
