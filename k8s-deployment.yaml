@@ -41,8 +41,8 @@ spec:
           mountPath: /app/logs
       volumes:
       - name: characters-storage
-        persistentVolumeClaim:
-          claimName: discordlm-pvc
+        hostPath:
+          path: /root/discordlm/characters
       - name: logs-storage
         persistentVolumeClaim:
           claimName: discordlm-logs-pvc
