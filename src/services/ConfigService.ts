@@ -2,6 +2,7 @@ import "https://deno.land/std@0.224.0/dotenv/load.ts";
 import adze from "adze";
 
 export class ConfigService {
+    public botSelfId: string | null = null;
     private getEnv(key: string, required: true): string;
     private getEnv(key: string, required: false, defaultValue: string): string;
     private getEnv(key: string, required: boolean, defaultValue?: string): string | undefined {
@@ -16,10 +17,6 @@ export class ConfigService {
         const token = this.getEnv("BOT_TOKEN", true);
         adze.debug("Retrieved Bot Token:", token);
         return token;
-    }
-
-    getBotSelfId(): string {
-        return this.getEnv("BOT_SELF_ID", true);
     }
 
     getGeminiApiKey(): string {
@@ -90,11 +87,19 @@ export class ConfigService {
     }
 
     getRateLimitPerMinute(): number {
-        return parseInt(this.getEnv("RATE_LIMIT_PER_MINUTE", false, "10"));
+        return parseInt(this.getEnv("RATE_LIMIT_PER_MINUTE", false, "4"));
     }
 
     getUserIdList(): string {
         return this.getEnv("USER_ID_LIST", false, "");
+    }
+
+    getLimitUserIds(): string[] {
+        const userIds = this.getEnv("LIMIT_USER_IDS", false, "");
+        if (!userIds) {
+            return [];
+        }
+        return userIds.split(";").filter((id) => id.trim() !== "");
     }
 
     isWhitelistEnabled(): boolean {

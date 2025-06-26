@@ -29,7 +29,10 @@ export class MessageCreateHandler {
     ) {
         this.inferenceQueue = new Queue(configService.getInferenceParallelism());
         this.componentService = new ComponentService();
-        this.rateLimitService = new RateLimitService(configService.getRateLimitPerMinute());
+        this.rateLimitService = new RateLimitService(
+            configService.getRateLimitPerMinute(),
+            configService.getLimitUserIds(),
+        );
     }
 
     public async handle(message: Message): Promise<void> {
@@ -44,11 +47,11 @@ export class MessageCreateHandler {
         if (message.author.bot && (!message.webhookId || !message.content.endsWith(WEBHOOK_IDENTIFIER))) {
             return;
         }
-        if (message.author.id === configService.getBotSelfId() && message.content.startsWith("Switched to ")) {
+        if (message.author.id === configService.botSelfId && message.content.startsWith("Switched to ")) {
             return;
         }
 
-        const mentionsBot = message.mentions.has(configService.getBotSelfId());
+        const mentionsBot = message.mentions.has(configService.botSelfId!);
         const isDM = message.channel.type === ChannelType.DM;
 
         let repliesToWebhookCharacter = false;
@@ -60,7 +63,7 @@ export class MessageCreateHandler {
             try {
                 const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
                 if (
-                    repliedMessage.author.id === configService.getBotSelfId() &&
+                    repliedMessage.author.id === configService.botSelfId &&
                     repliedMessage.content.startsWith("Switched to ")
                 ) {
                     const match = repliedMessage.content.match(/Switched to \*\*(.*?)\*\*/);
@@ -75,7 +78,7 @@ export class MessageCreateHandler {
                     targetCharacterName = (repliedMessage as Message).author?.username || "";
                     repliesToWebhookCharacter = true;
                 } else if (
-                    repliedMessage.author.id === configService.getBotSelfId() &&
+                    repliedMessage.author.id === configService.botSelfId &&
                     !repliedMessage.webhookId &&
                     !repliedMessage.content.startsWith("Switched to ")
                 ) {
@@ -118,7 +121,7 @@ export class MessageCreateHandler {
         }
 
         let character = null;
-        const isDirectPing = message.content.includes(`<@${configService.getBotSelfId()}>`);
+        const isDirectPing = message.content.includes(`<@${configService.botSelfId}>`);
 
         if (isDirectPing || repliesToAssistant) {
             this.logger.info(
@@ -261,7 +264,7 @@ export class MessageCreateHandler {
                 this.llmService.generateMessage.bind(this.llmService) as any,
                 this.client,
                 messages,
-                configService.getBotSelfId(),
+                configService.botSelfId!,
                 character ? character.card : null,
                 Math.floor(Math.random() * 1000000),
                 false,

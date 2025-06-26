@@ -16,10 +16,14 @@ export class RateLimitService {
     private userLimits: Map<string, UserRateLimit> = new Map();
     private readonly windowMs = 60000; // 1 minute in milliseconds
     private requestsPerMinute: number;
+    private limitedRequestsPerMinute: number;
+    private limitedUserIds: string[];
     private cleanupInterval: number | undefined;
 
-    constructor(requestsPerMinute: number) {
+    constructor(requestsPerMinute: number, limitedUserIds: string[]) {
         this.requestsPerMinute = requestsPerMinute;
+        this.limitedRequestsPerMinute = Math.floor(requestsPerMinute / 2);
+        this.limitedUserIds = limitedUserIds;
         this.startCleanupInterval();
     }
 
@@ -30,6 +34,8 @@ export class RateLimitService {
     canMakeRequest(userId: string): boolean {
         const now = Date.now();
         const userLimit = this.userLimits.get(userId);
+        const isLimitedUser = this.limitedUserIds.includes(userId);
+        const maxRequests = isLimitedUser ? this.limitedRequestsPerMinute : this.requestsPerMinute;
 
         if (!userLimit) {
             // First request from this user
@@ -51,7 +57,7 @@ export class RateLimitService {
         }
 
         // Check if user has exceeded the limit
-        if (userLimit.requests >= this.requestsPerMinute) {
+        if (userLimit.requests >= maxRequests) {
             return false;
         }
 

@@ -69,10 +69,10 @@ jobs:
               --dry-run=client -o yaml | k3s kubectl apply -f - --overwrite
             k3s kubectl create secret generic discordlm-secrets \
               --from-literal=BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
-              --from-literal=BOT_SELF_ID=${{ secrets.BOT_SELF_ID }} \
               --from-literal=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
               --from-literal=ADMIN_OVERRIDE_ID=${{ secrets.ADMIN_OVERRIDE_ID }} \
               --from-literal=USER_ID_LIST=${{ secrets.USER_ID_LIST }} \
+              --from-literal=LIMIT_USER_IDS=${{ secrets.LIMIT_USER_IDS }} \
               --from-literal=OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
               --dry-run=client -o yaml | k3s kubectl apply -f - --overwrite
             k3s kubectl apply -f /root/discordlm/k8s-config.yaml

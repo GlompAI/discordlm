@@ -83,7 +83,6 @@ The following environment variables are required:
 | Variable | Description | Required | Default |
 |----------|-------------|----------|---------|
 | `BOT_TOKEN` | Discord bot token from Discord Developer Portal | Yes | - |
-| `BOT_SELF_ID` | Discord snowflake ID of the bot itself | Yes | - |
 | `LLM_PROVIDER` | The LLM provider to use (`gemini`, `openai`, `ollama`) | No | `gemini` |
 | `MODEL_NAME` | The model name to use for the selected provider | Yes | `models/gemini-1.5-flash` |
 | `GEMINI_API_KEY` | Your Google Gemini API key | Yes (if provider is `gemini`) | - |
@@ -117,7 +116,6 @@ Create a `.env` file or set environment variables:
 
 ```bash
 export BOT_TOKEN="your_discord_bot_token_here"
-export BOT_SELF_ID="1234567890123456789"
 export GEMINI_API_KEY="your_gemini_api_key_here"
 export MODEL_NAME="models/gemini-1.5-flash"
 ```
@@ -133,7 +131,6 @@ docker build -t discordlm .
 # Run the container with environment variables
 docker run -d \
   -e BOT_TOKEN="your_discord_bot_token" \
-  -e BOT_SELF_ID="1234567890123456789" \
   -e GEMINI_API_KEY="your_gemini_api_key" \
   -e MODEL_NAME="models/gemini-1.5-flash" \
   -v /path/to/your/characters:/app/characters \
@@ -152,7 +149,6 @@ services:
     build: .
     environment:
       - BOT_TOKEN=your_discord_bot_token
-      - BOT_SELF_ID=1234567890123456789
       - GEMINI_API_KEY=your_gemini_api_key
       - MODEL_NAME=models/gemini-1.5-flash
     volumes:

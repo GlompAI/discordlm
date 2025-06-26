@@ -65,7 +65,6 @@ Note: The bot currently only reads from `/app/characters`, so you'd need to orga
 ### Required Variables
 ```env
 BOT_TOKEN=your_discord_bot_token
-BOT_SELF_ID=your_bot_user_id
 OPENAI_URL=https://api.openai.com/v1
 OPENAI_KEY=your_openai_api_key
 MODEL_NAME=gpt-4o-mini
@@ -188,7 +187,6 @@ mkdir characters
 
 # Create .env file
 echo "BOT_TOKEN=your_token_here" > .env
-echo "BOT_SELF_ID=your_bot_id" >> .env
 # ... add other required vars
 
 # Run
