@@ -13,7 +13,7 @@ export class GeminiProvider implements LLMProvider {
 
     constructor() {
         this.textEngine = new TextEngine();
-        this.generativeAi = new GoogleGenerativeAI(configService.getApiKey());
+        this.generativeAi = new GoogleGenerativeAI(configService.getGeminiApiKey());
     }
 
     public setBotDiscordName(name: string) {
