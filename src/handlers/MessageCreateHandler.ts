@@ -271,20 +271,7 @@ export class MessageCreateHandler {
             const endTime = performance.now();
             const llmResponseTime = endTime - startTime;
 
-            if (result.completion.promptFeedback?.blockReason) {
-                const reason = result.completion.promptFeedback.blockReason;
-                adze.error(`Response blocked due to: ${reason}`);
-                let userMessage =
-                    "Oops! It seems my response was blocked. This can happen for a variety of reasons, including if a message goes against our terms of service.";
-                if (reason === "SAFETY") {
-                    userMessage =
-                        "Oops! It seems my response was blocked for safety reasons. You could try deleting your last message and rephrasing, or use the `/reset` command to clear our conversation and start fresh.";
-                }
-                await this.sendEphemeralError(message, userMessage);
-                return;
-            }
-
-            const text = result.completion.text();
+            const text = result.text();
             if (!text) {
                 adze.error("Empty response from API, but no block reason provided.");
                 await this.sendEphemeralError(
