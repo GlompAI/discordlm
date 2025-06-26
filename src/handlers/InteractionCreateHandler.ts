@@ -352,6 +352,7 @@ export class InteractionCreateHandler {
         try {
             this.logger.info(`${logContext} Fetching message history for re-roll...`);
             const messages = await this.fetchMessageHistory(message.channel, message.id);
+            this.logger.info(`${logContext} Fetched ${messages.length} messages for re-roll`);
 
             let character = null;
             if (message.webhookId) {
