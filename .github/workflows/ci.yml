@@ -8,7 +8,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
 
     steps:
@@ -20,7 +20,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
-          password: ${{ secrets.GHCR_TOKEN }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
@@ -65,7 +65,7 @@ jobs:
             k3s kubectl create secret docker-registry regcred \
               --docker-server=ghcr.io \
               --docker-username=${{ github.actor }} \
-              --docker-password=${{ secrets.GITHUB_TOKEN }} \
+              --docker-password=${{ secrets.GHCR_TOKEN }} \
               -o yaml | k3s kubectl apply -f - --overwrite --force
             k3s kubectl delete secret discordlm-secrets --ignore-not-found
             k3s kubectl create secret generic discordlm-secrets \
