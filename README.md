@@ -172,7 +172,7 @@ The bot includes a per-user rate limiting system to prevent abuse:
 
 - **Default limit**: 4 requests per minute per user
 - **Configurable**: Set `RATE_LIMIT_PER_MINUTE` environment variable
-- **Special Limit**: A lower rate limit (half of the default) can be applied to a list of user IDs set in the `LIMIT_USER_IDS` environment variable.
+- **Special Limit**: A lower rate limit (half of the default) can be applied to a semicolon-separated list of user IDs set in the `LIMIT_USER_IDS` environment variable.
 - **User feedback**: Users receive a temporary message when rate limited
 - **Automatic queuing**: Rate-limited requests are queued and processed when the limit resets
 - **In-memory storage**: Rate limits are stored in memory and reset on bot restart
@@ -183,6 +183,13 @@ When a user exceeds the rate limit, they'll see a message like:
 ```
 
 The message automatically deletes after 5 seconds, and their request will be processed automatically when the rate limit window resets.
+
+## Whitelist Feature
+
+The bot can be configured to only allow a specific list of users to interact with it. This is useful for private bots or for testing purposes.
+
+- **Enable Whitelist**: To enable the whitelist, set the `WHITELIST_ENABLE` environment variable to `true` and provide a comma-separated list of user IDs in the `USER_ID_LIST` environment variable.
+- **Bypass Whitelist**: The user ID set in the `ADMIN_OVERRIDE_ID` environment variable will always be able to interact with the bot, regardless of the whitelist.
 
 ## Permissions Required
 
