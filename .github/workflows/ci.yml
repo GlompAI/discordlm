@@ -66,7 +66,7 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "k8s-deployment.yaml,k8s-config-qa.yaml"
+          source: "k8s-deployment.yaml,k8s-config.yaml"
           target: "/root/discordlm/"
 
       - name: Deploy to remote server
@@ -90,7 +90,21 @@ jobs:
               --from-literal=GEMINI_BASE_URL=${{ secrets.GEMINI_BASE_URL }} \
               -o yaml | k3s kubectl apply -f - --overwrite
             k3s kubectl delete configmap discordlm-config --ignore-not-found
-            k3s kubectl create configmap discordlm-config --from-file=/root/discordlm/k8s-config-qa.yaml
+            k3s kubectl create configmap discordlm-config \
+              --from-literal=OPENAI_BASE_URL="${{ vars.OPENAI_BASE_URL }}" \
+              --from-literal=ADMIN_OVERRIDE_ID="${{ vars.ADMIN_OVERRIDE_ID }}" \
+              --from-literal=USER_ID_LIST="${{ vars.USER_ID_LIST }}" \
+              --from-literal=LIMIT_USER_IDS="${{ vars.LIMIT_USER_IDS }}" \
+              --from-literal=GEMINI_TOKEN_LIMIT="${{ vars.GEMINI_TOKEN_LIMIT }}" \
+              --from-literal=OPENAI_TOKEN_LIMIT="${{ vars.OPENAI_TOKEN_LIMIT }}" \
+              --from-literal=RATE_LIMIT_PER_MINUTE="${{ vars.RATE_LIMIT_PER_MINUTE }}" \
+              --from-literal=ENABLE_AVATAR_SERVER="${{ vars.ENABLE_AVATAR_SERVER }}" \
+              --from-literal=DEBUG="${{ vars.DEBUG }}" \
+              --from-literal=MAX_HISTORY_MESSAGES="${{ vars.MAX_HISTORY_MESSAGES }}" \
+              --from-literal=PUBLIC_AVATAR_BASE_URL="${{ vars.PUBLIC_AVATAR_BASE_URL }}" \
+              --from-literal=AVATAR_PORT="${{ vars.AVATAR_PORT }}" \
+              -o yaml | k3s kubectl apply -f -
+            k3s kubectl patch configmap discordlm-config --type merge -p '{"data":{"WHITELIST_ENABLE":"true"}}'
             k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
             sleep 5
             k3s kubectl delete deployment discordlm-deployment
