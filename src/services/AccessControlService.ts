@@ -7,7 +7,7 @@ class AccessControlService {
 
     constructor() {
         const userIdList = configService.getUserIdList();
-        this.allowedUsers = new Set(userIdList.split(";").filter((id: string) => id.trim() !== ""));
+        this.allowedUsers = new Set(userIdList.split(",").filter((id: string) => id.trim() !== ""));
         this.isWhitelist = configService.isWhitelistEnabled();
         this.adminOverrideUsers = new Set(configService.getAdminOverrideList());
     }
@@ -26,7 +26,7 @@ class AccessControlService {
         if (this.isWhitelist) {
             return isUserInList;
         } else {
-            return !isUserInList;
+            return true;
         }
     }
 }
