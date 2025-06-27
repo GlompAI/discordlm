@@ -5,7 +5,7 @@ import { CharacterService } from "../services/CharacterService.ts";
 import { LLMService } from "../services/LLMService.ts";
 import { configService } from "../services/ConfigService.ts";
 import { smartSplit } from "../utils.ts";
-import adze from "npm:adze";
+import adze from "adze";
 import { getHelpText } from "../utils.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";
 import { Queue } from "../queue.ts";
@@ -30,6 +30,7 @@ export class MessageCreateHandler {
         this.inferenceQueue = new Queue(configService.getInferenceParallelism());
         this.componentService = new ComponentService();
         this.rateLimitService = new RateLimitService(
+            client,
             configService.getRateLimitPerMinute(),
             configService.getLimitUserIds(),
         );
@@ -92,7 +93,7 @@ export class MessageCreateHandler {
                     repliedMessage.author.id === configService.botSelfId &&
                     repliedMessage.content.startsWith("Switched to ")
                 ) {
-                    const match = repliedMessage.content.match(/Switched to (.*?)/);
+                    const match = repliedMessage.content.match(/Switched to (.*?)\n?.*/);
                     if (match) {
                         targetCharacterName = match[1];
                     } else {
@@ -191,7 +192,7 @@ export class MessageCreateHandler {
         this.logger.info(`${logContext} Using character: ${character ? character.card.name : "none"}`);
 
         // Check rate limit
-        if (!this.rateLimitService.canMakeRequest(message.author.id)) {
+        if (!this.rateLimitService.canMakeRequest(message.author)) {
             this.logger.info(`${logContext} User is rate limited`);
             await this.rateLimitService.sendRateLimitNotification(message);
 
