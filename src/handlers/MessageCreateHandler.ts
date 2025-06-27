@@ -41,7 +41,7 @@ export class MessageCreateHandler {
             await this.sendEphemeralError(message, "Interaction blocked.");
             return;
         }
-        if (message.content === RESET_MESSAGE_CONTENT || message.interaction) {
+        if (message.content === RESET_MESSAGE_CONTENT || message.interaction || message.content === "Interaction blocked.") {
             return;
         }
         if (message.author.bot && (!message.webhookId || !message.content.endsWith(WEBHOOK_IDENTIFIER))) {
