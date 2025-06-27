@@ -45,12 +45,6 @@ export class InteractionCreateHandler {
 
     public async handle(interaction: Interaction): Promise<void> {
         if (this.isShuttingDown) return;
-        if (!accessControlService.isUserAllowed(interaction.user.id)) {
-            if (interaction.isRepliable()) {
-                await interaction.reply({ content: "Interaction blocked.", ephemeral: true });
-            }
-            return;
-        }
 
         const logContext = interaction.guild
             ? `[Guild: ${interaction.guild.name} | Channel: ${
@@ -60,11 +54,19 @@ export class InteractionCreateHandler {
 
         try {
             if (interaction.isAutocomplete()) {
+                if (!accessControlService.isUserAllowed(interaction.user.id)) {
+                    await interaction.respond([]);
+                    return;
+                }
                 await this.handleAutocomplete(interaction);
                 return;
             }
 
             if (interaction.isMessageComponent()) {
+                if (!accessControlService.isUserAllowed(interaction.user.id)) {
+                    await interaction.reply({ content: "Interaction blocked.", ephemeral: true });
+                    return;
+                }
                 await this.handleComponentInteraction(interaction, logContext);
                 return;
             }
@@ -73,6 +75,10 @@ export class InteractionCreateHandler {
 
             const { commandName } = interaction;
 
+            if (!accessControlService.isUserAllowed(interaction.user.id)) {
+                await interaction.reply({ content: "Interaction blocked.", ephemeral: true });
+                return;
+            }
             if (commandName === "switch") {
                 await this.handleSwitchCommand(interaction);
             } else if (commandName === "list") {
