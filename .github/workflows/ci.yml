@@ -50,7 +50,7 @@ jobs:
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY_QA }}" > private_key.pem
           chmod 600 private_key.pem
-          scp -i private_key.pem -o StrictHostKeyChecking=no dist/discordlm heni@ooo.observer:/home/heni/discordlm/dist/
+          scp -v -i private_key.pem -o StrictHostKeyChecking=no dist/discordlm heni@ooo.observer:/home/heni/discordlm/dist/
 
       - name: Deploy to remote server
         uses: appleboy/ssh-action@master
