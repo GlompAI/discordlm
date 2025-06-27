@@ -31,94 +31,38 @@ jobs:
             ghcr.io/glompai/discordlm:${{ github.sha }}
             ghcr.io/glompai/discordlm:latest
 
-  deploy-qa:
+  deploy-qa-binary:
     needs: build-and-push
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
+    container: denoland/deno:2.3.3
     environment: qa
-    permissions:
-      id-token: write
-      contents: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Import Secrets from Vault
-        uses: hashicorp/vault-action@v2
-        with:
-          url: https://vault.glomp.ai
-          method: jwt
-          role: qa
-          secrets: |
-            secret/data/qa BOT_TOKEN | BOT_TOKEN ;
-            secret/data/qa GEMINI_API_KEY | GEMINI_API_KEY ;
-            secret/data/qa OPENAI_API_KEY | OPENAI_API_KEY
-
-      - name: Replace image tag in deployment yaml
-        env:
-          DEPLOYMENT_NAME: discordlm-deployment-qa
-          SECRET_NAME: discordlm-secrets-qa
-          CONFIG_MAP_NAME: discordlm-config-qa
+      - name: Compile application
         run: |
-          export IMAGE_TAG=${{ github.sha }}
-          export DEPLOYMENT_NAME
-          export SECRET_NAME
-          export CONFIG_MAP_NAME
-          envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
+          deno compile --unstable-kv --allow-net --allow-env --allow-read --allow-write --output dist/discordlm src/main.ts
 
-      - name: Copy deployment file to server
+      - name: Copy binary to server
         uses: appleboy/scp-action@master
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "k8s-deployment.yaml,k8s-config-qa.yaml"
-          target: "/root/discordlm/"
+          host: ooo.observer
+          username: heni
+          key: ${{ secrets.SSH_PRIVATE_KEY_QA }}
+          source: "dist/discordlm"
+          target: "/home/heni/discordlm/dist/"
 
       - name: Deploy to remote server
         uses: appleboy/ssh-action@master
-        env:
-          DEPLOYMENT_NAME: discordlm-deployment-qa
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          host: ooo.observer
+          username: heni
+          key: ${{ secrets.SSH_PRIVATE_KEY_QA }}
           script: |
-            k3s kubectl delete secret docker-registry regcred --ignore-not-found
-            k3s kubectl create secret docker-registry regcred \
-              --docker-server=ghcr.io \
-              --docker-username=${{ github.actor }} \
-              --docker-password=${{ secrets.GHCR_TOKEN }} \
-              -o yaml | k3s kubectl apply -f - --overwrite --force
-            k3s kubectl delete secret discordlm-secrets-qa --ignore-not-found
-            k3s kubectl create secret generic discordlm-secrets-qa \
-              --from-literal=BOT_TOKEN=${{ env.BOT_TOKEN }} \
-              --from-literal=GEMINI_API_KEY=${{ env.GEMINI_API_KEY }} \
-              --from-literal=OPENAI_API_KEY=${{ env.OPENAI_API_KEY }} \
-              --from-literal=GEMINI_BASE_URL=${{ secrets.GEMINI_BASE_URL }} \
-              -o yaml | k3s kubectl apply -f - --overwrite
-            k3s kubectl delete configmap discordlm-config-qa --ignore-not-found
-            k3s kubectl create configmap discordlm-config-qa \
-              --from-literal=OPENAI_BASE_URL="${{ vars.OPENAI_BASE_URL }}" \
-              --from-literal=ADMIN_OVERRIDE_ID="${{ vars.ADMIN_OVERRIDE_ID }}" \
-              --from-literal=USER_ID_LIST="${{ vars.USER_ID_LIST }}" \
-              --from-literal=LIMIT_USER_IDS="${{ vars.LIMIT_USER_IDS }}" \
-              --from-literal=GEMINI_TOKEN_LIMIT="${{ vars.GEMINI_TOKEN_LIMIT }}" \
-              --from-literal=OPENAI_TOKEN_LIMIT="${{ vars.OPENAI_TOKEN_LIMIT }}" \
-              --from-literal=RATE_LIMIT_PER_MINUTE="${{ vars.RATE_LIMIT_PER_MINUTE }}" \
-              --from-literal=ENABLE_AVATAR_SERVER="${{ vars.ENABLE_AVATAR_SERVER }}" \
-              --from-literal=DEBUG="${{ vars.DEBUG }}" \
-              --from-literal=MAX_HISTORY_MESSAGES="${{ vars.MAX_HISTORY_MESSAGES }}" \
-              --from-literal=PUBLIC_AVATAR_BASE_URL="${{ vars.PUBLIC_AVATAR_BASE_URL }}" \
-              --from-literal=AVATAR_PORT="${{ vars.AVATAR_PORT }}" \
-              -o yaml | k3s kubectl apply -f -
-            k3s kubectl patch configmap discordlm-config-qa --type merge -p '{"data":{"WHITELIST_ENABLE":"true"}}'
-            k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
-            sleep 5
-            k3s kubectl delete deployment ${{ env.DEPLOYMENT_NAME }} --ignore-not-found
-            k3s kubectl apply -f /root/discordlm/k8s-deployment.yaml
-            k3s kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}
+            systemctl --user restart discordlm.service
 
   deploy-prod:
     needs: build-and-push
