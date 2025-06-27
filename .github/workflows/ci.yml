@@ -40,6 +40,10 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      - name: Test Vault Connection
+        run: |
+          curl -s -o /dev/null -w "%{http_code}" https://vault.glomp.ai/v1/sys/health
+
       - name: Import Secrets from Vault
         uses: hashicorp/vault-action@v2
         with:
