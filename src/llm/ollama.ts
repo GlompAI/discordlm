@@ -31,7 +31,7 @@ export class OllamaProvider implements LLMProvider {
         const username = lastHumanMessage?.user || "user";
 
         const prompt = this.textEngine.buildPrompt(messages, username, character, isSFW, "ollama");
-        
+
         await dumpDebug("ollama-prompt", "prompt", prompt);
 
         const apiMessages: any[] = [];

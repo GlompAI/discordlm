@@ -160,7 +160,10 @@ export class InteractionCreateHandler {
                 const member = await premiumGuild.members.fetch(interaction.user.id);
                 const premiumService = PremiumService.getInstance();
                 if (!member || !await premiumService.isPremium(member)) {
-                    await interaction.reply({ content: "You must be a premium user to delete messages in DMs.", ephemeral: true });
+                    await interaction.reply({
+                        content: "You must be a premium user to delete messages in DMs.",
+                        ephemeral: true,
+                    });
                     return;
                 }
             } else {
@@ -397,10 +400,14 @@ export class InteractionCreateHandler {
             if (message.webhookId) {
                 character = this.characterService.getCharacter(message.author.username);
                 if (!character) {
-                    this.logger.warn(`Could not find character for webhook message re-roll: ${message.author.username}`);
+                    this.logger.warn(
+                        `Could not find character for webhook message re-roll: ${message.author.username}`,
+                    );
                 }
             } else if (message.embeds.length > 0 && (message.embeds[0].author?.name || message.embeds[0].title)) {
-                character = this.characterService.getCharacter(message.embeds[0].author?.name || message.embeds[0].title!);
+                character = this.characterService.getCharacter(
+                    message.embeds[0].author?.name || message.embeds[0].title!,
+                );
             } else if (interaction.channel?.type === ChannelType.DM) {
                 character = await this.characterService.inferCharacterFromHistory(interaction.channel);
             }

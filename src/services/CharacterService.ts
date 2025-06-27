@@ -109,5 +109,4 @@ export class CharacterService {
 
         return this.getAssistantCharacter();
     }
-
 }
