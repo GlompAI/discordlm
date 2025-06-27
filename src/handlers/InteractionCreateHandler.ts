@@ -280,7 +280,9 @@ export class InteractionCreateHandler {
             const characters = this.characterService.getCharacters().filter((c) =>
                 c.card.name !== configService.getAssistantName()
             );
-            const currentCharacter = await this.characterService.inferCharacterFromHistory(interaction.channel);
+            const currentCharacter = interaction.channel?.type === ChannelType.DM
+                ? null
+                : await this.characterService.inferCharacterFromHistory(interaction.channel);
             const selectMenu = this.componentService.createCharacterSelectMenu(characters, currentCharacter);
             await interaction.reply({
                 content: "Select a character to switch to:",
