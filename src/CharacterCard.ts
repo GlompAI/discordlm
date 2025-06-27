@@ -286,7 +286,7 @@ export async function loadCharacterCards(
         const entries = Deno.readDir(resolvedDir);
 
         for await (const entry of entries) {
-            if (entry.isFile) {
+            if (entry.isFile && !entry.name.startsWith("._")) {
                 const filePath = `${resolvedDir}/${entry.name}`;
                 let card: CharacterCard | null = null;
                 let avatarUrl: string | undefined;
