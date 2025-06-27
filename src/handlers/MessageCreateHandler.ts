@@ -65,6 +65,15 @@ export class MessageCreateHandler {
             }
         }
 
+        // Check if it's a new DM conversation and send help text
+        if (message.channel.type === ChannelType.DM) {
+            const messages = await message.channel.messages.fetch({ limit: 2 });
+            if (messages.size <= 1) {
+                await message.reply({ content: getHelpText(), allowedMentions: { repliedUser: false } });
+                return;
+            }
+        }
+
         if (
             message.content === RESET_MESSAGE_CONTENT || message.interaction ||
             message.content === "My funds are low, please subscribe on my server for future access"
@@ -280,8 +289,12 @@ export class MessageCreateHandler {
             }
         }
 
-        const messages = allMessages;
-        this.logger.info(`${logContext} Fetched ${messages.length} messages in chronological order`);
+        const messages = allMessages.filter((msg) => {
+            const isBot = msg.author.id === this.client.user?.id;
+            const isHelpMessage = msg.content.startsWith("Welcome to the bot! Here's a quick guide");
+            return !(isBot && isHelpMessage);
+        });
+        this.logger.info(`${logContext} Fetched and filtered ${messages.length} messages in chronological order`);
 
         try {
             this.logger.info(`${logContext} Generating response...`);

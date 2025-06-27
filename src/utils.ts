@@ -1,9 +1,7 @@
 import { userMention } from "discord.js";
 import { configService } from "./services/ConfigService.ts";
 
-export function getHelpText() {
-    const botId = configService.botSelfId!;
-    return `
+export const HELP_TEXT_CONTENT = `
 Welcome to the bot! Here's a quick guide on how to interact:
 
 **Commands:**
@@ -16,7 +14,7 @@ Welcome to the bot! Here's a quick guide on how to interact:
 *   **Direct Messages (DMs):** Send a message to the bot to talk to your selected character. (None selected is the default assistant).
 *   **In a Server:** Reply to any character message to have that character reply to you. You can also reply to the \`/switch\` message.
 *   **Fake Mentions:** Use @CharName without a real ping to trigger a character from the /switch list directly!
-*   **Assistant:** Mention ${userMention(botId)} anywhere to invoke the assistant directly, without a character persona.
+*   **Assistant:** Mention BOT_MENTION_PLACEHOLDER anywhere to invoke the assistant directly, without a character persona.
 
 **Message Actions:**
 *   **Reroll (♻️):** Re-generates the bot's last response.
@@ -30,7 +28,11 @@ Welcome to the bot! Here's a quick guide on how to interact:
 *   You can adjust this format over time and the bot will adjust.
 
 Have fun!
-    `.trim();
+`.trim();
+
+export function getHelpText() {
+    const botId = configService.botSelfId!;
+    return HELP_TEXT_CONTENT.replace("BOT_MENTION_PLACEHOLDER", userMention(botId));
 }
 
 export function smartSplit(text: string, maxLength = 1980): string[] {
