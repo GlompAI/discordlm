@@ -28,8 +28,8 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ toLower(github.repository_owner) }}/${{ toLower(github.event.repository.name) }}:${{ github.sha }}
-            ghcr.io/${{ toLower(github.repository_owner) }}/${{ toLower(github.event.repository.name) }}:latest
+            ghcr.io/glompai/discordlm:${{ github.sha }}
+            ghcr.io/glompai/discordlm:latest
 
   deploy-qa:
     needs: build-and-push
