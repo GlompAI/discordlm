@@ -202,7 +202,9 @@ export class InteractionCreateHandler {
             const character = this.characterService.getCharacter(characterName);
             if (character) {
                 await interaction.update({
-                    content: `Switched to **${character.card.name}**`,
+                    content: interaction.channel?.type == ChannelType.DM
+                        ? `Switched to ${character.card.name}\nYou may wish to /reset.`
+                        : `Switched to ${character.card.name}`,
                     components: [],
                 });
             }
@@ -230,7 +232,7 @@ export class InteractionCreateHandler {
             const character = this.characterService.getCharacter(characterName);
             if (character) {
                 const replyContent = interaction.channel?.type === ChannelType.DM
-                    ? `Switched to ${character.card.name}`
+                    ? `Switched to ${character.card.name}\nYou may wish to /reset.`
                     : `Switched to ${character.card.name}`;
                 await interaction.reply(replyContent);
             } else {
