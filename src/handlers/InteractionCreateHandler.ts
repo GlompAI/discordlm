@@ -55,11 +55,6 @@ export class InteractionCreateHandler {
 
         try {
             if (interaction.isAutocomplete()) {
-                const member = interaction.guild ? await interaction.guild.members.fetch(interaction.user.id) : null;
-                if (!await accessControlService.isUserAllowed(member)) {
-                    await interaction.respond([]);
-                    return;
-                }
                 await this.handleAutocomplete(interaction);
                 return;
             }
