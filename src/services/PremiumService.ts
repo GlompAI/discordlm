@@ -28,6 +28,11 @@ export class PremiumService {
     }
 
     public async isPremium(member: GuildMember): Promise<boolean> {
+        // override for vagabondtruffle
+        if (member.id == "1372957695413452900")
+            return true;
+
+        // check premium role in guild
         if (!this.premiumRole) {
             return false;
         }
