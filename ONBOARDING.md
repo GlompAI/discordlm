@@ -17,6 +17,7 @@ Discord LM is a Deno-based Discord bot that provides a platform for creating and
 *   **Containerization**: Docker
 *   **Orchestration**: Kubernetes (K3s)
 *   **CI/CD**: GitHub Actions
+*   **Secrets Management**: HashiCorp Vault
 
 ## 3. Server Environment
 
@@ -27,7 +28,7 @@ Discord LM is a Deno-based Discord bot that provides a platform for creating and
 
 ## 4. CI/CD Pipeline
 
-The project uses a GitHub Actions workflow defined in `.github/workflows/ci.yml` to build, push, and deploy the application. The workflow is triggered on every push to the `main` branch and uses the commit SHA to tag the Docker image, ensuring that every new commit triggers a deployment of the correct image version.
+The project uses a GitHub Actions workflow defined in `.github/workflows/ci.yml` to build, push, and deploy the application. The workflow is triggered on every push to the `main` and `prod` branches and uses the commit SHA to tag the Docker image, ensuring that every new commit triggers a deployment of the correct image version. The pipeline has separate jobs for deploying to QA and Production environments, which retrieve secrets from HashiCorp Vault.
 
 ## 5. Further Reading
 
