@@ -192,7 +192,7 @@ export class MessageCreateHandler {
         this.logger.info(`${logContext} Using character: ${character ? character.card.name : "none"}`);
 
         // Check rate limit
-        if (!this.rateLimitService.canMakeRequest(message.author)) {
+        if (!(await this.rateLimitService.canMakeRequest(message.author))) {
             this.logger.info(`${logContext} User is rate limited`);
             await this.rateLimitService.sendRateLimitNotification(message);
 
