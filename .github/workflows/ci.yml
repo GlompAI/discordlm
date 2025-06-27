@@ -60,11 +60,13 @@ jobs:
           DEPLOYMENT_NAME: discordlm-deployment-qa
           SECRET_NAME: discordlm-secrets-qa
           CONFIG_MAP_NAME: discordlm-config-qa
+          CHARACTER_PATH: /root/discordlm/qa/characters
         run: |
           export IMAGE_TAG=${{ github.sha }}
           export DEPLOYMENT_NAME
           export SECRET_NAME
           export CONFIG_MAP_NAME
+          export CHARACTER_PATH
           envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
 
       - name: Copy deployment file to server
@@ -149,11 +151,13 @@ jobs:
           DEPLOYMENT_NAME: discordlm-deployment-prod
           SECRET_NAME: discordlm-secrets-prod
           CONFIG_MAP_NAME: discordlm-config-prod
+          CHARACTER_PATH: /root/discordlm/prod/characters
         run: |
           export IMAGE_TAG=${{ github.sha }}
           export DEPLOYMENT_NAME
           export SECRET_NAME
           export CONFIG_MAP_NAME
+          export CHARACTER_PATH
           envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
 
       - name: Copy deployment file to server
