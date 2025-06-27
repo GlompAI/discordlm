@@ -1,4 +1,5 @@
 import { ChannelType, Client, EmbedBuilder, hideLinkEmbed, hyperlink, Message, TextChannel } from "discord.js";
+import { PremiumService } from "../services/PremiumService.ts";
 import { CharacterConfig } from "../CharacterCard.ts";
 import { CharacterService } from "../services/CharacterService.ts";
 import { LLMService } from "../services/LLMService.ts";
@@ -37,9 +38,23 @@ export class MessageCreateHandler {
 
     public async handle(message: Message): Promise<void> {
         if (this.isShuttingDown) return;
-        if (!accessControlService.isUserAllowed(message.author.id)) {
+        if (!await accessControlService.isUserAllowed(message.member)) {
             await this.sendEphemeralError(message, "Interaction blocked.");
             return;
+        }
+
+        if (message.channel.type === ChannelType.DM) {
+            const premiumGuild = await this.client.guilds.fetch("1304097485136072714");
+            const member = await premiumGuild.members.fetch(message.author.id);
+            const premiumService = PremiumService.getInstance();
+            if (!member || !await premiumService.isPremium(member)) {
+                const messages = await message.channel.messages.fetch({ limit: 100 });
+                const botMessages = messages.filter(m => m.author.id === this.client.user?.id && m.content !== RESET_MESSAGE_CONTENT);
+                if (botMessages.size > 10) {
+                    await this.sendEphemeralError(message, "You have reached the message limit for DMs. Please subscribe to premium to continue.");
+                    return;
+                }
+            }
         }
         if (message.content === RESET_MESSAGE_CONTENT || message.interaction || message.content === "Interaction blocked.") {
             return;

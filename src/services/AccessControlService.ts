@@ -1,46 +1,44 @@
 import { configService } from "./ConfigService.ts";
 import adze from "npm:adze";
+import { GuildMember } from "npm:discord.js";
+import { PremiumService } from "./PremiumService.ts";
 
 class AccessControlService {
     private readonly logger = adze.withEmoji.timestamp.seal();
-    private readonly allowedUsers: Set<string>;
-    private readonly isWhitelist: boolean;
     private readonly adminOverrideUsers: Set<string>;
 
     constructor() {
-        const userIdList = configService.getUserIdList();
-        this.allowedUsers = new Set(userIdList.split(",").filter((id: string) => id.trim() !== ""));
-        this.isWhitelist = configService.isWhitelistEnabled();
         this.adminOverrideUsers = new Set(configService.getAdminOverrideList());
     }
 
-    public isUserAllowed(userId: string): boolean {
-        if (userId === configService.botSelfId) {
-            return true;
-        }
-        this.logger.info(`Checking access for user ${userId}`);
-        this.logger.info(`Whitelist enabled: ${this.isWhitelist}`);
-        this.logger.info(`Allowed users: ${[...this.allowedUsers]}`);
-        this.logger.info(`Admin override users: ${[...this.adminOverrideUsers]}`);
-
-        if (this.adminOverrideUsers.has(userId)) {
-            this.logger.info(`User ${userId} is an admin override. Access granted.`);
-            return true;
-        }
-
-        if (!this.isWhitelist) {
-            this.logger.info("Whitelist is not enabled. Access granted.");
-            return true;
-        }
-
-        if (this.allowedUsers.size === 0) {
-            this.logger.info("Whitelist is enabled, but no users are in the list. Access denied.");
+    public async isUserAllowed(member: GuildMember | null): Promise<boolean> {
+        if (!member) {
             return false;
         }
 
-        const isAllowed = this.allowedUsers.has(userId);
-        this.logger.info(`User ${userId} is in allowed list: ${isAllowed}. Access ${isAllowed ? "granted" : "denied"}.`);
-        return isAllowed;
+        if (member.id === configService.botSelfId) {
+            return true;
+        }
+        this.logger.info(`Checking access for user ${member.id}`);
+
+        if (this.adminOverrideUsers.has(member.id)) {
+            this.logger.info(`User ${member.id} is an admin override. Access granted.`);
+            return true;
+        }
+
+        if (member.guild) {
+            this.logger.info(`User ${member.id} is in a guild. Access granted.`);
+            return true;
+        }
+
+        const premiumService = PremiumService.getInstance();
+        if (await premiumService.isPremium(member)) {
+            this.logger.info(`User ${member.id} is a premium user. Access granted.`);
+            return true;
+        }
+
+        this.logger.info(`User ${member.id} is in a DM and not a premium user. Access denied.`);
+        return false;
     }
 }
 
