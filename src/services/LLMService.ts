@@ -98,7 +98,7 @@ export class LLMService {
                 messages = messages.slice(lastResetIndex + 1);
             }
 
-            const historyPromises = messages.filter((m) => m.content || m.embeds.length > 0).map(
+            const historyPromises = messages.filter((m) => m.attachments || m.content || m.embeds.length > 0).map(
                 async (message): Promise<MessageView | null> => {
                     let role: "user" | "assistant" | "system" = "user";
                     let userName = "";
@@ -163,8 +163,7 @@ export class LLMService {
                                 .map(async (a) => {
                                     if (
                                         !a.contentType?.startsWith("image/") &&
-                                        !a.contentType?.startsWith("video/") &&
-                                        !a.contentType?.startsWith("audio/")
+                                        !a.contentType?.startsWith("video/")
                                     ) {
                                         return null;
                                     }
