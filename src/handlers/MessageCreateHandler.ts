@@ -38,6 +38,10 @@ export class MessageCreateHandler {
 
     public async handle(message: Message): Promise<void> {
         if (this.isShuttingDown) return;
+        if (message.author.id === configService.botSelfId) {
+            return;
+        }
+
         if (!await accessControlService.isUserAllowed(message.member)) {
             await this.sendEphemeralError(message, "Interaction blocked.");
             return;
@@ -50,13 +54,13 @@ export class MessageCreateHandler {
             if (!member || !await premiumService.isPremium(member)) {
                 const messages = await message.channel.messages.fetch({ limit: 100 });
                 const botMessages = messages.filter(m => m.author.id === this.client.user?.id && m.content !== RESET_MESSAGE_CONTENT);
-                if (botMessages.size > 10) {
-                    await this.sendEphemeralError(message, "You have reached the message limit for DMs. Please subscribe to premium to continue.");
+                if (botMessages.size >= 10) {
+                    await this.sendEphemeralError(message, "My funds are low, please subscribe on my server for future access");
                     return;
                 }
             }
         }
-        if (message.content === RESET_MESSAGE_CONTENT || message.interaction || message.content === "Interaction blocked.") {
+        if (message.content === RESET_MESSAGE_CONTENT || message.interaction || message.content === "Interaction blocked." || message.content === "My funds are low, please subscribe on my server for future access") {
             return;
         }
         if (message.author.bot && (!message.webhookId || !message.content.endsWith(WEBHOOK_IDENTIFIER))) {
