@@ -145,7 +145,7 @@ export class InteractionCreateHandler {
         if (interaction.customId === "delete") {
             if (interaction.channel?.type === ChannelType.DM) {
                 const premiumGuild = await this.client.guilds.fetch("1304097485136072714");
-                const member = await premiumGuild.members.fetch(interaction.user.id);
+                const member = await premiumGuild.members.fetch({ user: interaction.user.id, force: true });
                 const premiumService = PremiumService.getInstance();
                 if (!member || !await premiumService.isPremium(member)) {
                     await interaction.reply({

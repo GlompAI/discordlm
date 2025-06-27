@@ -46,13 +46,14 @@ export class MessageCreateHandler {
         // Check premium grant
         if (message.channel.type === ChannelType.DM) {
             const premiumGuild = await this.client.guilds.fetch("1304097485136072714");
-            const member = await premiumGuild.members.fetch(message.author.id);
+            const member = await premiumGuild.members.fetch({ user: message.author.id, force: true });
             const premiumService = PremiumService.getInstance();
             if (!member || !await premiumService.isPremium(member)) {
                 const messages = await message.channel.messages.fetch({ limit: 100 });
                 const botMessages = messages.filter((m) =>
                     m.author.id === this.client.user?.id && !m.content.startsWith("Switched to ")
                 );
+                this.logger.info(`Demo limit reached for user: ${member.displayName ?? member.user.username}`);
                 if (botMessages.size >= 10) {
                     await this.sendEphemeralError(
                         message,
