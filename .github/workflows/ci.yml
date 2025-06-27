@@ -56,8 +56,15 @@ jobs:
             secret/data/qa OPENAI_API_KEY | OPENAI_API_KEY
 
       - name: Replace image tag in deployment yaml
+        env:
+          DEPLOYMENT_NAME: discordlm-deployment-qa
+          SECRET_NAME: discordlm-secrets-qa
+          CONFIG_MAP_NAME: discordlm-config-qa
         run: |
           export IMAGE_TAG=${{ github.sha }}
+          export DEPLOYMENT_NAME
+          export SECRET_NAME
+          export CONFIG_MAP_NAME
           envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
 
       - name: Copy deployment file to server
@@ -75,22 +82,24 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
+        env:
+          DEPLOYMENT_NAME: discordlm-deployment-qa
+        script: |
             k3s kubectl delete secret docker-registry regcred --ignore-not-found
             k3s kubectl create secret docker-registry regcred \
               --docker-server=ghcr.io \
               --docker-username=${{ github.actor }} \
               --docker-password=${{ secrets.GHCR_TOKEN }} \
               -o yaml | k3s kubectl apply -f - --overwrite --force
-            k3s kubectl delete secret discordlm-secrets --ignore-not-found
-            k3s kubectl create secret generic discordlm-secrets \
+            k3s kubectl delete secret discordlm-secrets-qa --ignore-not-found
+            k3s kubectl create secret generic discordlm-secrets-qa \
               --from-literal=BOT_TOKEN=${{ env.BOT_TOKEN }} \
               --from-literal=GEMINI_API_KEY=${{ env.GEMINI_API_KEY }} \
               --from-literal=OPENAI_API_KEY=${{ env.OPENAI_API_KEY }} \
               --from-literal=GEMINI_BASE_URL=${{ secrets.GEMINI_BASE_URL }} \
               -o yaml | k3s kubectl apply -f - --overwrite
-            k3s kubectl delete configmap discordlm-config --ignore-not-found
-            k3s kubectl create configmap discordlm-config \
+            k3s kubectl delete configmap discordlm-config-qa --ignore-not-found
+            k3s kubectl create configmap discordlm-config-qa \
               --from-literal=OPENAI_BASE_URL="${{ vars.OPENAI_BASE_URL }}" \
               --from-literal=ADMIN_OVERRIDE_ID="${{ vars.ADMIN_OVERRIDE_ID }}" \
               --from-literal=USER_ID_LIST="${{ vars.USER_ID_LIST }}" \
@@ -104,12 +113,12 @@ jobs:
               --from-literal=PUBLIC_AVATAR_BASE_URL="${{ vars.PUBLIC_AVATAR_BASE_URL }}" \
               --from-literal=AVATAR_PORT="${{ vars.AVATAR_PORT }}" \
               -o yaml | k3s kubectl apply -f -
-            k3s kubectl patch configmap discordlm-config --type merge -p '{"data":{"WHITELIST_ENABLE":"true"}}'
+            k3s kubectl patch configmap discordlm-config-qa --type merge -p '{"data":{"WHITELIST_ENABLE":"true"}}'
             k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
             sleep 5
-            k3s kubectl delete deployment discordlm-deployment
+            k3s kubectl delete deployment ${{ env.DEPLOYMENT_NAME }} --ignore-not-found
             k3s kubectl apply -f /root/discordlm/k8s-deployment.yaml
-            k3s kubectl rollout status deployment/discordlm-deployment
+            k3s kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}
 
   deploy-prod:
     needs: build-and-push
@@ -136,8 +145,15 @@ jobs:
             secret/data/prod OPENAI_API_KEY | OPENAI_API_KEY
 
       - name: Replace image tag in deployment yaml
+        env:
+          DEPLOYMENT_NAME: discordlm-deployment-prod
+          SECRET_NAME: discordlm-secrets-prod
+          CONFIG_MAP_NAME: discordlm-config-prod
         run: |
           export IMAGE_TAG=${{ github.sha }}
+          export DEPLOYMENT_NAME
+          export SECRET_NAME
+          export CONFIG_MAP_NAME
           envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
 
       - name: Copy deployment file to server
@@ -155,22 +171,24 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
+        env:
+          DEPLOYMENT_NAME: discordlm-deployment-prod
+        script: |
             k3s kubectl delete secret docker-registry regcred --ignore-not-found
             k3s kubectl create secret docker-registry regcred \
               --docker-server=ghcr.io \
               --docker-username=${{ github.actor }} \
               --docker-password=${{ secrets.GHCR_TOKEN }} \
               -o yaml | k3s kubectl apply -f - --overwrite --force
-            k3s kubectl delete secret discordlm-secrets --ignore-not-found
-            k3s kubectl create secret generic discordlm-secrets \
+            k3s kubectl delete secret discordlm-secrets-prod --ignore-not-found
+            k3s kubectl create secret generic discordlm-secrets-prod \
               --from-literal=BOT_TOKEN=${{ env.BOT_TOKEN }} \
               --from-literal=GEMINI_API_KEY=${{ env.GEMINI_API_KEY }} \
               --from-literal=OPENAI_API_KEY=${{ env.OPENAI_API_KEY }} \
               --from-literal=GEMINI_BASE_URL=${{ secrets.GEMINI_BASE_URL }} \
               -o yaml | k3s kubectl apply -f - --overwrite
-            k3s kubectl delete configmap discordlm-config --ignore-not-found
-            k3s kubectl create configmap discordlm-config \
+            k3s kubectl delete configmap discordlm-config-prod --ignore-not-found
+            k3s kubectl create configmap discordlm-config-prod \
               --from-literal=OPENAI_BASE_URL="${{ vars.OPENAI_BASE_URL }}" \
               --from-literal=ADMIN_OVERRIDE_ID="${{ vars.ADMIN_OVERRIDE_ID }}" \
               --from-literal=USER_ID_LIST="${{ vars.USER_ID_LIST }}" \
@@ -186,6 +204,6 @@ jobs:
               -o yaml | k3s kubectl apply -f -
             k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
             sleep 5
-            k3s kubectl delete deployment discordlm-deployment
+            k3s kubectl delete deployment ${{ env.DEPLOYMENT_NAME }} --ignore-not-found
             k3s kubectl apply -f /root/discordlm/k8s-deployment.yaml
-            k3s kubectl rollout status deployment/discordlm-deployment
+            k3s kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}

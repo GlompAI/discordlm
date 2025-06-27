@@ -1,7 +1,7 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: discordlm-deployment
+  name: ${DEPLOYMENT_NAME}
 spec:
   replicas: 1
   selector:
@@ -32,9 +32,9 @@ spec:
           periodSeconds: 20
         envFrom:
         - secretRef:
-            name: discordlm-secrets
+            name: ${SECRET_NAME}
         - configMapRef:
-            name: discordlm-config
+            name: ${CONFIG_MAP_NAME}
         volumeMounts:
         - name: characters
           mountPath: /app/characters
