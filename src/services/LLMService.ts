@@ -21,19 +21,20 @@ export class LLMService {
     constructor() {
         this.llmProvider = this.createProvider();
         if (configService.getProvider() === "gemini") {
-            this.fallbackProvider = new OpenAIProvider();
+            this.fallbackProvider = new OpenAIProvider(configService.getModel("openai"));
         }
     }
 
     private createProvider(): LLMProvider {
         const provider = configService.getProvider();
+        const model = configService.getModel(provider);
         switch (provider) {
             case "openai":
-                return new OpenAIProvider();
+                return new OpenAIProvider(model);
             case "ollama":
-                return new OllamaProvider();
+                return new OllamaProvider(model);
             case "gemini":
-                return new GeminiProvider();
+                return new GeminiProvider(model);
             default:
                 throw new Error(`Unknown LLM provider: ${provider}`);
         }

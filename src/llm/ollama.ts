@@ -10,11 +10,14 @@ export class OllamaProvider implements LLMProvider {
     private textEngine: TextEngine;
     private ollama: Ollama;
 
-    constructor() {
+    private model: string;
+
+    constructor(model: string) {
         this.textEngine = new TextEngine();
         this.ollama = new Ollama({
             host: configService.getOllamaHost(),
         });
+        this.model = model;
     }
 
     public setBotDiscordName(name: string) {
@@ -59,7 +62,7 @@ export class OllamaProvider implements LLMProvider {
         apiMessages.push(...adaptedHistory);
 
         const response = await this.ollama.chat({
-            model: configService.getModel(),
+            model: this.model,
             messages: apiMessages,
         });
 

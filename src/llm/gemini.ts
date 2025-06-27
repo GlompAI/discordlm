@@ -11,9 +11,12 @@ export class GeminiProvider implements LLMProvider {
     private textEngine: TextEngine;
     private generativeAi: GoogleGenerativeAI;
 
-    constructor() {
+    private model: string;
+
+    constructor(model: string) {
         this.textEngine = new TextEngine();
         this.generativeAi = new GoogleGenerativeAI(configService.getGeminiApiKey());
+        this.model = model;
     }
 
     public setBotDiscordName(name: string) {
@@ -68,7 +71,7 @@ export class GeminiProvider implements LLMProvider {
         await dumpDebug("gemini-prompt", "prompt", adaptedPrompt);
 
         const model = this.generativeAi.getGenerativeModel({
-            model: configService.getModel(),
+            model: this.model,
             tools: [{ functionDeclarations: tools }],
             systemInstruction: adaptedPrompt.systemInstruction,
             safetySettings: adaptedPrompt.safetySettings,

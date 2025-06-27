@@ -11,7 +11,9 @@ export class OpenAIProvider implements LLMProvider {
     private openai: OpenAI;
     private toolsSupported = true;
 
-    constructor() {
+    private model: string;
+
+    constructor(model: string) {
         this.textEngine = new TextEngine();
         this.openai = new OpenAI({
             apiKey: configService.getOpenAIKey(),
@@ -20,6 +22,7 @@ export class OpenAIProvider implements LLMProvider {
                 [configService.getOpenAICustomHeaderKey()]: configService.getOpenAIKey(),
             },
         });
+        this.model = model;
     }
 
     public setBotDiscordName(name: string) {
@@ -89,7 +92,7 @@ export class OpenAIProvider implements LLMProvider {
         apiMessages.push(...adaptedHistory);
 
         const request: OpenAI.Chat.Completions.ChatCompletionCreateParams = {
-            model: configService.getModel("openai"),
+            model: this.model,
             messages: apiMessages,
         };
 
