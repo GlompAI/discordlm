@@ -31,15 +31,26 @@ jobs:
             ghcr.io/${{ github.repository }}:${{ github.sha }}
             ghcr.io/${{ github.repository }}:latest
 
-  deploy:
+  deploy-qa:
     needs: build-and-push
     runs-on: ubuntu-latest
+    environment: qa
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
-      - name: Pull latest changes
-        run: git pull
+
+      - name: Import Secrets from Vault
+        uses: hashicorp/vault-action@v2
+        with:
+          url: https://vault.glomp.ai
+          method: userpass
+          username: luigi
+          password: ${{ secrets.VAULT_PASSWORD }}
+          secrets: |
+            secret/data/qa BOT_TOKEN | BOT_TOKEN ;
+            secret/data/qa GEMINI_API_KEY | GEMINI_API_KEY ;
+            secret/data/qa OPENAI_API_KEY | OPENAI_API_KEY
 
       - name: Replace image tag in deployment yaml
         run: |
@@ -70,9 +81,9 @@ jobs:
               -o yaml | k3s kubectl apply -f - --overwrite --force
             k3s kubectl delete secret discordlm-secrets --ignore-not-found
             k3s kubectl create secret generic discordlm-secrets \
-              --from-literal=BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
-              --from-literal=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
-              --from-literal=OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
+              --from-literal=BOT_TOKEN=${{ env.BOT_TOKEN }} \
+              --from-literal=GEMINI_API_KEY=${{ env.GEMINI_API_KEY }} \
+              --from-literal=OPENAI_API_KEY=${{ env.OPENAI_API_KEY }} \
               --from-literal=GEMINI_BASE_URL=${{ secrets.GEMINI_BASE_URL }} \
               -o yaml | k3s kubectl apply -f - --overwrite
             k3s kubectl delete configmap discordlm-config --ignore-not-found
