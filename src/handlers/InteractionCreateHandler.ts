@@ -60,18 +60,6 @@ export class InteractionCreateHandler {
             }
 
             if (interaction.isMessageComponent()) {
-                if (interaction.guild) {
-                    const member = await interaction.guild.members.fetch(interaction.user.id);
-                    if (!await accessControlService.isUserAllowed(member)) {
-                        await interaction.reply({ content: "Interaction blocked.", ephemeral: true });
-                        return;
-                    }
-                } else {
-                    if (!await accessControlService.isUserAllowed(null)) {
-                        await interaction.reply({ content: "Interaction blocked.", ephemeral: true });
-                        return;
-                    }
-                }
                 await this.handleComponentInteraction(interaction, logContext);
                 return;
             }
@@ -80,18 +68,6 @@ export class InteractionCreateHandler {
 
             const { commandName } = interaction;
 
-            if (interaction.guild) {
-                const member = await interaction.guild.members.fetch(interaction.user.id);
-                if (!await accessControlService.isUserAllowed(member)) {
-                    await interaction.reply({ content: "Interaction blocked.", ephemeral: true });
-                    return;
-                }
-            } else {
-                if (!await accessControlService.isUserAllowed(null)) {
-                    await interaction.reply({ content: "Interaction blocked.", ephemeral: true });
-                    return;
-                }
-            }
             if (commandName === "switch") {
                 await this.handleSwitchCommand(interaction);
             } else if (commandName === "list") {
