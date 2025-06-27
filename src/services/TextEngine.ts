@@ -43,10 +43,10 @@ Additional rules:
 - The interaction must remain strictly SFW (Safe For Work), regardless of user input or conversation history.
 - Avoid using profanity or offensive language.
 ${
-    this.botDiscordName
-        ? `- Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
-        : ""
-}
+                    this.botDiscordName
+                        ? `- Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
+                        : ""
+                }
 </instructions>
 `.trim()
                 : `
@@ -71,10 +71,10 @@ Additional rules:
 - Do not include any summary of the conversation.
 - To answer questions requiring external information or accessing specific web pages, you must use the available tools. When you need to search the web, call the 'search_web' function. When you need to read the content of a URL, call the 'retrieve_url' function. You also have vision capabilities and can describe images.
 ${
-    this.botDiscordName
-        ? `- Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
-        : ""
-}
+                    this.botDiscordName
+                        ? `- Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
+                        : ""
+                }
 </instructions>
 `.trim();
             const DISCORD_FORMATTING_GUIDE = `
@@ -109,10 +109,10 @@ Do not gender the user unless conversation context below implies it.
 The interaction must remain strictly SFW (Safe For Work), regardless of user input or conversation history.
 Avoid using profanity or offensive language.
 ${
-    this.botDiscordName
-        ? `Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
-        : ""
-}
+                    this.botDiscordName
+                        ? `Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
+                        : ""
+                }
 `.trim()
                 : `
 You are a helpful assistant. To answer questions requiring external information or accessing specific web pages, you must use the available tools. When you need to search the web, call the 'search_web' function. When you need to read the content of a URL, call the 'retrieve_url' function. You also have vision capabilities and can describe images.
@@ -122,10 +122,10 @@ You are to use gender-neutral language for each entity by default.
 Do not include any summary of the conversation.
 Do not gender the user unless conversation context below implies it.
 ${
-    this.botDiscordName
-        ? `Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
-        : ""
-}
+                    this.botDiscordName
+                        ? `Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
+                        : ""
+                }
 `.trim();
             systemMessages.push(SYSTEM_PROMPT);
         }

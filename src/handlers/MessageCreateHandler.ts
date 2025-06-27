@@ -10,9 +10,8 @@ import { getHelpText } from "../utils.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";
 import { Queue } from "../queue.ts";
 import { ComponentService } from "../services/ComponentService.ts";
-import { WebhookManager, WEBHOOK_IDENTIFIER } from "../WebhookManager.ts";
+import { WEBHOOK_IDENTIFIER, WebhookManager } from "../WebhookManager.ts";
 import { RateLimitService } from "../services/RateLimitService.ts";
-import { accessControlService } from "../services/AccessControlService.ts";
 import { MetricsService } from "../services/MetricsService.ts";
 
 export class MessageCreateHandler {
@@ -38,29 +37,37 @@ export class MessageCreateHandler {
 
     public async handle(message: Message): Promise<void> {
         if (this.isShuttingDown) return;
+
+        // Ignore messages from self
         if (message.author.id === configService.botSelfId) {
             return;
         }
 
-        if (!await accessControlService.isUserAllowed(message.member)) {
-            await this.sendEphemeralError(message, "Interaction blocked.");
-            return;
-        }
-
+        // Check premium grant
         if (message.channel.type === ChannelType.DM) {
             const premiumGuild = await this.client.guilds.fetch("1304097485136072714");
             const member = await premiumGuild.members.fetch(message.author.id);
             const premiumService = PremiumService.getInstance();
             if (!member || !await premiumService.isPremium(member)) {
                 const messages = await message.channel.messages.fetch({ limit: 100 });
-                const botMessages = messages.filter(m => m.author.id === this.client.user?.id && m.content !== RESET_MESSAGE_CONTENT);
+                const botMessages = messages.filter((m) =>
+                    m.author.id === this.client.user?.id && !m.content.startsWith("Switched to ")
+                );
                 if (botMessages.size >= 10) {
-                    await this.sendEphemeralError(message, "My funds are low, please subscribe on my server for future access");
+                    await this.sendEphemeralError(
+                        message,
+                        "My funds are low, please subscribe on my server for future access.",
+                    );
                     return;
                 }
             }
         }
-        if (message.content === RESET_MESSAGE_CONTENT || message.interaction || message.content === "Interaction blocked." || message.content === "My funds are low, please subscribe on my server for future access") {
+
+        if (
+            message.content === RESET_MESSAGE_CONTENT || message.interaction ||
+            message.content === "Interaction blocked." ||
+            message.content === "My funds are low, please subscribe on my server for future access"
+        ) {
             return;
         }
         if (message.author.bot && (!message.webhookId || !message.content.endsWith(WEBHOOK_IDENTIFIER))) {

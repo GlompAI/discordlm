@@ -29,7 +29,7 @@
         ]
     },
     "lock": false,
-    "nodeModulesDir": true,
+    "nodeModulesDir": "auto",
     "test": {
         "include": [
             "src/"

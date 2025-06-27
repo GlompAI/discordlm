@@ -49,15 +49,15 @@ export function smartSplit(text: string, maxLength = 1980): string[] {
                 currentPart = "";
             }
             // Split the long line itself
-            const words = line.split(' ');
-            let tempLine = '';
+            const words = line.split(" ");
+            let tempLine = "";
             for (const word of words) {
                 if (tempLine.length + word.length + 1 > maxLength) {
                     parts.push(tempLine);
-                    tempLine = '';
+                    tempLine = "";
                 }
                 if (tempLine.length > 0) {
-                    tempLine += ' ';
+                    tempLine += " ";
                 }
                 tempLine += word;
             }

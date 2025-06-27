@@ -36,7 +36,6 @@ export class OpenAIProvider implements LLMProvider {
         const username = lastHumanMessage?.user || "user";
 
         const prompt = this.textEngine.buildPrompt(messages, username, character, isSFW, "openai");
-        
 
         const apiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
 
@@ -50,7 +49,10 @@ export class OpenAIProvider implements LLMProvider {
         const visionEnabled = configService.isOpenAIVisionEnabled();
         const adaptedHistory = prompt.history
             .map((message: MessageView): OpenAI.Chat.Completions.ChatCompletionMessageParam | null => {
-                const content: (OpenAI.Chat.Completions.ChatCompletionContentPartText | OpenAI.Chat.Completions.ChatCompletionContentPartImage)[] = [{
+                const content: (
+                    | OpenAI.Chat.Completions.ChatCompletionContentPartText
+                    | OpenAI.Chat.Completions.ChatCompletionContentPartImage
+                )[] = [{
                     type: "text",
                     text: message.message,
                 }];
