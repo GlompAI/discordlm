@@ -66,7 +66,6 @@ export class MessageCreateHandler {
 
         if (
             message.content === RESET_MESSAGE_CONTENT || message.interaction ||
-            message.content === "Interaction blocked." ||
             message.content === "My funds are low, please subscribe on my server for future access"
         ) {
             return;
