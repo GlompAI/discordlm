@@ -55,17 +55,10 @@ export class InteractionCreateHandler {
 
         try {
             if (interaction.isAutocomplete()) {
-                if (interaction.guild) {
-                    const member = await interaction.guild.members.fetch(interaction.user.id);
-                    if (!await accessControlService.isUserAllowed(member)) {
-                        await interaction.respond([]);
-                        return;
-                    }
-                } else {
-                    if (!await accessControlService.isUserAllowed(null)) {
-                        await interaction.respond([]);
-                        return;
-                    }
+                const member = interaction.guild ? await interaction.guild.members.fetch(interaction.user.id) : null;
+                if (!await accessControlService.isUserAllowed(member)) {
+                    await interaction.respond([]);
+                    return;
                 }
                 await this.handleAutocomplete(interaction);
                 return;
@@ -283,7 +276,10 @@ export class InteractionCreateHandler {
             const currentCharacter = interaction.channel?.type === ChannelType.DM
                 ? null
                 : await this.characterService.inferCharacterFromHistory(interaction.channel);
-            const selectMenu = this.componentService.createCharacterSelectMenu(characters, currentCharacter);
+            const selectMenu = this.componentService.createCharacterSelectMenu(
+                characters,
+                currentCharacter,
+            );
             await interaction.reply({
                 content: "Select a character to switch to:",
                 components: [selectMenu],
