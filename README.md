@@ -99,7 +99,6 @@ The following environment variables are required:
 | `RATE_LIMIT_PER_MINUTE` | Maximum requests per user per minute | No | `4` |
 | `LIMIT_USER_IDS` | Semicolon-separated list of user IDs to apply a lower rate limit to | No | - |
 | `INFERENCE_PARALLELISM` | Number of parallel inference requests to allow | No | `10` |
-| `USER_ID_LIST` | Comma-separated list of user IDs allowed to interact with the bot | No | - |
 | `ADMIN_OVERRIDE_ID` | User ID to bypass administrator checks | No | - |
 | `ENABLE_AVATAR_SERVER` | Enable the avatar server for webhooks | No | `false` |
 | `AVATAR_PORT` | Port for the avatar server | No | `8080` |
@@ -184,12 +183,15 @@ When a user exceeds the rate limit, they'll see a message like:
 
 The message automatically deletes after 5 seconds, and their request will be processed automatically when the rate limit window resets.
 
-## Whitelist Feature
+## Premium Features
 
-The bot can be configured to only allow a specific list of users to interact with it. This is useful for private bots or for testing purposes.
+The bot now supports a premium tier, granting special access and features to users with a specific role in a designated guild.
 
-- **Enable Whitelist**: To enable the whitelist, set the `WHITELIST_ENABLE` environment variable to `true` and provide a comma-separated list of user IDs in the `USER_ID_LIST` environment variable.
-- **Bypass Whitelist**: The user ID set in the `ADMIN_OVERRIDE_ID` environment variable will always be able to interact with the bot, regardless of the whitelist.
+- **DM Access**: Only premium users can interact with the bot in Direct Messages.
+- **Message Deletion**: Only premium users can delete the bot's messages in DMs.
+- **Message Limit**: Non-premium users are limited to 10 messages from the bot in DMs. After reaching this limit, they will receive a message prompting them to subscribe.
+
+These features are managed by checking for a specific role (`Super Glomper`) in a designated guild (`1304097485136072714`).
 
 ## Permissions Required
 
