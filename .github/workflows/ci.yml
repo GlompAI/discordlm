@@ -49,7 +49,7 @@ jobs:
           url: https://vault.glomp.ai
           method: jwt
           role: qa
-          audience: https://github.com/GlompAI
+          jwtGithubAudience: "https://github.com/GlompAI"
           secrets: |
             secret/data/qa BOT_TOKEN | BOT_TOKEN ;
             secret/data/qa GEMINI_API_KEY | GEMINI_API_KEY ;
