@@ -29,6 +29,10 @@ export class PremiumService {
             adze.info(`Premium access granted for user: ${member.displayName}`);
             return true;
         }
+        if (member.roles.cache.has("1388224070528532671")) {
+            adze.info(`Donator access granted for user: ${member.displayName}`);
+            return true;
+        }
         adze.error(`No premium found for user: ${member.displayName}`);
         return false;
     }
