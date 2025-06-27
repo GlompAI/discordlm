@@ -35,22 +35,20 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     environment: qa
+    permissions:
+      id-token: write
+      contents: read
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Test Vault Connection
-        run: |
-          curl -s -o /dev/null -w "%{http_code}" https://vault.glomp.ai/v1/sys/health
-
       - name: Import Secrets from Vault
         uses: hashicorp/vault-action@v2
         with:
           url: https://vault.glomp.ai
-          method: userpass
-          username: luigi
-          password: ${{ secrets.VAULT_PASSWORD }}
+          method: jwt
+          role: qa
           secrets: |
             secret/data/qa BOT_TOKEN | BOT_TOKEN ;
             secret/data/qa GEMINI_API_KEY | GEMINI_API_KEY ;
