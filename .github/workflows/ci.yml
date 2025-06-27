@@ -90,8 +90,8 @@ jobs:
               --from-literal=GEMINI_BASE_URL=${{ secrets.GEMINI_BASE_URL }} \
               -o yaml | k3s kubectl apply -f - --overwrite
             k3s kubectl delete configmap discordlm-config --ignore-not-found
+            k3s kubectl create configmap discordlm-config --from-file=/root/discordlm/k8s-config-qa.yaml
             k3s kubectl create configmap discordlm-config \
-              --from-file=/root/discordlm/k8s-config-qa.yaml \
               --from-literal=OPENAI_BASE_URL="${{ vars.OPENAI_BASE_URL }}" \
               --from-literal=ADMIN_OVERRIDE_ID="${{ vars.ADMIN_OVERRIDE_ID }}" \
               --from-literal=USER_ID_LIST="${{ vars.USER_ID_LIST }}" \
@@ -104,7 +104,7 @@ jobs:
               --from-literal=MAX_HISTORY_MESSAGES="${{ vars.MAX_HISTORY_MESSAGES }}" \
               --from-literal=PUBLIC_AVATAR_BASE_URL="${{ vars.PUBLIC_AVATAR_BASE_URL }}" \
               --from-literal=AVATAR_PORT="${{ vars.AVATAR_PORT }}" \
-              -o yaml | k3s kubectl apply -f - --overwrite
+              -o yaml --dry-run=client | k3s kubectl apply -f -
             k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
             sleep 5
             k3s kubectl delete deployment discordlm-deployment
