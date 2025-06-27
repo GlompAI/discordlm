@@ -15,6 +15,9 @@ class AccessControlService {
     }
 
     public isUserAllowed(userId: string): boolean {
+        if (userId === configService.botSelfId) {
+            return true;
+        }
         this.logger.info(`Checking access for user ${userId}`);
         this.logger.info(`Whitelist enabled: ${this.isWhitelist}`);
         this.logger.info(`Allowed users: ${[...this.allowedUsers]}`);
