@@ -82,9 +82,9 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
         env:
           DEPLOYMENT_NAME: discordlm-deployment-qa
-        script: |
             k3s kubectl delete secret docker-registry regcred --ignore-not-found
             k3s kubectl create secret docker-registry regcred \
               --docker-server=ghcr.io \
@@ -171,9 +171,9 @@ jobs:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
+          script: |
         env:
           DEPLOYMENT_NAME: discordlm-deployment-prod
-        script: |
             k3s kubectl delete secret docker-registry regcred --ignore-not-found
             k3s kubectl create secret docker-registry regcred \
               --docker-server=ghcr.io \
