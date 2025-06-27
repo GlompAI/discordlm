@@ -78,13 +78,13 @@ jobs:
 
       - name: Deploy to remote server
         uses: appleboy/ssh-action@master
+        env:
+          DEPLOYMENT_NAME: discordlm-deployment-qa
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-        env:
-          DEPLOYMENT_NAME: discordlm-deployment-qa
             k3s kubectl delete secret docker-registry regcred --ignore-not-found
             k3s kubectl create secret docker-registry regcred \
               --docker-server=ghcr.io \
@@ -167,13 +167,13 @@ jobs:
 
       - name: Deploy to remote server
         uses: appleboy/ssh-action@master
+        env:
+          DEPLOYMENT_NAME: discordlm-deployment-prod
         with:
           host: ${{ secrets.SSH_HOST }}
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
-        env:
-          DEPLOYMENT_NAME: discordlm-deployment-prod
             k3s kubectl delete secret docker-registry regcred --ignore-not-found
             k3s kubectl create secret docker-registry regcred \
               --docker-server=ghcr.io \
