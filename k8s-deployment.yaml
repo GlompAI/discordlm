@@ -2,31 +2,19 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: discordlm-deployment
-  labels:
-    app: discordlm
 spec:
   replicas: 1
   selector:
     matchLabels:
       app: discordlm
-  strategy:
-    type: RollingUpdate
-    rollingUpdate:
-      maxUnavailable: 0
-      maxSurge: 1
   template:
     metadata:
       labels:
         app: discordlm
-      annotations:
-        discordlm.com/restartedAt: "1750888362"
     spec:
-      imagePullSecrets:
-      - name: regcred
       containers:
       - name: discordlm
-        image: ghcr.io/aronson/discordlm:$IMAGE_TAG
-        imagePullPolicy: Always
+        image: ghcr.io/glompai/discordlm:${IMAGE_TAG}
         ports:
         - containerPort: 8080
         - containerPort: 8081
@@ -43,32 +31,19 @@ spec:
           initialDelaySeconds: 15
           periodSeconds: 20
         envFrom:
-        - configMapRef:
-            name: discordlm-config
         - secretRef:
             name: discordlm-secrets
+        - configMapRef:
+            name: discordlm-config
         volumeMounts:
-        - name: characters-storage
+        - name: characters
           mountPath: /app/characters
-        - name: logs-storage
+        - name: logs
           mountPath: /app/logs
       volumes:
-      - name: characters-storage
+      - name: characters
         hostPath:
           path: /root/discordlm/characters
-      - name: logs-storage
-        persistentVolumeClaim:
-          claimName: discordlm-logs-pvc
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: discordlm-service
-spec:
-  type: NodePort
-  selector:
-    app: discordlm
-  ports:
-    - protocol: TCP
-      port: 3334
-      targetPort: 8080
+      - name: logs
+        hostPath:
+          path: /root/discordlm/logs
