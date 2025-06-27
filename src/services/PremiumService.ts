@@ -25,7 +25,10 @@ export class PremiumService {
             return true;
         }
 
-        if (member.roles.premiumSubscriberRole) {
+        const premiumRole = await (await this.client?.guilds.fetch("1304097485136072714"))?.roles.fetch(
+            "1387978615450239149",
+        );
+        if (premiumRole?.members.has(member.user.id)) {
             adze.info(`Premium access granted for user: ${member.displayName}`);
             return true;
         }
