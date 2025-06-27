@@ -32,7 +32,7 @@ export class LLMService {
             case "openai":
                 return new OpenAIProvider(model);
             case "ollama":
-                return new OllamaProvider(model);
+                return new OllamaProvider();
             case "gemini":
                 return new GeminiProvider(model);
             default:
