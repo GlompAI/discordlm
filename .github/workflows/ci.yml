@@ -47,13 +47,10 @@ jobs:
           deno compile --unstable-kv --allow-net --allow-env --allow-read --allow-write --output dist/discordlm src/main.ts
 
       - name: Copy binary to server
-        uses: appleboy/scp-action@master
-        with:
-          host: ooo.observer
-          username: heni
-          key: ${{ secrets.SSH_PRIVATE_KEY_QA }}
-          source: "dist/discordlm"
-          target: "/home/heni/discordlm/dist/"
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY_QA }}" > private_key.pem
+          chmod 600 private_key.pem
+          scp -i private_key.pem -o StrictHostKeyChecking=no dist/discordlm heni@ooo.observer:/home/heni/discordlm/dist/
 
       - name: Deploy to remote server
         uses: appleboy/ssh-action@master
