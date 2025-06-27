@@ -80,9 +80,7 @@ export class CharacterService {
         const messages = await channel.messages.fetch({ limit: 100 });
         for (const message of messages.values()) {
             if (message.author.id === this.client.user?.id && message.content.startsWith("Switched to ")) {
-                // Handle both formats: "Switched to CharName" and "Switched to **CharName**"
-                const match = message.content.match(/Switched to \*\*(.*?)\*\*/) ||
-                    message.content.match(/Switched to (.+?)(?:\n|$)/);
+                const match = message.content.match(/Switched to (.+?)(?:\n|$)/);
                 const characterName = match ? match[1] : message.content.substring("Switched to ".length).trim();
                 const character = this.getCharacter(characterName);
                 if (character) {

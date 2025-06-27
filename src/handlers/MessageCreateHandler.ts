@@ -92,7 +92,7 @@ export class MessageCreateHandler {
                     repliedMessage.author.id === configService.botSelfId &&
                     repliedMessage.content.startsWith("Switched to ")
                 ) {
-                    const match = repliedMessage.content.match(/Switched to \*\*(.*?)\*\*/);
+                    const match = repliedMessage.content.match(/Switched to (.*?)/);
                     if (match) {
                         targetCharacterName = match[1];
                     } else {
