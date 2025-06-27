@@ -43,7 +43,7 @@ spec:
       volumes:
       - name: characters
         hostPath:
-          path: /root/discordlm/characters
+          path: ${CHARACTER_PATH}
       - name: logs
         hostPath:
           path: /root/discordlm/logs
