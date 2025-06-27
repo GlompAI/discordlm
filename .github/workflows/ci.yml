@@ -46,20 +46,21 @@ jobs:
         run: |
           deno compile --unstable-kv --allow-net --allow-env --allow-read --allow-write --output dist/discordlm src/main.ts
 
+      - name: Install SSH and rsync
+        run: |
+          apt-get update && apt-get install -y openssh-client rsync
+
       - name: Copy binary to server
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY_QA }}" > private_key.pem
           chmod 600 private_key.pem
-          scp -v -i private_key.pem -o StrictHostKeyChecking=no dist/discordlm heni@ooo.observer:/home/heni/discordlm/dist/
+          rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" dist/discordlm heni@ooo.observer:/home/heni/discordlm/dist/
 
       - name: Deploy to remote server
-        uses: appleboy/ssh-action@master
-        with:
-          host: ooo.observer
-          username: heni
-          key: ${{ secrets.SSH_PRIVATE_KEY_QA }}
-          script: |
-            systemctl --user restart discordlm.service
+        run: |
+          echo "${{ secrets.SSH_PRIVATE_KEY_QA }}" > private_key.pem
+          chmod 600 private_key.pem
+          ssh -i private_key.pem -o StrictHostKeyChecking=no heni@ooo.observer "systemctl --user restart discordlm.service"
 
   deploy-prod:
     needs: build-and-push
