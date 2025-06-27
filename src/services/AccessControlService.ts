@@ -17,17 +17,15 @@ class AccessControlService {
             return true;
         }
 
+        if (!this.isWhitelist) {
+            return true;
+        }
+
         if (this.allowedUsers.size === 0) {
-            return true;
+            return false;
         }
 
-        const isUserInList = this.allowedUsers.has(userId);
-
-        if (this.isWhitelist) {
-            return isUserInList;
-        } else {
-            return true;
-        }
+        return this.allowedUsers.has(userId);
     }
 }
 
