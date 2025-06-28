@@ -21,6 +21,8 @@ export class CloudflareService {
                     "--credentials-file",
                     credentialsFile,
                     tunnelId,
+                    "--url",
+                    "http://localhost:8080",
                 ],
             }).spawn();
         } else {
