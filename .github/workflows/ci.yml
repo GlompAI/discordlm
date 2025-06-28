@@ -155,6 +155,5 @@ jobs:
               -o yaml | k3s kubectl apply -f -
             k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
             sleep 5
-            k3s kubectl delete deployment ${{ env.DEPLOYMENT_NAME }} --ignore-not-found
             k3s kubectl apply -f /root/discordlm/k8s-deployment.yaml
             k3s kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}
