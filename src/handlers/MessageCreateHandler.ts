@@ -30,6 +30,7 @@ export class MessageCreateHandler {
         this.inferenceQueue = new Queue(configService.getInferenceParallelism());
         this.componentService = new ComponentService();
         this.rateLimitService = new RateLimitService(
+            client,
             configService.getRateLimitPerMinute(),
             configService.getLimitUserIds(),
         );
@@ -46,13 +47,14 @@ export class MessageCreateHandler {
         // Check premium grant
         if (message.channel.type === ChannelType.DM) {
             const premiumGuild = await this.client.guilds.fetch("1304097485136072714");
-            const member = await premiumGuild.members.fetch(message.author.id);
+            const member = await premiumGuild.members.fetch({ user: message.author.id, force: true });
             const premiumService = PremiumService.getInstance();
             if (!member || !await premiumService.isPremium(member)) {
                 const messages = await message.channel.messages.fetch({ limit: 100 });
                 const botMessages = messages.filter((m) =>
                     m.author.id === this.client.user?.id && !m.content.startsWith("Switched to ")
                 );
+                this.logger.info(`Demo limit reached for user: ${member.displayName ?? member.user.username}`);
                 if (botMessages.size >= 10) {
                     await this.sendEphemeralError(
                         message,
@@ -63,9 +65,17 @@ export class MessageCreateHandler {
             }
         }
 
+        // Check if it's a new DM conversation and send help text
+        if (message.channel.type === ChannelType.DM) {
+            const messages = await message.channel.messages.fetch({ limit: 2 });
+            if (messages.size <= 1) {
+                await message.reply({ content: getHelpText(), allowedMentions: { repliedUser: false } });
+                return;
+            }
+        }
+
         if (
             message.content === RESET_MESSAGE_CONTENT || message.interaction ||
-            message.content === "Interaction blocked." ||
             message.content === "My funds are low, please subscribe on my server for future access"
         ) {
             return;
@@ -92,7 +102,7 @@ export class MessageCreateHandler {
                     repliedMessage.author.id === configService.botSelfId &&
                     repliedMessage.content.startsWith("Switched to ")
                 ) {
-                    const match = repliedMessage.content.match(/Switched to \*\*(.*?)\*\*/);
+                    const match = repliedMessage.content.match(/Switched to (.*?)\n?.*/);
                     if (match) {
                         targetCharacterName = match[1];
                     } else {
@@ -191,7 +201,7 @@ export class MessageCreateHandler {
         this.logger.info(`${logContext} Using character: ${character ? character.card.name : "none"}`);
 
         // Check rate limit
-        if (!this.rateLimitService.canMakeRequest(message.author.id)) {
+        if (!(await this.rateLimitService.canMakeRequest(message.author))) {
             this.logger.info(`${logContext} User is rate limited`);
             await this.rateLimitService.sendRateLimitNotification(message);
 
@@ -279,8 +289,12 @@ export class MessageCreateHandler {
             }
         }
 
-        const messages = allMessages;
-        this.logger.info(`${logContext} Fetched ${messages.length} messages in chronological order`);
+        const messages = allMessages.filter((msg) => {
+            const isBot = msg.author.id === this.client.user?.id;
+            const isHelpMessage = msg.content.startsWith("Welcome to the bot! Here's a quick guide");
+            return !(isBot && isHelpMessage);
+        });
+        this.logger.info(`${logContext} Fetched and filtered ${messages.length} messages in chronological order`);
 
         try {
             this.logger.info(`${logContext} Generating response...`);
@@ -305,7 +319,7 @@ export class MessageCreateHandler {
                 adze.error("Empty response from API, but no block reason provided.");
                 await this.sendEphemeralError(
                     message,
-                    "Oops! It seems my response was blocked. This can happen for a variety of reasons, including if a message goes against our terms of service. You could try deleting your last message and rephrasing, re-rolling the last character message, or use the `/reset` command to clear our conversation and start fresh.",
+                    "Oops! It seems my response was blocked. This can happen for a variety of reasons, including if a message goes against our terms of service. You could **try deleting your last message** and rephrasing, **re-rolling** the last character message, or **use the `/reset` command** to clear our conversation and start fresh.",
                 );
                 return;
             }
