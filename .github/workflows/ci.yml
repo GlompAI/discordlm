@@ -103,7 +103,8 @@ jobs:
           CONFIG_MAP_NAME: discordlm-config-prod
           CHARACTER_PATH: /root/discordlm/prod/characters
         run: |
-          sed -i "s|image: ghcr.io/glompai/discordlm:.*|image: ghcr.io/glompai/discordlm:${{ github.sha }}|g" k8s-deployment.yaml
+          export IMAGE_TAG=${{ github.sha }}
+          envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
 
       - name: Copy deployment file to server
         uses: appleboy/scp-action@master
