@@ -44,7 +44,7 @@ jobs:
 
       - name: Compile application
         run: |
-          deno compile --unstable-kv --allow-net --allow-env --allow-read --allow-write --output dist/discordlm src/main.ts
+          deno compile --unstable-kv --allow-net --allow-env --allow-read --allow-write --target x86_64-unknown-linux-gnu --output dist/discordlm src/main.ts
 
       - name: Install SSH and rsync
         run: |
