@@ -1,6 +1,6 @@
 import { configService } from "./ConfigService.ts";
-import adze from "npm:adze";
-import { GuildMember } from "npm:discord.js";
+import adze from "adze";
+import { GuildMember } from "discord.js";
 import { PremiumService } from "./PremiumService.ts";
 
 class AccessControlService {

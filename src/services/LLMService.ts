@@ -1,10 +1,10 @@
 import { Client, Guild, Message } from "discord.js";
 import { replaceAllAsync } from "../replace.ts";
-import { GifReader } from "npm:omggif";
-import { PNG } from "npm:pngjs";
+import { GifReader } from "omggif";
+import { PNG } from "pngjs";
 import { Buffer } from "node:buffer";
 import { CharacterCard } from "../CharacterCard.ts";
-import adze from "npm:adze";
+import adze from "adze";
 import { MessageView } from "../types.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";
 import { LLMProvider } from "../llm/provider.ts";

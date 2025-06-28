@@ -52,7 +52,7 @@
         "pngjs": "npm:pngjs",
         "adze": "npm:adze",
         "openai": "npm:openai@^4.52.7",
-        "ollama": "npm:ollama@^0.5.2"
+        "llama-tokenizer-js": "npm:llama-tokenizer-js"
     },
     "exclude": [
         "dist/",

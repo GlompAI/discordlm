@@ -20,7 +20,7 @@ import { CharacterService } from "../services/CharacterService.ts";
 import { dumpDebug } from "../debug.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";
 import { getHelpText } from "../utils.ts";
-import adze from "npm:adze";
+import adze from "adze";
 import { WebhookManager } from "../WebhookManager.ts";
 import { ComponentService } from "../services/ComponentService.ts";
 import { LLMService } from "../services/LLMService.ts";

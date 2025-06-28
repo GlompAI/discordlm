@@ -10,7 +10,7 @@ import {
     WebhookMessageEditOptions,
 } from "discord.js";
 import { CharacterConfig } from "./CharacterCard.ts";
-import adze from "npm:adze";
+import adze from "adze";
 
 const logger = adze.withEmoji.timestamp.seal();
 export const WEBHOOK_IDENTIFIER = "\u200B";

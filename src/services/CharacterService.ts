@@ -3,7 +3,7 @@ import { WebhookManager } from "../WebhookManager.ts";
 import { AvatarServer } from "../AvatarServer.ts";
 import { configService } from "./ConfigService.ts";
 import { Client, TextBasedChannel } from "discord.js";
-import adze from "npm:adze";
+import adze from "adze";
 import { CharacterConfig } from "../CharacterCard.ts";
 
 export class CharacterService {

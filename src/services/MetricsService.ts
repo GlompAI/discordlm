@@ -1,4 +1,4 @@
-import { Guild, GuildTextBasedChannel, User } from "npm:discord.js";
+import { Guild, GuildTextBasedChannel, User } from "discord.js";
 
 const kv = await Deno.openKv("./logs/metrics.kv");
 

@@ -1,5 +1,5 @@
 import { Message } from "discord.js";
-import adze from "npm:adze";
+import adze from "adze";
 
 interface UserRateLimit {
     userId: string;

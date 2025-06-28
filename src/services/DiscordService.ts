@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, Partials } from "discord.js";
 import { configService } from "./ConfigService.ts";
-import adze from "npm:adze";
+import adze from "adze";
 
 export class DiscordService {
     public readonly client: Client;

@@ -5,7 +5,7 @@ import { CharacterService } from "../services/CharacterService.ts";
 import { LLMService } from "../services/LLMService.ts";
 import { configService } from "../services/ConfigService.ts";
 import { smartSplit } from "../utils.ts";
-import adze from "npm:adze";
+import adze from "adze";
 import { getHelpText } from "../utils.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";
 import { Queue } from "../queue.ts";
