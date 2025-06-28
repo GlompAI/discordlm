@@ -71,12 +71,6 @@ jobs:
       - name: Copy files to server
         run: |
           rsync -avz -e "ssh -o StrictHostKeyChecking=no" dist/discordlm cloudflared .env.qa heni@ooo.observer:/home/heni/discordlm/
-          export IMAGE_TAG=${{ github.sha }}
-          export DEPLOYMENT_NAME
-          export SECRET_NAME
-          export CONFIG_MAP_NAME
-          export CHARACTER_PATH
-          envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
 
       - name: Deploy to remote server
         run: |
