@@ -28,29 +28,35 @@ export class PremiumService {
     }
 
     public async isPremium(member: GuildMember | undefined): Promise<boolean> {
+        this.logger.info(`Checking premium for member: ${member?.displayName ?? "undefined"}`);
         if (!this.guild) {
             this.logger.error("Premium guild not found, defaulting to premium.");
             return true;
         }
+        this.logger.info(`Premium guild found: ${this.guild.name}`);
         if (!member) {
             this.logger.warn("Could not find member in premium guild, defaulting to premium.");
             return true;
         }
+        this.logger.info(`Member found: ${member.displayName}`);
         // override for vagabondtruffle
         if (member.user.id == "1372957695413452900") {
-            adze.info("Overriding premium for bot owner");
+            this.logger.info("Overriding premium for bot owner");
             return true;
         }
 
+        const roles = member.roles.cache.map(role => role.id);
+        this.logger.info(`Member roles: ${roles.join(", ")}`);
+
         if (member.roles.cache.has("1387978615450239149")) {
-            adze.info(`Premium access granted for user: ${member.displayName}`);
+            this.logger.info(`Premium access granted for user: ${member.displayName}`);
             return true;
         }
         if (member.roles.cache.has("1388224070528532671")) {
-            adze.info(`Donator access granted for user: ${member.displayName}`);
+            this.logger.info(`Donator access granted for user: ${member.displayName}`);
             return true;
         }
-        adze.error(`No premium found for user: ${member.displayName}`);
+        this.logger.error(`No premium found for user: ${member.displayName}`);
         return false;
     }
 }
