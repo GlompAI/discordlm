@@ -8,8 +8,8 @@ The QA environment is hosted on a dedicated server and is configured to run a se
 
 *   **Server**: `heni@ooo.observer`
 *   **Process Manager**: The application is managed by a `systemd` user service with lingering enabled to ensure it runs persistently. The service is defined in `~/.config/systemd/user/discordlm.service`.
-*   **LLM Provider**: The QA environment uses a local Ollama instance running on `http://127.0.0.1:11434`.
-*   **LLM Model**: The default model for the QA environment is `deepseek-r1:8b`.
+*   **LLM Provider**: The QA environment uses a local OpenAI-compatible instance running on `http://127.0.0.1:11434`.
+*   **LLM Model**: The default model for the QA environment is `nidumai/nidum-gemma-3-4b-it-uncensored:q5_k_m`.
 
 ## 2. Access and Deployment
 
@@ -43,7 +43,6 @@ Secrets for the QA environment are managed via a `.env.qa` file located in the a
 *   `BOT_SELF_ID`
 *   `LLM_PROVIDER`
 *   `MODEL_NAME`
-*   `OLLAMA_HOST`
 *   `TOKEN_LIMIT`
 *   `ENABLE_AVATAR_SERVER`
 *   `AVATAR_PORT`

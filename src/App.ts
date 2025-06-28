@@ -10,6 +10,7 @@ import adze from "npm:adze";
 import { createHash } from "node:crypto";
 import { HealthServer } from "./HealthServer.ts";
 import { configService } from "./services/ConfigService.ts";
+import { CloudflareService } from "./services/CloudflareService.ts";
 
 export class App {
     private readonly logger = adze.withEmoji.timestamp.seal();
@@ -21,6 +22,7 @@ export class App {
     private readonly interactionCreateHandler: InteractionCreateHandler;
     private readonly messageCreateHandler: MessageCreateHandler;
     private readonly healthServer: HealthServer;
+    private readonly cloudflareService: CloudflareService;
     private isShuttingDown = false;
 
     constructor() {
@@ -42,10 +44,12 @@ export class App {
             this.webhookManager,
         );
         this.healthServer = new HealthServer();
+        this.cloudflareService = new CloudflareService();
     }
 
     public async start(): Promise<void> {
         this.healthServer.start();
+        this.cloudflareService.start();
         this.logSecretHashes();
         this.discordService.onReady(async (client) => {
             if (client.user) {
@@ -89,6 +93,7 @@ export class App {
         }
 
         await this.characterService.stop();
+        await this.cloudflareService.stop();
         await this.discordService.destroy();
         Deno.exit();
     }
@@ -142,12 +147,9 @@ export class App {
             "GEMINI_TOKEN_LIMIT",
             "OPENAI_TOKEN_LIMIT",
             "RATE_LIMIT_PER_MINUTE",
-            "ENABLE_AVATAR_SERVER",
-            "PUBLIC_AVATAR_BASE_URL",
             "DEBUG",
             "MAX_HISTORY_MESSAGES",
             "OPENAI_BASE_URL",
-            "PUBLIC_AVATAR_BASE_URL",
             "GEMINI_BASE_URL",
             "OPENAI_BASE_URL",
         ];
