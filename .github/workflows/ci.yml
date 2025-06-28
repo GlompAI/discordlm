@@ -59,6 +59,7 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_QA }}
 
       - name: Create .env.qa from secret
+          CHARACTER_PATH: /root/discordlm/qa/characters
         run: |
           echo "${{ secrets.ENV_QA_FILE_CONTENT }}" > .env.qa
 
@@ -69,6 +70,21 @@ jobs:
       - name: Copy files to server
         run: |
           rsync -avz -e "ssh -o StrictHostKeyChecking=no" dist/discordlm cloudflared .env.qa heni@ooo.observer:/home/heni/discordlm/
+          export IMAGE_TAG=${{ github.sha }}
+          export DEPLOYMENT_NAME
+          export SECRET_NAME
+          export CONFIG_MAP_NAME
+          export CHARACTER_PATH
+          envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
+
+      - name: Copy deployment file to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "k8s-deployment.yaml,k8s-config-qa.yaml"
+          target: "/root/discordlm/"
 
       - name: Deploy to remote server
         run: |
@@ -109,11 +125,13 @@ jobs:
           DEPLOYMENT_NAME: discordlm-deployment-prod
           SECRET_NAME: discordlm-secrets-prod
           CONFIG_MAP_NAME: discordlm-config-prod
+          CHARACTER_PATH: /root/discordlm/prod/characters
         run: |
           export IMAGE_TAG=${{ github.sha }}
           export DEPLOYMENT_NAME
           export SECRET_NAME
           export CONFIG_MAP_NAME
+          export CHARACTER_PATH
           envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
 
       - name: Copy deployment file to server

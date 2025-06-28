@@ -55,35 +55,11 @@ export class InteractionCreateHandler {
 
         try {
             if (interaction.isAutocomplete()) {
-                if (interaction.guild) {
-                    const member = await interaction.guild.members.fetch(interaction.user.id);
-                    if (!await accessControlService.isUserAllowed(member)) {
-                        await interaction.respond([]);
-                        return;
-                    }
-                } else {
-                    if (!await accessControlService.isUserAllowed(null)) {
-                        await interaction.respond([]);
-                        return;
-                    }
-                }
                 await this.handleAutocomplete(interaction);
                 return;
             }
 
             if (interaction.isMessageComponent()) {
-                if (interaction.guild) {
-                    const member = await interaction.guild.members.fetch(interaction.user.id);
-                    if (!await accessControlService.isUserAllowed(member)) {
-                        await interaction.reply({ content: "Interaction blocked.", ephemeral: true });
-                        return;
-                    }
-                } else {
-                    if (!await accessControlService.isUserAllowed(null)) {
-                        await interaction.reply({ content: "Interaction blocked.", ephemeral: true });
-                        return;
-                    }
-                }
                 await this.handleComponentInteraction(interaction, logContext);
                 return;
             }
@@ -92,18 +68,6 @@ export class InteractionCreateHandler {
 
             const { commandName } = interaction;
 
-            if (interaction.guild) {
-                const member = await interaction.guild.members.fetch(interaction.user.id);
-                if (!await accessControlService.isUserAllowed(member)) {
-                    await interaction.reply({ content: "Interaction blocked.", ephemeral: true });
-                    return;
-                }
-            } else {
-                if (!await accessControlService.isUserAllowed(null)) {
-                    await interaction.reply({ content: "Interaction blocked.", ephemeral: true });
-                    return;
-                }
-            }
             if (commandName === "switch") {
                 await this.handleSwitchCommand(interaction);
             } else if (commandName === "list") {
@@ -157,7 +121,7 @@ export class InteractionCreateHandler {
         if (interaction.customId === "delete") {
             if (interaction.channel?.type === ChannelType.DM) {
                 const premiumGuild = await this.client.guilds.fetch("1304097485136072714");
-                const member = await premiumGuild.members.fetch(interaction.user.id);
+                const member = await premiumGuild.members.fetch({ user: interaction.user.id, force: true });
                 const premiumService = PremiumService.getInstance();
                 if (!member || !await premiumService.isPremium(member)) {
                     await interaction.reply({
@@ -238,7 +202,9 @@ export class InteractionCreateHandler {
             const character = this.characterService.getCharacter(characterName);
             if (character) {
                 await interaction.update({
-                    content: `Switched to **${character.card.name}**`,
+                    content: interaction.channel?.type == ChannelType.DM
+                        ? `Switched to ${character.card.name}\nYou may wish to /reset.`
+                        : `Switched to ${character.card.name}`,
                     components: [],
                 });
             }
@@ -266,7 +232,7 @@ export class InteractionCreateHandler {
             const character = this.characterService.getCharacter(characterName);
             if (character) {
                 const replyContent = interaction.channel?.type === ChannelType.DM
-                    ? `Switched to ${character.card.name}`
+                    ? `Switched to ${character.card.name}\nYou may wish to /reset.`
                     : `Switched to ${character.card.name}`;
                 await interaction.reply(replyContent);
             } else {
@@ -280,8 +246,13 @@ export class InteractionCreateHandler {
             const characters = this.characterService.getCharacters().filter((c) =>
                 c.card.name !== configService.getAssistantName()
             );
-            const currentCharacter = await this.characterService.inferCharacterFromHistory(interaction.channel);
-            const selectMenu = this.componentService.createCharacterSelectMenu(characters, currentCharacter);
+            const currentCharacter = interaction.channel?.type === ChannelType.DM
+                ? null
+                : await this.characterService.inferCharacterFromHistory(interaction.channel);
+            const selectMenu = this.componentService.createCharacterSelectMenu(
+                characters,
+                currentCharacter,
+            );
             await interaction.reply({
                 content: "Select a character to switch to:",
                 components: [selectMenu],

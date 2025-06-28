@@ -1,12 +1,9 @@
 import { Client, Guild, GuildMember, Role } from "discord.js";
-
-const PREMIUM_GUILD_ID = "1304097485136072714";
-const PREMIUM_ROLE_ID = "1387978615450239149";
+import adze from "adze";
 
 export class PremiumService {
     private static instance: PremiumService;
-    private premiumRole: Role | undefined;
-    private premiumGuild: Guild | undefined;
+    public client: Client | undefined;
 
     private constructor() {}
 
@@ -18,19 +15,25 @@ export class PremiumService {
     }
 
     public async init(client: Client) {
-        this.premiumGuild = await client.guilds.fetch(PREMIUM_GUILD_ID);
-        if (this.premiumGuild) {
-            const role = await this.premiumGuild.roles.fetch(PREMIUM_ROLE_ID);
-            if (role) {
-                this.premiumRole = role;
-            }
-        }
+        this.client = client;
     }
 
     public async isPremium(member: GuildMember): Promise<boolean> {
-        if (!this.premiumRole) {
-            return false;
+        // override for vagabondtruffle
+        if (member.user.id == "1372957695413452900") {
+            adze.info("Overriding premium for bot owner");
+            return true;
         }
-        return member.roles.cache.has(this.premiumRole.id);
+
+        if (member.roles.cache.has("1387978615450239149")) {
+            adze.info(`Premium access granted for user: ${member.displayName}`);
+            return true;
+        }
+        if (member.roles.cache.has("1388224070528532671")) {
+            adze.info(`Donator access granted for user: ${member.displayName}`);
+            return true;
+        }
+        adze.error(`No premium found for user: ${member.displayName}`);
+        return false;
     }
 }

@@ -1,5 +1,6 @@
-import { Message } from "discord.js";
+import { Client, Message, User } from "discord.js";
 import adze from "adze";
+import { PremiumService } from "./PremiumService.ts";
 
 interface UserRateLimit {
     userId: string;
@@ -19,22 +20,27 @@ export class RateLimitService {
     private limitedRequestsPerMinute: number;
     private limitedUserIds: string[];
     private cleanupInterval: number | undefined;
+    private client: Client;
 
-    constructor(requestsPerMinute: number, limitedUserIds: string[]) {
+    constructor(client: Client, requestsPerMinute: number, limitedUserIds: string[]) {
         this.requestsPerMinute = requestsPerMinute;
         this.limitedRequestsPerMinute = Math.floor(requestsPerMinute / 2);
         this.limitedUserIds = limitedUserIds;
         this.startCleanupInterval();
+        this.client = client;
     }
 
     /**
      * Check if a user can make a request
      * @returns true if allowed, false if rate limited
      */
-    canMakeRequest(userId: string): boolean {
+    async canMakeRequest(user: User): Promise<boolean> {
         const now = Date.now();
+        const userId = user.id;
         const userLimit = this.userLimits.get(userId);
-        const isLimitedUser = this.limitedUserIds.includes(userId);
+        const guild = await this.client.guilds.fetch("1304097485136072714");
+        const member = await guild.members.fetch(userId);
+        const isLimitedUser = this.limitedUserIds.includes(userId) || !PremiumService.getInstance().isPremium(member);
         const maxRequests = isLimitedUser ? this.limitedRequestsPerMinute : this.requestsPerMinute;
 
         if (!userLimit) {
@@ -132,13 +138,13 @@ export class RateLimitService {
         const seconds = Math.ceil(timeUntilReset / 1000);
 
         try {
-            // Send a reply that auto-deletes after 5 seconds
+            // Send a reply that auto-deletes after 10 seconds
             const reply = await message.reply({
-                content: `⏱️ Rate limited. Try again in ${seconds}s.`,
+                content: `⏱️ Rate limited. Please wait ${seconds}s. Premium members have higher limits.`,
             });
             setTimeout(() => {
                 reply.delete().catch(() => {});
-            }, 5000);
+            }, 10000);
         } catch (e) {
             this.logger.error("Failed to send rate limit notification:", e);
         }
