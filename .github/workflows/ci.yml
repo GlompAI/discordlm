@@ -116,7 +116,7 @@ jobs:
           host: ${{ vars.SSH_HOST }}
           username: ${{ vars.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "k8s-deployment.yaml,k8s-config.yaml"
+          source: "k8s-deployment.yaml,k8s-config.yaml,k8s-cloudflare-secret.yaml"
           target: "/root/discordlm/"
 
       - name: Deploy to remote server
@@ -155,5 +155,6 @@ jobs:
               -o yaml | k3s kubectl apply -f -
             k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
             sleep 5
+            k3s kubectl apply -f /root/discordlm/k8s-cloudflare-secret.yaml
             k3s kubectl apply -f /root/discordlm/k8s-deployment.yaml
             k3s kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}

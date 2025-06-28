@@ -46,6 +46,8 @@ spec:
           mountPath: /app/characters
         - name: logs
           mountPath: /app/logs
+        - name: cloudflare-credentials
+          mountPath: /root/.cloudflared
       volumes:
       - name: characters
         hostPath:
@@ -53,3 +55,6 @@ spec:
       - name: logs
         hostPath:
           path: /root/discordlm/logs
+      - name: cloudflare-credentials
+        secret:
+          secretName: cloudflare-credentials
