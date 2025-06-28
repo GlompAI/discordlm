@@ -24,7 +24,7 @@ export class ConfigService {
     }
 
     getGeminiBaseUrl(): string | undefined {
-        return this.getEnv("GEMINI_BASE_URL", false, "");
+        return this.getEnv("GEMINI_BASE_URL", false, "https://generativelanguage.googleapis.com/v1beta");
     }
 
     getOpenAIKey(): string {
