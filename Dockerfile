@@ -16,4 +16,4 @@ RUN deno cache src/main.ts
 EXPOSE 3334
 
 # Define the entrypoint
-ENTRYPOINT ["deno", "run", "--unstable-kv", "--allow-net", "--allow-env", "--allow-read", "--allow-write", "src/main.ts"]
+ENTRYPOINT ["deno", "run", "--unstable-kv", "--allow-net", "--allow-env", "--allow-read", "--allow-write", "--allow-run", "src/main.ts"]
