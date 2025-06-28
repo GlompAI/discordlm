@@ -42,16 +42,21 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Compile application
-        run: |
-          mkdir -p dist
-          deno compile --unstable-kv --allow-net --allow-env --allow-read --allow-write --target x86_64-unknown-linux-gnu --output dist/discordlm src/main.ts
-
-      - name: Install SSH and rsync
+      - name: Install dependencies
         run: |
           apt-get update && apt-get install -y openssh-client rsync wget
           wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cloudflared
           chmod +x cloudflared
+
+      - name: Load SSH Key
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_QA }}
+
+      - name: Compile application
+        run: |
+          mkdir -p dist
+          deno compile --unstable-kv --allow-net --allow-env --allow-read --allow-write --target x86_64-unknown-linux-gnu --output dist/discordlm src/main.ts
 
       - name: Create .env.qa from secret
         run: |
@@ -59,17 +64,13 @@ jobs:
 
       - name: Copy binary and cloudflared to server
         run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY_QA }}" > private_key.pem
-          chmod 600 private_key.pem
-          rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" dist/discordlm heni@ooo.observer:/home/heni/discordlm/discordlm
-          rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" cloudflared heni@ooo.observer:/home/heni/discordlm/
-          rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" .env.qa heni@ooo.observer:/home/heni/discordlm/
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" dist/discordlm heni@ooo.observer:/home/heni/discordlm/discordlm
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" cloudflared heni@ooo.observer:/home/heni/discordlm/
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" .env.qa heni@ooo.observer:/home/heni/discordlm/
 
       - name: Deploy to remote server
         run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY_QA }}" > private_key.pem
-          chmod 600 private_key.pem
-          ssh -i private_key.pem -o StrictHostKeyChecking=no heni@ooo.observer " \
+          ssh -o StrictHostKeyChecking=no heni@ooo.observer " \
             chmod +x /home/heni/discordlm/discordlm && \
             systemctl --user stop discordlm.service || true && \
             pkill -f discordlm || true && \
