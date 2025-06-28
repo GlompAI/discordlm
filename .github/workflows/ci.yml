@@ -72,6 +72,7 @@ jobs:
 
       - name: Deploy to remote server
         run: |
+          set -x
           ssh -o StrictHostKeyChecking=no heni@ooo.observer "chmod +x /home/heni/discordlm/discordlm"
           ssh -o StrictHostKeyChecking=no heni@ooo.observer "systemctl --user stop discordlm.service || true"
           ssh -o StrictHostKeyChecking=no heni@ooo.observer "pkill -f discordlm || true"
