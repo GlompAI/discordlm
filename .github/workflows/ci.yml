@@ -52,11 +52,15 @@ jobs:
           wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cloudflared
           chmod +x cloudflared
 
+      - name: Create .env.qa from secret
+        run: |
+          echo "${{ secrets.ENV_QA_FILE_CONTENT }}" > .env.qa
+
       - name: Copy binary and cloudflared to server
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY_QA }}" > private_key.pem
           chmod 600 private_key.pem
-          rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" dist/discordlm cloudflared heni@ooo.observer:/home/heni/discordlm/dist/
+          rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" dist/discordlm cloudflared .env.qa heni@ooo.observer:/home/heni/discordlm/
 
       - name: Deploy to remote server
         run: |
