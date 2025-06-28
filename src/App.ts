@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 import { configService } from "./services/ConfigService.ts";
 import { CloudflareService } from "./services/CloudflareService.ts";
 import { AvatarServer } from "./AvatarServer.ts";
+import { PremiumService } from "./services/PremiumService.ts";
 
 export class App {
     private readonly logger = adze.withEmoji.timestamp.seal();
@@ -78,6 +79,7 @@ export class App {
         });
 
         await this.discordService.login();
+        await PremiumService.getInstance().init(this.discordService.client);
 
         Deno.addSignalListener("SIGINT", () => this.stop());
         Deno.addSignalListener("SIGTERM", () => this.stop());
