@@ -72,7 +72,6 @@ jobs:
             systemctl --user stop discordlm.service || true && \
             pkill -f discordlm || true && \
             rm -f /home/heni/discordlm/discordlm && \
-            rsync -avz -e 'ssh -i private_key.pem -o StrictHostKeyChecking=no' dist/discordlm heni@ooo.observer:/home/heni/discordlm/discordlm && \
             mkdir -p .cloudflared && \
             echo '${{ secrets.CLOUDFLARE_CREDENTIALS_FILE_CONTENT }}' > .cloudflared/22663346-58e3-4a55-ba33-02577e175488.json && \
             systemctl --user start discordlm.service"
