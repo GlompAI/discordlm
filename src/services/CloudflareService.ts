@@ -18,8 +18,9 @@ export class CloudflareService {
                     "tunnel",
                     "--no-autoupdate",
                     "run",
-                    "--token",
-                    Deno.readTextFileSync(credentialsFile),
+                    "--credentials-file",
+                    credentialsFile,
+                    tunnelId,
                 ],
             }).spawn();
         } else {
