@@ -1,4 +1,4 @@
-import adze from "npm:adze";
+import adze from "adze";
 import { configService } from "./ConfigService.ts";
 
 const logger = adze.withEmoji.timestamp.seal();

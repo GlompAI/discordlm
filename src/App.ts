@@ -6,7 +6,7 @@ import { InteractionCreateHandler } from "./handlers/InteractionCreateHandler.ts
 import { MessageCreateHandler } from "./handlers/MessageCreateHandler.ts";
 import { WebhookManager } from "./WebhookManager.ts";
 import { Events, SlashCommandBuilder } from "discord.js";
-import adze from "npm:adze";
+import adze from "adze";
 import { createHash } from "node:crypto";
 import { HealthServer } from "./HealthServer.ts";
 import { configService } from "./services/ConfigService.ts";

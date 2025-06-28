@@ -70,7 +70,6 @@ export class ConfigService {
         return adminIds.split(";").filter((id) => id.trim() !== "");
     }
 
-
     isDebugEnabled(): boolean {
         return this.getEnv("DEBUG", false, "false") === "true";
     }

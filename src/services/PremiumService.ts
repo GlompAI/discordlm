@@ -1,4 +1,4 @@
-import { Client, Guild, GuildMember, Role } from "npm:discord.js";
+import { Client, Guild, GuildMember, Role } from "discord.js";
 
 const PREMIUM_GUILD_ID = "1304097485136072714";
 const PREMIUM_ROLE_ID = "1387978615450239149";

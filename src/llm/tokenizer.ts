@@ -1,4 +1,4 @@
-import Tokenizer from "npm:llama-tokenizer-js";
+import Tokenizer from "llama-tokenizer-js";
 
 export function countTokens(message: string): number {
     if (message == "") return 0;

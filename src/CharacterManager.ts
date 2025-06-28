@@ -5,7 +5,7 @@ import {
     parseCharacterCardFromJSON,
     parseCharacterCardFromPNG,
 } from "./CharacterCard.ts";
-import adze from "npm:adze";
+import adze from "adze";
 import { resolve } from "https://deno.land/std@0.224.0/path/mod.ts";
 import { configService } from "./services/ConfigService.ts";
 
