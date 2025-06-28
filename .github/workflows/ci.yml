@@ -62,11 +62,13 @@ jobs:
         run: |
           echo "${{ secrets.ENV_QA_FILE_CONTENT }}" > .env.qa
 
-      - name: Copy binary and cloudflared to server
+      - name: Check files before copy
         run: |
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no" dist/discordlm heni@ooo.observer:/home/heni/discordlm/discordlm
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no" cloudflared heni@ooo.observer:/home/heni/discordlm/
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no" .env.qa heni@ooo.observer:/home/heni/discordlm/
+          ls -la
+          ls -la dist
+      - name: Copy files to server
+        run: |
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" dist/discordlm cloudflared .env.qa heni@ooo.observer:/home/heni/discordlm/
 
       - name: Deploy to remote server
         run: |
