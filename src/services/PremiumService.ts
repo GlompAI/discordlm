@@ -4,6 +4,7 @@ import { configService } from "./ConfigService.ts";
 
 export class PremiumService {
     private static instance: PremiumService;
+    private readonly logger = adze.withEmoji.timestamp.seal();
     public client: Client | undefined;
     public guild: Guild | undefined;
 
@@ -19,7 +20,7 @@ export class PremiumService {
     public async init(client: Client) {
         this.client = client;
         try {
-            this.guild = await this.client.guilds.fetch(configService.getPremiumGuildId());
+            this.guild = await this.client.guilds.fetch({ guild: configService.getPremiumGuildId(), force: true });
         } catch (exception) {
             adze.warn("Premium guild not found! Falling back...");
             console.log(exception);
@@ -27,7 +28,12 @@ export class PremiumService {
     }
 
     public async isPremium(member: GuildMember | undefined): Promise<boolean> {
-        if (!this.guild || !member) {
+        if (!this.guild) {
+            this.logger.error("Premium guild not found, defaulting to premium.");
+            return true;
+        }
+        if (!member) {
+            this.logger.warn("Could not find member in premium guild, defaulting to premium.");
             return true;
         }
         // override for vagabondtruffle
