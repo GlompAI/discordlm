@@ -43,7 +43,7 @@ spec:
           value: "avatar.glomp.ai"
         volumeMounts:
         - name: characters
-          mountPath: /app/characters
+          mountPath: ${CHARACTER_PATH}
         - name: logs
           mountPath: /app/logs
         - name: cloudflare-credentials
