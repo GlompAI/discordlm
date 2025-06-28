@@ -1,9 +1,10 @@
-import { Client, Guild, GuildMember, Role } from "discord.js";
+import { Client, Guild, GuildMember } from "discord.js";
 import adze from "adze";
 
 export class PremiumService {
     private static instance: PremiumService;
     public client: Client | undefined;
+    public guild: Guild | undefined;
 
     private constructor() {}
 
@@ -16,9 +17,18 @@ export class PremiumService {
 
     public async init(client: Client) {
         this.client = client;
+        try {
+            this.guild = await this.client.guilds.fetch("1304097485136072714");
+        } catch (exception) {
+            adze.warn("Premium guild not found! Falling back...");
+            console.log(exception);
+        }
     }
 
-    public async isPremium(member: GuildMember): Promise<boolean> {
+    public async isPremium(member: GuildMember | undefined): Promise<boolean> {
+        if (!this.guild || !member) {
+            return true;
+        }
         // override for vagabondtruffle
         if (member.user.id == "1372957695413452900") {
             adze.info("Overriding premium for bot owner");

@@ -38,8 +38,8 @@ export class RateLimitService {
         const now = Date.now();
         const userId = user.id;
         const userLimit = this.userLimits.get(userId);
-        const guild = await this.client.guilds.fetch("1304097485136072714");
-        const member = await guild.members.fetch(userId);
+        const premiumService = PremiumService.getInstance();
+        const member = await premiumService.guild?.members.fetch(userId);
         const isLimitedUser = this.limitedUserIds.includes(userId) || !PremiumService.getInstance().isPremium(member);
         const maxRequests = isLimitedUser ? this.limitedRequestsPerMinute : this.requestsPerMinute;
 
