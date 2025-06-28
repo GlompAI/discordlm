@@ -103,6 +103,7 @@ jobs:
           CONFIG_MAP_NAME: discordlm-config-prod
           CHARACTER_PATH: /root/discordlm/prod/characters
         run: |
+          echo "IMAGE_TAG=${{ github.sha }}" >> $GITHUB_ENV
           export IMAGE_TAG=${{ github.sha }}
           export DEPLOYMENT_NAME
           export SECRET_NAME
