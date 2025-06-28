@@ -106,6 +106,17 @@ jobs:
           source: "k8s-deployment.yaml,k8s-config.yaml,k8s-cloudflare-secret.yaml"
           target: "/root/discordlm/"
 
+      - name: Replace image tag in deployment yaml
+        env:
+          DEPLOYMENT_NAME: discordlm-deployment-prod
+          SECRET_NAME: discordlm-secrets-prod
+          CONFIG_MAP_NAME: discordlm-config-prod
+          CHARACTER_PATH: /root/discordlm/prod/characters
+        run: |
+          export IMAGE_TAG=${{ github.sha }}
+          envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
+          cat k8s-deployment.yaml
+
       - name: Deploy to remote server
         uses: appleboy/ssh-action@master
         env:
