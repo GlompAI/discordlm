@@ -21,7 +21,7 @@ export class CloudflareService {
                     "--credentials-file",
                     credentialsFile,
                     "--url",
-                    "http://localhost:8080",
+                    "http://localhost:18888",
                     tunnelId,
                 ],
             }).spawn();
@@ -31,7 +31,7 @@ export class CloudflareService {
                 args: [
                     "tunnel",
                     "--url",
-                    "http://localhost:8080",
+                    "http://localhost:18888",
                 ],
             }).spawn();
         }

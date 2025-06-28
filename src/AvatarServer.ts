@@ -5,7 +5,7 @@ const logger = adze.withEmoji.timestamp.seal();
 
 export class AvatarServer {
     private server: Deno.HttpServer | null = null;
-    private readonly port = 8080;
+    private readonly port = 18888;
     private charactersDir: string;
 
     constructor(charactersDir: string = "./characters") {
