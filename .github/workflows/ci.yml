@@ -77,7 +77,7 @@ jobs:
             mkdir -p /home/heni/.cloudflared && \
             echo '${{ secrets.CLOUDFLARE_CREDENTIALS_FILE_CONTENT }}' > /home/heni/.cloudflared/22663346-58e3-4a55-ba33-02577e175488.json && \
             systemctl --user daemon-reload && \
-            systemctl --user start discordlm.service"
+            systemctl --user start discordlm.service || true"
 
   deploy-prod:
     needs: build-and-push
