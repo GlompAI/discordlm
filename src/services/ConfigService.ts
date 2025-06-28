@@ -123,6 +123,11 @@ export class ConfigService {
     getCloudflareHostname(): string | undefined {
         return this.getEnv("CLOUDFLARE_HOSTNAME", false, "");
     }
+
+    getPremiumGuildId(): string {
+        return this.getEnv("PREMIUM_GUILD_ID", false, "1304097485136072714");
+    }
 }
 
 export const configService = new ConfigService();
+

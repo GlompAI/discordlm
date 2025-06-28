@@ -35,6 +35,9 @@ spec:
         - configMapRef:
             name: ${CONFIG_MAP_NAME}
         env:
+        - name: PREMIUM_GUILD_ID
+          value: "1304097485136072714"
+        env:
         - name: CLOUDFLARE_TUNNEL_ID
           value: "1630c589-6e93-4082-a703-860e44aa831c"
         - name: CLOUDFLARE_CREDENTIALS_FILE

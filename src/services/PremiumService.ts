@@ -1,5 +1,6 @@
 import { Client, Guild, GuildMember } from "discord.js";
 import adze from "adze";
+import { configService } from "./ConfigService.ts";
 
 export class PremiumService {
     private static instance: PremiumService;
@@ -18,7 +19,7 @@ export class PremiumService {
     public async init(client: Client) {
         this.client = client;
         try {
-            this.guild = await this.client.guilds.fetch("1304097485136072714");
+            this.guild = await this.client.guilds.fetch(configService.getPremiumGuildId());
         } catch (exception) {
             adze.warn("Premium guild not found! Falling back...");
             console.log(exception);
