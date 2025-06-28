@@ -11,6 +11,7 @@ COPY . .
 # as Docker's layer caching will handle this. If deno.json changes,
 # this layer will be re-run.
 RUN deno cache src/main.ts
+RUN wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O /usr/local/bin/cloudflared && chmod +x /usr/local/bin/cloudflared
 
 # Expose the port the app runs on
 EXPOSE 3334
