@@ -128,3 +128,5 @@ Temporary Items
 .apdisk
 
 characters/*.png
+
+.env.qa
