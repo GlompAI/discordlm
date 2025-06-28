@@ -32,6 +32,8 @@ export class LLMService {
                 return new OpenAIProvider(model);
             case "gemini":
                 return new GeminiProvider(model);
+            case "groq":
+                return new OpenAIProvider(model);
             default:
                 throw new Error(`Unknown LLM provider: ${provider}`);
         }

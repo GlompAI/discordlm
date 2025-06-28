@@ -43,9 +43,16 @@ export class ConfigService {
         return this.getEnv("OPENAI_CUSTOM_HEADER_KEY", false, "x-api-key");
     }
 
-    getModel(provider?: "gemini" | "openai"): string {
+    getGroqApiKey(): string {
+        return this.getEnv("GROQ_API_KEY", false, "");
+    }
+
+    getModel(provider?: "gemini" | "openai" | "groq"): string {
         if (provider === "openai") {
             return this.getEnv("OPENAI_MODEL_NAME", false, "gpt-4-turbo");
+        }
+        if (provider === "groq") {
+            return this.getEnv("GROQ_MODEL_NAME", false, "llama3-8b-8192");
         }
         return this.getEnv("GEMINI_MODEL_NAME", false, "gemini-1.5-flash");
     }
@@ -101,8 +108,8 @@ export class ConfigService {
         return parseInt(this.getEnv("MAX_HISTORY_MESSAGES", false, "200"));
     }
 
-    getProvider(): "gemini" | "openai" {
-        return this.getEnv("LLM_PROVIDER", false, "gemini") as "gemini" | "openai";
+    getProvider(): "gemini" | "openai" | "groq" {
+        return this.getEnv("LLM_PROVIDER", false, "gemini") as "gemini" | "openai" | "groq";
     }
 
     getCloudflareTunnelId(): string | undefined {
