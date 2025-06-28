@@ -20,6 +20,7 @@ Access to the QA server is granted via an `ed25519` SSH key. The private key is 
 ### CI/CD Deployment
 
 The deployment process for the QA environment is automated via a GitHub Actions workflow defined in `.github/workflows/ci.yml`.
+- `GROQ_API_KEY`: Your Groq API key.
 
 *   **Workflow Job**: A dedicated job named `deploy-qa-binary` handles the deployment.
 *   **Trigger**: The workflow is triggered on every push to the `main` branch.
