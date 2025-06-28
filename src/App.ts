@@ -8,7 +8,6 @@ import { WebhookManager } from "./WebhookManager.ts";
 import { Events, SlashCommandBuilder } from "discord.js";
 import adze from "adze";
 import { createHash } from "node:crypto";
-import { HealthServer } from "./HealthServer.ts";
 import { configService } from "./services/ConfigService.ts";
 import { CloudflareService } from "./services/CloudflareService.ts";
 import { AvatarServer } from "./AvatarServer.ts";
@@ -23,7 +22,6 @@ export class App {
     private readonly webhookManager: WebhookManager;
     private readonly interactionCreateHandler: InteractionCreateHandler;
     private readonly messageCreateHandler: MessageCreateHandler;
-    private readonly healthServer: HealthServer;
     private readonly cloudflareService: CloudflareService;
     private readonly avatarServer: AvatarServer;
     private isShuttingDown = false;
@@ -46,13 +44,11 @@ export class App {
             this.discordService.client,
             this.webhookManager,
         );
-        this.healthServer = new HealthServer();
         this.cloudflareService = new CloudflareService();
         this.avatarServer = new AvatarServer();
     }
 
     public async start(): Promise<void> {
-        this.healthServer.start();
         this.avatarServer.start();
         this.cloudflareService.start();
         this.logSecretHashes();
@@ -65,7 +61,7 @@ export class App {
             }
             await this.characterService.start();
             await this.registerSlashCommands();
-            this.healthServer.setReady(true);
+            this.avatarServer.setReady(true);
             this.logger.log("Bot startup complete!");
         });
 
@@ -90,7 +86,7 @@ export class App {
     public async stop(): Promise<void> {
         this.logger.log("Shutting down...");
         this.isShuttingDown = true;
-        this.healthServer.setReady(false);
+        this.avatarServer.setReady(false);
 
         while (this.llmService.getActiveGenerations() > 0) {
             this.logger.log(`Waiting for ${this.llmService.getActiveGenerations()} active generations to complete...`);

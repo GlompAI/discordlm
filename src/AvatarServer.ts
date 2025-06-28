@@ -7,6 +7,7 @@ export class AvatarServer {
     private server: Deno.HttpServer | null = null;
     private readonly port = 18888;
     private charactersDir: string;
+    private isReady = false;
 
     constructor(charactersDir: string = "./characters") {
         // Resolve the absolute path to handle binary execution from different directories
@@ -24,6 +25,10 @@ export class AvatarServer {
         } catch (error) {
             logger.error(`Failed to start avatar server: ${error}`);
         }
+    }
+
+    public setReady(isReady: boolean) {
+        this.isReady = isReady;
     }
 
     /**
@@ -49,6 +54,18 @@ export class AvatarServer {
                 status: 200,
                 headers: { "Content-Type": "text/html" },
             });
+        }
+
+        if (url.pathname === "/healthz") {
+            return new Response("OK", { status: 200 });
+        }
+
+        if (url.pathname === "/readyz") {
+            if (this.isReady) {
+                return new Response("OK", { status: 200 });
+            } else {
+                return new Response("Not Ready", { status: 503 });
+            }
         }
 
         if (url.pathname === "/") {
