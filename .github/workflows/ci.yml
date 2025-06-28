@@ -35,16 +35,20 @@ jobs:
     needs: build-and-push
     if: github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
-    container: denoland/deno:2.3.3
     environment: qa
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Install dependencies
+      - name: Compile application
         run: |
-          apt-get update && apt-get install -y openssh-client rsync wget
+          mkdir -p dist
+          docker run --rm -v ${{ github.workspace }}:/app -w /app denoland/deno:2.3.3 \
+            deno compile --unstable-kv --allow-net --allow-env --allow-read --allow-write --target x86_64-unknown-linux-gnu --output dist/discordlm src/main.ts
+
+      - name: Download cloudflared
+        run: |
           wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cloudflared
           chmod +x cloudflared
 
@@ -52,11 +56,6 @@ jobs:
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_QA }}
-
-      - name: Compile application
-        run: |
-          mkdir -p dist
-          deno compile --unstable-kv --allow-net --allow-env --allow-read --allow-write --target x86_64-unknown-linux-gnu --output dist/discordlm src/main.ts
 
       - name: Create .env.qa from secret
         run: |
