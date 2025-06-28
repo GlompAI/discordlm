@@ -75,7 +75,6 @@ jobs:
           set -x
           ssh -o StrictHostKeyChecking=no heni@ooo.observer "chmod +x /home/heni/discordlm/discordlm"
           ssh -o StrictHostKeyChecking=no heni@ooo.observer "systemctl --user stop discordlm.service || true"
-          ssh -o StrictHostKeyChecking=no heni@ooo.observer "pkill -f discordlm || true"
           ssh -o StrictHostKeyChecking=no heni@ooo.observer "mkdir -p /home/heni/.cloudflared"
           echo "${{ secrets.CLOUDFLARE_CREDENTIALS_FILE_CONTENT }}" | ssh -o StrictHostKeyChecking=no heni@ooo.observer "cat > /home/heni/.cloudflared/22663346-58e3-4a55-ba33-02577e175488.json"
           ssh -o StrictHostKeyChecking=no heni@ooo.observer "systemctl --user daemon-reload"
