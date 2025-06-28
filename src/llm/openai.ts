@@ -38,7 +38,7 @@ export class OpenAIProvider implements LLMProvider {
         const lastHumanMessage = messages.slice().reverse().find((msg) => msg.role === "user");
         const username = lastHumanMessage?.user || "user";
 
-        const prompt = this.textEngine.buildPrompt(messages, username, character, isSFW, "openai");
+        const prompt = await this.textEngine.buildPrompt(messages, username, character, isSFW, "openai");
 
         const apiMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [];
 

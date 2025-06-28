@@ -12,13 +12,13 @@ export class TextEngine {
         this.botDiscordName = name;
     }
 
-    public buildPrompt = (
+    public buildPrompt = async (
         messages: MessageView[],
         username: string = "user",
         character?: CharacterCard,
         isSFW: boolean = false,
         provider: "gemini" | "openai" = "gemini",
-    ): Prompt => {
+    ): Promise<Prompt> => {
         const card = character;
         const systemMessages: string[] = [];
 
@@ -134,9 +134,9 @@ ${
         // 2. Build and Prune the Chat History
         let budget = 0;
         if (provider === "gemini") {
-            budget = configService.getGeminiTokenLimit() - countTokens(systemPromptText);
+            budget = configService.getGeminiTokenLimit() - await countTokens(systemPromptText, provider);
         } else {
-            budget = configService.getOpenAITokenLimit() - countTokens(systemPromptText);
+            budget = configService.getOpenAITokenLimit() - await countTokens(systemPromptText, provider);
         }
         const history: MessageView[] = [];
         const reversedMessages = messages.slice().reverse();
@@ -144,7 +144,7 @@ ${
         for (const message of reversedMessages) {
             const ownName = character?.name || character?.char_name || "Assistant";
             const content = `${message.role === "assistant" ? ownName : message.user}: ${message.message}`;
-            const tokens = countTokens(content);
+            const tokens = await countTokens(content, provider);
 
             if (budget - tokens < 0) {
                 break;
