@@ -104,7 +104,6 @@ jobs:
         run: |
           export IMAGE_TAG=${{ github.sha }}
           envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
-          cat k8s-deployment.yaml
 
       - name: Copy deployment file to server
         uses: appleboy/scp-action@master
