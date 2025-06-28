@@ -59,6 +59,7 @@ jobs:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_QA }}
 
       - name: Create .env.qa from secret
+        env:
           CHARACTER_PATH: /root/discordlm/qa/characters
         run: |
           echo "${{ secrets.ENV_QA_FILE_CONTENT }}" > .env.qa
