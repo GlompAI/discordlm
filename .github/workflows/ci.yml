@@ -95,26 +95,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-
-
-      - name: Copy deployment file to server
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ vars.SSH_HOST }}
-          username: ${{ vars.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "k8s-deployment.yaml,k8s-config.yaml,k8s-cloudflare-secret.yaml"
-          target: "/root/discordlm/"
-
-      - name: Copy deployment file to server
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ vars.SSH_HOST }}
-          username: ${{ vars.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "k8s-deployment.yaml,k8s-config.yaml,k8s-cloudflare-secret.yaml"
-          target: "/root/discordlm/"
-
       - name: Replace image tag in deployment yaml
         env:
           DEPLOYMENT_NAME: discordlm-deployment-prod
@@ -125,6 +105,15 @@ jobs:
           export IMAGE_TAG=${{ github.sha }}
           envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
           cat k8s-deployment.yaml
+
+      - name: Copy deployment file to server
+        uses: appleboy/scp-action@master
+        with:
+          host: ${{ vars.SSH_HOST }}
+          username: ${{ vars.SSH_USERNAME }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          source: "k8s-deployment.yaml,k8s-config.yaml,k8s-cloudflare-secret.yaml"
+          target: "/root/discordlm/"
 
       - name: Deploy to remote server
         uses: appleboy/ssh-action@master
