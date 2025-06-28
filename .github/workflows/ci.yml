@@ -109,16 +109,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Import Secrets from Vault
-        uses: hashicorp/vault-action@v2
-        with:
-          url: https://vault.glomp.ai
-          method: jwt
-          role: prod
-          secrets: |
-            secret/data/prod BOT_TOKEN | BOT_TOKEN ;
-            secret/data/prod GEMINI_API_KEY | GEMINI_API_KEY ;
-            secret/data/prod OPENAI_API_KEY | OPENAI_API_KEY
 
       - name: Replace image tag in deployment yaml
         env:
@@ -160,10 +150,10 @@ jobs:
               -o yaml | k3s kubectl apply -f - --overwrite --force
             k3s kubectl delete secret discordlm-secrets-prod --ignore-not-found
             k3s kubectl create secret generic discordlm-secrets-prod \
-              --from-literal=BOT_TOKEN=${{ env.BOT_TOKEN }} \
-              --from-literal=GEMINI_API_KEY=${{ env.GEMINI_API_KEY }} \
-              --from-literal=OPENAI_API_KEY=${{ env.OPENAI_API_KEY }} \
-              --from-literal=GEMINI_BASE_URL=${{ secrets.GEMINI_BASE_URL }} \
+              --from-literal=BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
+              --from-literal=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
+              --from-literal=OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
+              --from-literal=GEMINI_BASE_URL=${{ vars.GEMINI_BASE_URL }} \
               -o yaml | k3s kubectl apply -f - --overwrite
             k3s kubectl delete configmap discordlm-config-prod --ignore-not-found
             k3s kubectl create configmap discordlm-config-prod \
