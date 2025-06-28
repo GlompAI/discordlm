@@ -14,6 +14,7 @@ import { CloudflareService } from "./services/CloudflareService.ts";
 
 export class App {
     private readonly logger = adze.withEmoji.timestamp.seal();
+    private readonly version = "1.1.0";
     private readonly discordService: DiscordService;
     private readonly characterService: CharacterService;
     private readonly llmService: LLMService;

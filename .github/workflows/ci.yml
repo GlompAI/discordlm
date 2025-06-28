@@ -60,7 +60,9 @@ jobs:
         run: |
           echo "${{ secrets.SSH_PRIVATE_KEY_QA }}" > private_key.pem
           chmod 600 private_key.pem
-          rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" dist/discordlm cloudflared .env.qa heni@ooo.observer:/home/heni/discordlm/
+          rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" dist/discordlm heni@ooo.observer:/home/heni/discordlm/discordlm
+          rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" cloudflared heni@ooo.observer:/home/heni/discordlm/
+          rsync -avz -e "ssh -i private_key.pem -o StrictHostKeyChecking=no" .env.qa heni@ooo.observer:/home/heni/discordlm/
 
       - name: Deploy to remote server
         run: |
