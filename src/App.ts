@@ -63,6 +63,7 @@ export class App {
             await this.characterService.start();
             await this.registerSlashCommands();
             this.avatarServer.setReady(true);
+            await PremiumService.getInstance().init(this.discordService.client);
             this.logger.log("Bot startup complete!");
         });
 
@@ -79,7 +80,6 @@ export class App {
         });
 
         await this.discordService.login();
-        await PremiumService.getInstance().init(this.discordService.client);
 
         Deno.addSignalListener("SIGINT", () => this.stop());
         Deno.addSignalListener("SIGTERM", () => this.stop());

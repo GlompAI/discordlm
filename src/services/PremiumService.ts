@@ -21,8 +21,6 @@ export class PremiumService {
         this.client = client;
         try {
             this.guild = await this.client.guilds.fetch({ guild: configService.getPremiumGuildId(), force: true });
-            console.log("Hello!!!!!");
-            console.log(this.guild);
         } catch (exception) {
             adze.warn("Premium guild not found! Falling back...");
             console.log(exception);
