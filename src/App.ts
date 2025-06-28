@@ -11,6 +11,7 @@ import { createHash } from "node:crypto";
 import { HealthServer } from "./HealthServer.ts";
 import { configService } from "./services/ConfigService.ts";
 import { CloudflareService } from "./services/CloudflareService.ts";
+import { AvatarServer } from "./AvatarServer.ts";
 
 export class App {
     private readonly logger = adze.withEmoji.timestamp.seal();
@@ -24,6 +25,7 @@ export class App {
     private readonly messageCreateHandler: MessageCreateHandler;
     private readonly healthServer: HealthServer;
     private readonly cloudflareService: CloudflareService;
+    private readonly avatarServer: AvatarServer;
     private isShuttingDown = false;
 
     constructor() {
@@ -46,10 +48,12 @@ export class App {
         );
         this.healthServer = new HealthServer();
         this.cloudflareService = new CloudflareService();
+        this.avatarServer = new AvatarServer();
     }
 
     public async start(): Promise<void> {
         this.healthServer.start();
+        this.avatarServer.start();
         this.cloudflareService.start();
         this.logSecretHashes();
         this.discordService.onReady(async (client) => {
@@ -95,6 +99,7 @@ export class App {
 
         await this.characterService.stop();
         await this.cloudflareService.stop();
+        await this.avatarServer.stop();
         await this.discordService.destroy();
         Deno.exit();
     }
