@@ -18,7 +18,7 @@ export class AvatarServer {
      */
     start(): void {
         try {
-            this.server = Deno.serve({ port: this.port }, this.handleRequest.bind(this));
+            this.server = Deno.serve({ port: this.port, hostname: "0.0.0.0" }, this.handleRequest.bind(this));
             logger.info(`Avatar server started on http://localhost:${this.port}`);
             logger.info(`Serving avatars from: ${this.charactersDir}`);
         } catch (error) {
