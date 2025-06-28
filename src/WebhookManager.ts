@@ -10,8 +10,7 @@ import {
     WebhookMessageEditOptions,
 } from "discord.js";
 import { CharacterConfig } from "./CharacterCard.ts";
-import { getPublicAvatarBaseUrl } from "./env.ts";
-import adze from "npm:adze";
+import adze from "adze";
 
 const logger = adze.withEmoji.timestamp.seal();
 export const WEBHOOK_IDENTIFIER = "\u200B";
@@ -97,15 +96,7 @@ export class WebhookManager {
                             // Use URL directly
                             avatar = character.avatarUrl;
                         } else if (character.avatarUrl.startsWith("./") || character.avatarUrl.startsWith("/")) {
-                            // For file paths, try to use public avatar base URL
-                            const publicBaseUrl = getPublicAvatarBaseUrl();
-                            if (publicBaseUrl) {
-                                // Convert file path to public URL
-                                const fileName = character.avatarUrl.replace(/^\.\//, "").replace(/^\//, "");
-                                avatar = `${publicBaseUrl.replace(/\/$/, "")}/${fileName}`;
-                            } else {
-                                // No public URL configured, skip avatar
-                            }
+                            // No public URL configured, skip avatar
                         } else {
                             // Assume it's already a URL
                             avatar = character.avatarUrl;

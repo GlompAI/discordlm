@@ -1,16 +1,15 @@
 import { Client, Guild, Message } from "discord.js";
 import { replaceAllAsync } from "../replace.ts";
-import { GifReader } from "npm:omggif";
-import { PNG } from "npm:pngjs";
+import { GifReader } from "omggif";
+import { PNG } from "pngjs";
 import { Buffer } from "node:buffer";
 import { CharacterCard } from "../CharacterCard.ts";
-import adze from "npm:adze";
+import adze from "adze";
 import { MessageView } from "../types.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";
 import { LLMProvider } from "../llm/provider.ts";
 import { GeminiProvider } from "../llm/gemini.ts";
 import { OpenAIProvider } from "../llm/openai.ts";
-import { OllamaProvider } from "../llm/ollama.ts";
 import { configService } from "./ConfigService.ts";
 
 export class LLMService {
@@ -21,19 +20,20 @@ export class LLMService {
     constructor() {
         this.llmProvider = this.createProvider();
         if (configService.getProvider() === "gemini") {
-            this.fallbackProvider = new OpenAIProvider();
+            this.fallbackProvider = new OpenAIProvider(configService.getModel("openai"));
         }
     }
 
     private createProvider(): LLMProvider {
         const provider = configService.getProvider();
+        const model = configService.getModel(provider);
         switch (provider) {
             case "openai":
-                return new OpenAIProvider();
-            case "ollama":
-                return new OllamaProvider();
+                return new OpenAIProvider(model);
             case "gemini":
-                return new GeminiProvider();
+                return new GeminiProvider(model);
+            case "groq":
+                return new OpenAIProvider(model);
             default:
                 throw new Error(`Unknown LLM provider: ${provider}`);
         }

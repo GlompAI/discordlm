@@ -20,7 +20,7 @@ import { CharacterService } from "../services/CharacterService.ts";
 import { dumpDebug } from "../debug.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";
 import { getHelpText } from "../utils.ts";
-import adze from "npm:adze";
+import adze from "adze";
 import { WebhookManager } from "../WebhookManager.ts";
 import { ComponentService } from "../services/ComponentService.ts";
 import { LLMService } from "../services/LLMService.ts";
@@ -120,9 +120,8 @@ export class InteractionCreateHandler {
 
         if (interaction.customId === "delete") {
             if (interaction.channel?.type === ChannelType.DM) {
-                const premiumGuild = await this.client.guilds.fetch("1304097485136072714");
-                const member = await premiumGuild.members.fetch({ user: interaction.user.id, force: true });
                 const premiumService = PremiumService.getInstance();
+                const member = await premiumService.guild?.members.fetch({ user: interaction.user.id, force: true });
                 if (!member || !await premiumService.isPremium(member)) {
                     await interaction.reply({
                         content: "You must be a premium user to delete messages in DMs.",

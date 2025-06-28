@@ -3,7 +3,7 @@ import { WebhookManager } from "../WebhookManager.ts";
 import { AvatarServer } from "../AvatarServer.ts";
 import { configService } from "./ConfigService.ts";
 import { Client, TextBasedChannel } from "discord.js";
-import adze from "npm:adze";
+import adze from "adze";
 import { CharacterConfig } from "../CharacterCard.ts";
 
 export class CharacterService {
@@ -16,29 +16,21 @@ export class CharacterService {
     }
 
     public async start(): Promise<void> {
+        const hostname = configService.getCloudflareHostname();
         let avatarBaseUrl: string | undefined;
-        const publicAvatarBaseUrl = configService.getPublicAvatarBaseUrl();
 
-        if (publicAvatarBaseUrl) {
-            avatarBaseUrl = publicAvatarBaseUrl;
-            this.logger.log(`Using public avatar base URL: ${avatarBaseUrl}`);
-        }
-
-        if (configService.isAvatarServerEnabled()) {
+        if (hostname) {
+            avatarBaseUrl = `https://${hostname}`;
+            this.logger.log(`Using Cloudflare tunnel for avatars: ${avatarBaseUrl}`);
+        } else {
             this.logger.log(`Starting local avatar server...`);
-            this.avatarServer = new AvatarServer(configService.getAvatarServerPort());
+            this.avatarServer = new AvatarServer();
             await this.avatarServer.start();
-
-            if (!publicAvatarBaseUrl) {
-                avatarBaseUrl = `http://localhost:${configService.getAvatarServerPort()}`;
-                this.logger.log(`Local avatar server started with base URL: ${avatarBaseUrl}`);
-            } else {
-                this.logger.log(
-                    `Local avatar server started on port ${configService.getAvatarServerPort()} (proxied via ${publicAvatarBaseUrl})`,
-                );
-            }
+            avatarBaseUrl = `http://localhost:8080`;
+            this.logger.log(`Local avatar server started with base URL: ${avatarBaseUrl}`);
         }
 
+        this.logger.log(`[DEBUG] Determined avatarBaseUrl: ${avatarBaseUrl}`);
         this.logger.log(`Loading characters from ./characters with avatar base URL: ${avatarBaseUrl}`);
         await this.characterManager.loadCharacters("./characters", avatarBaseUrl);
         await this.characterManager.loadAssistantCharacter("./characters");

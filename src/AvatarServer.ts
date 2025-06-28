@@ -1,15 +1,14 @@
-import adze from "npm:adze";
+import adze from "adze";
 import { MetricsService } from "./services/MetricsService.ts";
 
 const logger = adze.withEmoji.timestamp.seal();
 
 export class AvatarServer {
     private server: Deno.HttpServer | null = null;
-    private port: number;
+    private readonly port = 18888;
     private charactersDir: string;
 
-    constructor(port: number = 8080, charactersDir: string = "./characters") {
-        this.port = port;
+    constructor(charactersDir: string = "./characters") {
         // Resolve the absolute path to handle binary execution from different directories
         this.charactersDir = new URL(charactersDir, `file://${Deno.cwd()}/`).pathname;
     }
@@ -19,7 +18,7 @@ export class AvatarServer {
      */
     start(): void {
         try {
-            this.server = Deno.serve({ port: this.port }, this.handleRequest.bind(this));
+            this.server = Deno.serve({ port: this.port, hostname: "0.0.0.0" }, this.handleRequest.bind(this));
             logger.info(`Avatar server started on http://localhost:${this.port}`);
             logger.info(`Serving avatars from: ${this.charactersDir}`);
         } catch (error) {

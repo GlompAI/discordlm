@@ -286,7 +286,7 @@ export async function loadCharacterCards(
         const entries = Deno.readDir(resolvedDir);
 
         for await (const entry of entries) {
-            if (entry.isFile) {
+            if (entry.isFile && !entry.name.startsWith("._")) {
                 const filePath = `${resolvedDir}/${entry.name}`;
                 let card: CharacterCard | null = null;
                 let avatarUrl: string | undefined;
@@ -317,6 +317,7 @@ export async function loadCharacterCards(
                         filename: entry.name,
                         avatarUrl,
                     });
+                    console.log(`[DEBUG] Loaded character ${normalizedCard.name} with avatarUrl: ${avatarUrl}`);
                 } else if (entry.name.toLowerCase().endsWith(".png") || entry.name.toLowerCase().endsWith(".json")) {
                     console.warn(`No character data found in ${entry.name}`);
                 }

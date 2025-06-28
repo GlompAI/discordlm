@@ -6,13 +6,16 @@ import { InteractionCreateHandler } from "./handlers/InteractionCreateHandler.ts
 import { MessageCreateHandler } from "./handlers/MessageCreateHandler.ts";
 import { WebhookManager } from "./WebhookManager.ts";
 import { Events, SlashCommandBuilder } from "discord.js";
-import adze from "npm:adze";
+import adze from "adze";
 import { createHash } from "node:crypto";
 import { HealthServer } from "./HealthServer.ts";
 import { configService } from "./services/ConfigService.ts";
+import { CloudflareService } from "./services/CloudflareService.ts";
+import { AvatarServer } from "./AvatarServer.ts";
 
 export class App {
     private readonly logger = adze.withEmoji.timestamp.seal();
+    private readonly version = "1.1.0";
     private readonly discordService: DiscordService;
     private readonly characterService: CharacterService;
     private readonly llmService: LLMService;
@@ -21,6 +24,8 @@ export class App {
     private readonly interactionCreateHandler: InteractionCreateHandler;
     private readonly messageCreateHandler: MessageCreateHandler;
     private readonly healthServer: HealthServer;
+    private readonly cloudflareService: CloudflareService;
+    private readonly avatarServer: AvatarServer;
     private isShuttingDown = false;
 
     constructor() {
@@ -42,10 +47,14 @@ export class App {
             this.webhookManager,
         );
         this.healthServer = new HealthServer();
+        this.cloudflareService = new CloudflareService();
+        this.avatarServer = new AvatarServer();
     }
 
     public async start(): Promise<void> {
         this.healthServer.start();
+        this.avatarServer.start();
+        this.cloudflareService.start();
         this.logSecretHashes();
         this.discordService.onReady(async (client) => {
             if (client.user) {
@@ -89,6 +98,8 @@ export class App {
         }
 
         await this.characterService.stop();
+        await this.cloudflareService.stop();
+        await this.avatarServer.stop();
         await this.discordService.destroy();
         Deno.exit();
     }
@@ -142,12 +153,9 @@ export class App {
             "GEMINI_TOKEN_LIMIT",
             "OPENAI_TOKEN_LIMIT",
             "RATE_LIMIT_PER_MINUTE",
-            "ENABLE_AVATAR_SERVER",
-            "PUBLIC_AVATAR_BASE_URL",
             "DEBUG",
             "MAX_HISTORY_MESSAGES",
             "OPENAI_BASE_URL",
-            "PUBLIC_AVATAR_BASE_URL",
             "GEMINI_BASE_URL",
             "OPENAI_BASE_URL",
         ];
