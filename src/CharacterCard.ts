@@ -317,6 +317,7 @@ export async function loadCharacterCards(
                         filename: entry.name,
                         avatarUrl,
                     });
+                    console.log(`[DEBUG] Loaded character ${normalizedCard.name} with avatarUrl: ${avatarUrl}`);
                 } else if (entry.name.toLowerCase().endsWith(".png") || entry.name.toLowerCase().endsWith(".json")) {
                     console.warn(`No character data found in ${entry.name}`);
                 }

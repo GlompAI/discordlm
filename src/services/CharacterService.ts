@@ -30,6 +30,7 @@ export class CharacterService {
             this.logger.log(`Local avatar server started with base URL: ${avatarBaseUrl}`);
         }
 
+        this.logger.log(`[DEBUG] Determined avatarBaseUrl: ${avatarBaseUrl}`);
         this.logger.log(`Loading characters from ./characters with avatar base URL: ${avatarBaseUrl}`);
         await this.characterManager.loadCharacters("./characters", avatarBaseUrl);
         await this.characterManager.loadAssistantCharacter("./characters");
