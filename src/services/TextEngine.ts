@@ -17,7 +17,7 @@ export class TextEngine {
         username: string = "user",
         character?: CharacterCard,
         isSFW: boolean = false,
-        provider: "gemini" | "openai" | "ollama" = "gemini",
+        provider: "gemini" | "openai" = "gemini",
     ): Prompt => {
         const card = character;
         const systemMessages: string[] = [];

@@ -10,7 +10,6 @@ import { RESET_MESSAGE_CONTENT } from "../main.ts";
 import { LLMProvider } from "../llm/provider.ts";
 import { GeminiProvider } from "../llm/gemini.ts";
 import { OpenAIProvider } from "../llm/openai.ts";
-import { OllamaProvider } from "../llm/ollama.ts";
 import { configService } from "./ConfigService.ts";
 
 export class LLMService {
@@ -31,8 +30,6 @@ export class LLMService {
         switch (provider) {
             case "openai":
                 return new OpenAIProvider(model);
-            case "ollama":
-                return new OllamaProvider();
             case "gemini":
                 return new GeminiProvider(model);
             default:

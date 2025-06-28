@@ -5,11 +5,10 @@ const logger = adze.withEmoji.timestamp.seal();
 
 export class AvatarServer {
     private server: Deno.HttpServer | null = null;
-    private port: number;
+    private readonly port = 8080;
     private charactersDir: string;
 
-    constructor(port: number = 8080, charactersDir: string = "./characters") {
-        this.port = port;
+    constructor(charactersDir: string = "./characters") {
         // Resolve the absolute path to handle binary execution from different directories
         this.charactersDir = new URL(charactersDir, `file://${Deno.cwd()}/`).pathname;
     }

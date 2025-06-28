@@ -43,15 +43,9 @@ export class ConfigService {
         return this.getEnv("OPENAI_CUSTOM_HEADER_KEY", false, "x-api-key");
     }
 
-    getOllamaHost(): string {
-        return this.getEnv("OLLAMA_HOST", false, "http://localhost:11434");
-    }
-
-    getModel(provider?: "gemini" | "openai" | "ollama"): string {
+    getModel(provider?: "gemini" | "openai"): string {
         if (provider === "openai") {
             return this.getEnv("OPENAI_MODEL_NAME", false, "gpt-4-turbo");
-        } else if (provider === "ollama") {
-            return this.getEnv("OLLAMA_MODEL_NAME", false, "");
         }
         return this.getEnv("GEMINI_MODEL_NAME", false, "gemini-1.5-flash");
     }
@@ -76,17 +70,6 @@ export class ConfigService {
         return adminIds.split(";").filter((id) => id.trim() !== "");
     }
 
-    isAvatarServerEnabled(): boolean {
-        return this.getEnv("ENABLE_AVATAR_SERVER", false, "false") === "true";
-    }
-
-    getAvatarServerPort(): number {
-        return parseInt(this.getEnv("AVATAR_PORT", false, "8080"));
-    }
-
-    getPublicAvatarBaseUrl(): string | undefined {
-        return this.getEnv("PUBLIC_AVATAR_BASE_URL", false, "");
-    }
 
     isDebugEnabled(): boolean {
         return this.getEnv("DEBUG", false, "false") === "true";
@@ -119,8 +102,20 @@ export class ConfigService {
         return parseInt(this.getEnv("MAX_HISTORY_MESSAGES", false, "200"));
     }
 
-    getProvider(): "gemini" | "openai" | "ollama" {
-        return this.getEnv("LLM_PROVIDER", false, "gemini") as "gemini" | "openai" | "ollama";
+    getProvider(): "gemini" | "openai" {
+        return this.getEnv("LLM_PROVIDER", false, "gemini") as "gemini" | "openai";
+    }
+
+    getCloudflareTunnelId(): string | undefined {
+        return this.getEnv("CLOUDFLARE_TUNNEL_ID", false, "");
+    }
+
+    getCloudflareCredentialsFile(): string | undefined {
+        return this.getEnv("CLOUDFLARE_CREDENTIALS_FILE", false, "");
+    }
+
+    getCloudflareHostname(): string | undefined {
+        return this.getEnv("CLOUDFLARE_HOSTNAME", false, "");
     }
 }
 
