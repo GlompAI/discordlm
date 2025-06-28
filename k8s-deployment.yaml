@@ -6,11 +6,11 @@ spec:
   replicas: 1
   selector:
     matchLabels:
-      app: discordlm
+      app: ${DEPLOYMENT_NAME}
   template:
     metadata:
       labels:
-        app: discordlm
+        app: ${DEPLOYMENT_NAME}
     spec:
       containers:
       - name: discordlm
