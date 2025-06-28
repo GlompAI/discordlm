@@ -52,7 +52,7 @@ export class ConfigService {
             return this.getEnv("OPENAI_MODEL_NAME", false, "gpt-4-turbo");
         }
         if (provider === "groq") {
-            return this.getEnv("GROQ_MODEL_NAME", false, "llama3-8b-8192");
+            return this.getEnv("GROQ_MODEL_NAME", false, "deepseek-r1-distill-llama-70b");
         }
         return this.getEnv("GEMINI_MODEL_NAME", false, "gemini-1.5-flash");
     }
