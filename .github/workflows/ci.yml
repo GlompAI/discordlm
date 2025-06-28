@@ -69,6 +69,7 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY_QA }}" > private_key.pem
           chmod 600 private_key.pem
           ssh -i private_key.pem -o StrictHostKeyChecking=no heni@ooo.observer " \
+            rm -rf /home/heni/discordlm/dist && \
             rm -f /home/heni/discordlm/discordlm && \
             mv /home/heni/discordlm/dist/discordlm /home/heni/discordlm/discordlm && \
             mkdir -p .cloudflared && \
