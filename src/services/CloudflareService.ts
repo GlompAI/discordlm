@@ -13,7 +13,7 @@ export class CloudflareService {
 
         if (tunnelId && credentialsFile && hostname) {
             logger.info(`Starting permanent Cloudflare tunnel for ${hostname}`);
-            this.process = new Deno.Command("./cloudflared", {
+            this.process = new Deno.Command("cloudflared", {
                 args: [
                     "tunnel",
                     "--no-autoupdate",
@@ -27,7 +27,7 @@ export class CloudflareService {
             }).spawn();
         } else {
             logger.info("Starting temporary Cloudflare tunnel");
-            this.process = new Deno.Command("./cloudflared", {
+            this.process = new Deno.Command("cloudflared", {
                 args: [
                     "tunnel",
                     "--url",
