@@ -69,6 +69,8 @@ jobs:
           echo "${{ secrets.SSH_PRIVATE_KEY_QA }}" > private_key.pem
           chmod 600 private_key.pem
           ssh -i private_key.pem -o StrictHostKeyChecking=no heni@ooo.observer " \
+            rm -f /home/heni/discordlm/discordlm && \
+            mv /home/heni/discordlm/dist/discordlm /home/heni/discordlm/discordlm && \
             mkdir -p .cloudflared && \
             echo '${{ secrets.CLOUDFLARE_CREDENTIALS_FILE_CONTENT }}' > .cloudflared/22663346-58e3-4a55-ba33-02577e175488.json && \
             systemctl --user restart discordlm.service"
