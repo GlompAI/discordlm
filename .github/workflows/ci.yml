@@ -113,8 +113,8 @@ jobs:
       - name: Copy deployment file to server
         uses: appleboy/scp-action@master
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
+          host: ${{ vars.SSH_HOST }}
+          username: ${{ vars.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "k8s-deployment.yaml,k8s-config.yaml"
           target: "/root/discordlm/"
@@ -124,8 +124,8 @@ jobs:
         env:
           DEPLOYMENT_NAME: discordlm-deployment-prod
         with:
-          host: ${{ secrets.SSH_HOST }}
-          username: ${{ secrets.SSH_USERNAME }}
+          host: ${{ vars.SSH_HOST }}
+          username: ${{ vars.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           script: |
             k3s kubectl delete secret docker-registry regcred --ignore-not-found
