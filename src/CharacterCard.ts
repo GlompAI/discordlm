@@ -68,6 +68,7 @@ export interface CharacterCard {
     scenario: string;
     first_mes: string;
     mes_example: string;
+    alternate_greetings?: string[];
     metadata?: {
         version?: number;
         created?: number;
@@ -99,6 +100,7 @@ function normalizeCard(card: Partial<CharacterCard | CharacterCardV2 | Character
             normalized.scenario = v2.data.scenario;
             normalized.first_mes = v2.data.first_mes;
             normalized.mes_example = v2.data.mes_example;
+            normalized.alternate_greetings = v2.data.alternate_greetings;
         } else if (card.spec === "chara_card_v3") {
             const v3 = card as CharacterCardV3;
             normalized.name = v3.name;
@@ -165,13 +167,18 @@ export async function parseCharacterCardFromPNG(filePath: string): Promise<Chara
                         try {
                             const text = new TextDecoder().decode(chunkData.slice(nullIndex + 1));
                             try {
-                                // First, try to parse as plain JSON
-                                return JSON.parse(text) as CharacterCard;
-                            } catch {
-                                // If that fails, try to decode from Base64
+                                // First, try to decode from Base64
                                 const decodedData = decodeBase64(text);
                                 const jsonString = new TextDecoder().decode(decodedData);
-                                return JSON.parse(jsonString) as CharacterCard;
+                                const card = JSON.parse(jsonString);
+                                // Check if it's a V2/V3 card and adapt it
+                                if (card.spec === "chara_card_v2" || card.spec === "chara_card_v3") {
+                                    return card;
+                                }
+                                return card as CharacterCard;
+                            } catch {
+                                // If that fails, try to parse as plain JSON
+                                return JSON.parse(text) as CharacterCard;
                             }
                         } catch (e) {
                             console.warn(`Failed to parse character data from ${filePath}:`, e);

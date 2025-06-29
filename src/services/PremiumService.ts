@@ -45,7 +45,7 @@ export class PremiumService {
             return true;
         }
 
-        const roles = member.roles.cache.map(role => role.id);
+        const roles = member.roles.cache.map((role) => role.id);
         this.logger.info(`Member roles: ${roles.join(", ")}`);
 
         if (member.roles.cache.has("1387978615450239149")) {

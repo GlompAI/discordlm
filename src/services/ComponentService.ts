@@ -27,6 +27,42 @@ export class ComponentService {
         return row;
     }
 
+    public createIntroActionRow(
+        characterName: string,
+        greetingIndex: number,
+        totalGreetings: number,
+        disabled = false,
+    ): ActionRowBuilder<ButtonBuilder> {
+        const row = new ActionRowBuilder<ButtonBuilder>()
+            .addComponents(
+                new ButtonBuilder()
+                    .setCustomId("reroll")
+                    .setLabel("Reroll")
+                    .setStyle(ButtonStyle.Primary)
+                    .setEmoji("♻️")
+                    .setDisabled(disabled),
+                new ButtonBuilder()
+                    .setCustomId("delete")
+                    .setLabel("Delete")
+                    .setStyle(ButtonStyle.Danger)
+                    .setEmoji("❌")
+                    .setDisabled(disabled),
+                new ButtonBuilder()
+                    .setCustomId(`prev-greeting-${characterName}-${greetingIndex - 1}`)
+                    .setLabel("Previous")
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji("⬅️")
+                    .setDisabled(disabled || greetingIndex <= 0),
+                new ButtonBuilder()
+                    .setCustomId(`next-greeting-${characterName}-${greetingIndex + 1}`)
+                    .setLabel("Next")
+                    .setStyle(ButtonStyle.Secondary)
+                    .setEmoji("➡️")
+                    .setDisabled(disabled || greetingIndex >= totalGreetings - 1),
+            );
+        return row;
+    }
+
     public createCharacterSelectMenu(
         characters: CharacterConfig[],
         currentCharacter?: CharacterConfig | null,

@@ -112,6 +112,11 @@ export class App {
                         .setDescription("The character to switch to (optional, will show a menu if not provided)")
                         .setRequired(false)
                         .setAutocomplete(true)
+                )
+                .addBooleanOption((option) =>
+                    option.setName("intro")
+                        .setDescription("Show the character's introduction message (default: true, DMs only)")
+                        .setRequired(false)
                 ),
             new SlashCommandBuilder()
                 .setName("list")

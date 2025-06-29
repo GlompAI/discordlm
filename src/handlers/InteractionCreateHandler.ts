@@ -222,23 +222,70 @@ export class InteractionCreateHandler {
             const newReply = await this.generateListReply(currentPage, interaction.channel as TextChannel);
             await (interaction as ButtonInteraction).update(newReply);
         }
+
+        if (interaction.customId.startsWith("prev-greeting-") || interaction.customId.startsWith("next-greeting-")) {
+            if (!interaction.isButton()) return;
+
+            const [_, __, characterName, greetingIndexStr] = interaction.customId.split("-");
+            const greetingIndex = parseInt(greetingIndexStr);
+
+            const character = this.characterService.getCharacter(characterName);
+            if (!character) {
+                await interaction.reply({ content: "Character not found.", ephemeral: true });
+                return;
+            }
+
+            const greetings = [character.card.first_mes, ...(character.card.alternate_greetings || [])];
+            if (greetingIndex < 0 || greetingIndex >= greetings.length) {
+                await interaction.reply({ content: "Invalid greeting index.", ephemeral: true });
+                return;
+            }
+
+            const embed = new EmbedBuilder()
+                .setAuthor({ name: character.card.name })
+                .setThumbnail(character.avatarUrl ?? null)
+                .setColor(0x5865F2)
+                .setDescription(greetings[greetingIndex]);
+
+            const actionRow = this.componentService.createIntroActionRow(
+                character.card.name,
+                greetingIndex,
+                greetings.length,
+            );
+
+            await interaction.update({ embeds: [embed], components: [actionRow] });
+        }
     }
 
     private async handleSwitchCommand(interaction: ChatInputCommandInteraction) {
         const characterName = interaction.options.getString("character");
+        const showIntro = interaction.options.getBoolean("intro") ?? true;
+
         if (characterName) {
-            // Handle old command format
             const character = this.characterService.getCharacter(characterName);
-            if (character) {
-                const replyContent = interaction.channel?.type === ChannelType.DM
-                    ? `Switched to ${character.card.name}\nYou may wish to /reset.`
-                    : `Switched to ${character.card.name}`;
-                await interaction.reply(replyContent);
-            } else {
+            if (!character) {
                 const availableChars = this.characterService.getCharacters().map((c) => c.card.name).join(", ");
                 await interaction.reply(
                     `Character "${characterName}" not found. Available characters: ${availableChars}`,
                 );
+                return;
+            }
+
+            if (interaction.channel?.type === ChannelType.DM && showIntro) {
+                const greetings = [character.card.first_mes, ...(character.card.alternate_greetings || [])];
+                const embed = new EmbedBuilder()
+                    .setAuthor({ name: character.card.name })
+                    .setThumbnail(character.avatarUrl ?? null)
+                    .setColor(0x5865F2)
+                    .setDescription(greetings[0]);
+
+                const actionRow = this.componentService.createIntroActionRow(character.card.name, 0, greetings.length);
+                await interaction.reply({ embeds: [embed], components: [actionRow] });
+            } else {
+                const replyContent = interaction.channel?.type === ChannelType.DM
+                    ? `Switched to ${character.card.name}\nYou may wish to /reset.`
+                    : `Switched to ${character.card.name}`;
+                await interaction.reply(replyContent);
             }
         } else {
             // New dropdown format

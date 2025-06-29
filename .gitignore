@@ -130,3 +130,14 @@ Temporary Items
 characters/*.png
 
 .env.qa
+
+# Ignore fetched and new character directories
+fetched_cards/
+new_characters/
+
+# Ignore noisy scripts
+audit_cards.ts
+cleanup.ts
+fetch_cards.ts
+final_process.ts
+leave_guild.ts
