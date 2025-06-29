@@ -282,11 +282,13 @@ export class InteractionCreateHandler {
                 const embed = new EmbedBuilder()
                     .setAuthor({ name: characterName })
                     .setThumbnail(character.avatarUrl ?? null)
-                    .setColor(0x5865F2)
                     .setDescription(this.fixGreeting(greetings[0], interaction.user.displayName, characterName));
 
+                const replyContent = interaction.channel?.type === ChannelType.DM
+                    ? `Switched to ${characterName}\nYou may wish to /reset.`
+                    : `Switched to ${characterName}`;
                 const actionRow = this.componentService.createIntroActionRow(character.card.name, 0, greetings.length);
-                await interaction.reply({ embeds: [embed], components: [actionRow] });
+                await interaction.reply({ content: replyContent, embeds: [embed], components: [actionRow] });
             } else {
                 const replyContent = interaction.channel?.type === ChannelType.DM
                     ? `Switched to ${characterName}\nYou may wish to /reset.`

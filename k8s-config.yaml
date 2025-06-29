@@ -1,9 +1,9 @@
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: discordlm-config
+    name: discordlm-config
 data:
-  LLM_PROVIDER: "gemini"
-  GEMINI_MODEL_NAME: "models/gemini-2.5-flash"
-  OPENAI_MODEL_NAME: "Q3-30B-A3B-EXL3_8.0bpw_H8"
-  OPENAI_VISION_SUPPORT: "false"
+    LLM_PROVIDER: "gemini"
+    GEMINI_MODEL_NAME: "models/gemini-2.5-flash"
+    OPENAI_MODEL_NAME: "Q3-30B-A3B-EXL3_8.0bpw_H8"
+    OPENAI_VISION_SUPPORT: "false"

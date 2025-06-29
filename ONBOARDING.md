@@ -8,22 +8,22 @@ Discord LM is a Deno-based Discord bot that provides a platform for creating and
 
 ## 2. Technical Stack
 
-*   **Language**: Deno/TypeScript
-*   **Libraries**:
-    *   `discord.js`: For interacting with the Discord API.
-    *   `@google/generative-ai`: For interacting with the Google Generative AI API.
-    *   `openai`: For interacting with OpenAI-compatible APIs.
-*   **Containerization**: Docker
-*   **Orchestration**: Kubernetes (K3s)
-*   **CI/CD**: GitHub Actions
-*   **Secrets Management**: HashiCorp Vault
+- **Language**: Deno/TypeScript
+- **Libraries**:
+  - `discord.js`: For interacting with the Discord API.
+  - `@google/generative-ai`: For interacting with the Google Generative AI API.
+  - `openai`: For interacting with OpenAI-compatible APIs.
+- **Containerization**: Docker
+- **Orchestration**: Kubernetes (K3s)
+- **CI/CD**: GitHub Actions
+- **Secrets Management**: HashiCorp Vault
 
 ## 3. Server Environment
 
-*   **Server**: `giga.pingas.org`
-*   **Operating System**: Ubuntu
-*   **Web Server**: Caddy (used as a reverse proxy)
-*   **Container Runtime**: Docker
+- **Server**: `giga.pingas.org`
+- **Operating System**: Ubuntu
+- **Web Server**: Caddy (used as a reverse proxy)
+- **Container Runtime**: Docker
 
 ## 4. CI/CD Pipeline
 

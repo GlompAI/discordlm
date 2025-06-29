@@ -80,31 +80,30 @@ This will create a binary at `dist/discordlm` that can be run without having Den
 
 The following environment variables are required:
 
-| Variable | Description | Required | Default |
-|----------|-------------|----------|---------|
-| `BOT_TOKEN` | Discord bot token from Discord Developer Portal | Yes | - |
-| `LLM_PROVIDER` | The LLM provider to use (`gemini`, `openai`, `ollama`) | No | `gemini` |
-| `GEMINI_MODEL_NAME` | The model name to use for the Gemini provider | No | `gemini-2.5-flash` |
-| `OPENAI_MODEL_NAME` | The model name to use for the OpenAI provider | No | `gpt-4-turbo` |
-| `GEMINI_API_KEY` | Your Google Gemini API key | Yes (if provider is `gemini`) | - |
-| `GEMINI_BASE_URL` | Custom base URL for the Gemini API | No | - |
-| `OPENAI_API_KEY` | Your OpenAI API key | Yes (if provider is `openai`) | - |
-| `OPENAI_BASE_URL` | Custom base URL for the OpenAI API | No | `https://api.openai.com/v1` |
-| `OPENAI_VISION_SUPPORT` | Enable vision support for OpenAI-compatible APIs | No | `false` |
-| `OPENAI_CUSTOM_HEADER_KEY` | Custom header for OpenAI-compatible APIs | No | `x-api-key` |
-| `OLLAMA_HOST` | The host for the Ollama API | No | `http://localhost:11434` |
-| `GEMINI_TOKEN_LIMIT` | Maximum token context to send to the Gemini API | No | `1000000` |
-| `OPENAI_TOKEN_LIMIT` | Maximum token context to send to the OpenAI API | No | `32768` |
-| `MAX_HISTORY_MESSAGES` | Maximum number of messages to fetch for history | No | `300` |
-| `RATE_LIMIT_PER_MINUTE` | Maximum requests per user per minute | No | `4` |
-| `LIMIT_USER_IDS` | Semicolon-separated list of user IDs to apply a lower rate limit to | No | - |
-| `INFERENCE_PARALLELISM` | Number of parallel inference requests to allow | No | `10` |
-| `ADMIN_OVERRIDE_ID` | User ID to bypass administrator checks | No | - |
-| `ENABLE_AVATAR_SERVER` | Enable the avatar server for webhooks | No | `false` |
-| `AVATAR_PORT` | Port for the avatar server | No | `8080` |
-| `PUBLIC_AVATAR_BASE_URL` | Publicly accessible base URL for the avatar server | No | - |
-| `DEBUG` | Enable debug logging | No | `false` |
-
+| Variable                   | Description                                                         | Required                      | Default                     |
+| -------------------------- | ------------------------------------------------------------------- | ----------------------------- | --------------------------- |
+| `BOT_TOKEN`                | Discord bot token from Discord Developer Portal                     | Yes                           | -                           |
+| `LLM_PROVIDER`             | The LLM provider to use (`gemini`, `openai`, `ollama`)              | No                            | `gemini`                    |
+| `GEMINI_MODEL_NAME`        | The model name to use for the Gemini provider                       | No                            | `gemini-2.5-flash`          |
+| `OPENAI_MODEL_NAME`        | The model name to use for the OpenAI provider                       | No                            | `gpt-4-turbo`               |
+| `GEMINI_API_KEY`           | Your Google Gemini API key                                          | Yes (if provider is `gemini`) | -                           |
+| `GEMINI_BASE_URL`          | Custom base URL for the Gemini API                                  | No                            | -                           |
+| `OPENAI_API_KEY`           | Your OpenAI API key                                                 | Yes (if provider is `openai`) | -                           |
+| `OPENAI_BASE_URL`          | Custom base URL for the OpenAI API                                  | No                            | `https://api.openai.com/v1` |
+| `OPENAI_VISION_SUPPORT`    | Enable vision support for OpenAI-compatible APIs                    | No                            | `false`                     |
+| `OPENAI_CUSTOM_HEADER_KEY` | Custom header for OpenAI-compatible APIs                            | No                            | `x-api-key`                 |
+| `OLLAMA_HOST`              | The host for the Ollama API                                         | No                            | `http://localhost:11434`    |
+| `GEMINI_TOKEN_LIMIT`       | Maximum token context to send to the Gemini API                     | No                            | `1000000`                   |
+| `OPENAI_TOKEN_LIMIT`       | Maximum token context to send to the OpenAI API                     | No                            | `32768`                     |
+| `MAX_HISTORY_MESSAGES`     | Maximum number of messages to fetch for history                     | No                            | `300`                       |
+| `RATE_LIMIT_PER_MINUTE`    | Maximum requests per user per minute                                | No                            | `4`                         |
+| `LIMIT_USER_IDS`           | Semicolon-separated list of user IDs to apply a lower rate limit to | No                            | -                           |
+| `INFERENCE_PARALLELISM`    | Number of parallel inference requests to allow                      | No                            | `10`                        |
+| `ADMIN_OVERRIDE_ID`        | User ID to bypass administrator checks                              | No                            | -                           |
+| `ENABLE_AVATAR_SERVER`     | Enable the avatar server for webhooks                               | No                            | `false`                     |
+| `AVATAR_PORT`              | Port for the avatar server                                          | No                            | `8080`                      |
+| `PUBLIC_AVATAR_BASE_URL`   | Publicly accessible base URL for the avatar server                  | No                            | -                           |
+| `DEBUG`                    | Enable debug logging                                                | No                            | `false`                     |
 
 ### Example Environment Setup
 
@@ -139,18 +138,18 @@ docker run -d \
 Or using docker-compose, create a `docker-compose.yml` file:
 
 ```yaml
-version: '3.8'
+version: "3.8"
 services:
-  discordlm:
-    build: .
-    environment:
-      - BOT_TOKEN=your_discord_bot_token
-      - GEMINI_API_KEY=your_gemini_api_key
-      - GEMINI_MODEL_NAME=models/gemini-2.5-flash
-    volumes:
-      - ./characters:/app/characters
-      - ./logs:/app/logs
-    restart: unless-stopped
+    discordlm:
+        build: .
+        environment:
+            - BOT_TOKEN=your_discord_bot_token
+            - GEMINI_API_KEY=your_gemini_api_key
+            - GEMINI_MODEL_NAME=models/gemini-2.5-flash
+        volumes:
+            - ./characters:/app/characters
+            - ./logs:/app/logs
+        restart: unless-stopped
 ```
 
 Then run with:
@@ -177,6 +176,7 @@ The bot includes a per-user rate limiting system to prevent abuse:
 - **In-memory storage**: Rate limits are stored in memory and reset on bot restart
 
 When a user exceeds the rate limit, they'll see a message like:
+
 ```
 ⏱️ Rate limited. Try again in 45s.
 ```
@@ -196,6 +196,7 @@ These features are managed by checking for a specific role (`Super Glomper`) in 
 ## Permissions Required
 
 The bot needs the following Discord permissions:
+
 - Read Messages
 - Send Messages
 - Read Message History
@@ -204,4 +205,3 @@ The bot needs the following Discord permissions:
 ## License
 
 See LICENSE.md for licensing information.
-

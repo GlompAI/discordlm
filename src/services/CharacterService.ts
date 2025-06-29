@@ -82,10 +82,13 @@ export class CharacterService {
                 }
             }
 
-            if (message.embeds.length > 0 && message.embeds[0].title) {
-                const character = this.getCharacter(message.embeds[0].title);
-                // Skip Aria embeds from old interactions
-                if (character && character.card.name !== "Aria") {
+            if (message.embeds.length > 0 && (message.embeds[0].author?.name || message.embeds[0].title)) {
+                const charName = message.embeds[0].author?.name || message.embeds[0].title;
+                if (!charName) {
+                    return this.getAssistantCharacter();
+                }
+                const character = this.getCharacter(charName);
+                if (character) {
                     return character;
                 }
             }

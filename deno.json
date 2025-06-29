@@ -9,7 +9,7 @@
     },
     "lint": {
         "include": [
-            "src/"
+            "src/**/**"
         ],
         "rules": {
             "tags": [
@@ -23,18 +23,10 @@
         "indentWidth": 4,
         "semiColons": true,
         "singleQuote": false,
-        "proseWrap": "preserve",
-        "include": [
-            "src/"
-        ]
+        "proseWrap": "preserve"
     },
-    "lock": false,
+    "lock": true,
     "nodeModulesDir": "none",
-    "test": {
-        "include": [
-            "src/"
-        ]
-    },
     "tasks": {
         "start": "deno run --unstable-kv --allow-run --allow-net --allow-env --allow-read --allow-write src/main.ts",
         "dev": "deno run --unstable-kv --allow-run --allow-net --allow-env --allow-read --allow-write --watch src/main.ts",

@@ -1,154 +1,154 @@
 name: CI/CD - Build, Push, and Deploy
 
 on:
-  push:
-    branches: [ "main", "prod" ]
+    push:
+        branches: ["main", "prod"]
 
 jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      packages: write
+    build-and-push:
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+            packages: write
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
 
-      - name: Log in to the GitHub Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+            - name: Log in to the GitHub Container Registry
+              uses: docker/login-action@v3
+              with:
+                  registry: ghcr.io
+                  username: ${{ github.actor }}
+                  password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: true
-          tags: |
-            ghcr.io/glompai/discordlm:${{ github.sha }}
-            ghcr.io/glompai/discordlm:latest
+            - name: Build and push Docker image
+              uses: docker/build-push-action@v5
+              with:
+                  context: .
+                  push: true
+                  tags: |
+                      ghcr.io/glompai/discordlm:${{ github.sha }}
+                      ghcr.io/glompai/discordlm:latest
 
-  deploy-qa-binary:
-    needs: build-and-push
-    if: github.ref == 'refs/heads/main'
-    runs-on: ubuntu-latest
-    environment: qa
+    deploy-qa-binary:
+        needs: build-and-push
+        if: github.ref == 'refs/heads/main'
+        runs-on: ubuntu-latest
+        environment: qa
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
 
-      - name: Compile application
-        run: |
-          mkdir -p dist
-          docker run --rm -v ${{ github.workspace }}:/app -w /app denoland/deno:2.3.3 \
-            deno compile --unstable-kv --allow-net --allow-env --allow-read --allow-write --allow-run --target x86_64-unknown-linux-gnu --output dist/discordlm src/main.ts
-          sudo chown -R $(id -u):$(id -g) dist
+            - name: Compile application
+              run: |
+                  mkdir -p dist
+                  docker run --rm -v ${{ github.workspace }}:/app -w /app denoland/deno:2.3.3 \
+                    deno compile --unstable-kv --allow-net --allow-env --allow-read --allow-write --allow-run --target x86_64-unknown-linux-gnu --output dist/discordlm src/main.ts
+                  sudo chown -R $(id -u):$(id -g) dist
 
-      - name: Download cloudflared
-        run: |
-          wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cloudflared
-          chmod +x cloudflared
+            - name: Download cloudflared
+              run: |
+                  wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-amd64 -O cloudflared
+                  chmod +x cloudflared
 
-      - name: Load SSH Key
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_QA }}
+            - name: Load SSH Key
+              uses: webfactory/ssh-agent@v0.9.0
+              with:
+                  ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY_QA }}
 
-      - name: Create .env.qa from secret
-        env:
-          CHARACTER_PATH: /root/discordlm/qa/characters
-        run: |
-          echo "${{ secrets.ENV_QA_FILE_CONTENT }}" > .env.qa
+            - name: Create .env.qa from secret
+              env:
+                  CHARACTER_PATH: /root/discordlm/qa/characters
+              run: |
+                  echo "${{ secrets.ENV_QA_FILE_CONTENT }}" > .env.qa
 
-      - name: Check files before copy
-        run: |
-          ls -la
-          ls -la dist
-      - name: Copy files to server
-        run: |
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no" dist/discordlm cloudflared .env.qa heni@ooo.observer:/home/heni/discordlm/
+            - name: Check files before copy
+              run: |
+                  ls -la
+                  ls -la dist
+            - name: Copy files to server
+              run: |
+                  rsync -avz -e "ssh -o StrictHostKeyChecking=no" dist/discordlm cloudflared .env.qa heni@ooo.observer:/home/heni/discordlm/
 
-      - name: Deploy to remote server
-        run: |
-          set -x
-          ssh -o StrictHostKeyChecking=no heni@ooo.observer "chmod +x /home/heni/discordlm/discordlm"
-          ssh -o StrictHostKeyChecking=no heni@ooo.observer "systemctl --user stop discordlm.service || true"
-          ssh -o StrictHostKeyChecking=no heni@ooo.observer "mkdir -p /home/heni/.cloudflared"
-          echo "${{ secrets.CLOUDFLARE_CREDENTIALS_FILE_CONTENT }}" | ssh -o StrictHostKeyChecking=no heni@ooo.observer "cat > /home/heni/.cloudflared/22663346-58e3-4a55-ba33-02577e175488.json"
-          ssh -o StrictHostKeyChecking=no heni@ooo.observer "systemctl --user daemon-reload"
-          ssh -o StrictHostKeyChecking=no heni@ooo.observer "systemctl --user start discordlm.service || true"
+            - name: Deploy to remote server
+              run: |
+                  set -x
+                  ssh -o StrictHostKeyChecking=no heni@ooo.observer "chmod +x /home/heni/discordlm/discordlm"
+                  ssh -o StrictHostKeyChecking=no heni@ooo.observer "systemctl --user stop discordlm.service || true"
+                  ssh -o StrictHostKeyChecking=no heni@ooo.observer "mkdir -p /home/heni/.cloudflared"
+                  echo "${{ secrets.CLOUDFLARE_CREDENTIALS_FILE_CONTENT }}" | ssh -o StrictHostKeyChecking=no heni@ooo.observer "cat > /home/heni/.cloudflared/22663346-58e3-4a55-ba33-02577e175488.json"
+                  ssh -o StrictHostKeyChecking=no heni@ooo.observer "systemctl --user daemon-reload"
+                  ssh -o StrictHostKeyChecking=no heni@ooo.observer "systemctl --user start discordlm.service || true"
 
-  deploy-prod:
-    needs: build-and-push
-    if: github.ref == 'refs/heads/prod'
-    runs-on: ubuntu-latest
-    environment: prod
-    permissions:
-      id-token: write
-      contents: read
+    deploy-prod:
+        needs: build-and-push
+        if: github.ref == 'refs/heads/prod'
+        runs-on: ubuntu-latest
+        environment: prod
+        permissions:
+            id-token: write
+            contents: read
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+        steps:
+            - name: Checkout repository
+              uses: actions/checkout@v4
 
-      - name: Replace image tag in deployment yaml
-        env:
-          DEPLOYMENT_NAME: discordlm-deployment-prod
-          SECRET_NAME: discordlm-secrets-prod
-          CONFIG_MAP_NAME: discordlm-config-prod
-          CHARACTER_PATH: /root/discordlm/prod/characters
-        run: |
-          export IMAGE_TAG=${{ github.sha }}
-          envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
+            - name: Replace image tag in deployment yaml
+              env:
+                  DEPLOYMENT_NAME: discordlm-deployment-prod
+                  SECRET_NAME: discordlm-secrets-prod
+                  CONFIG_MAP_NAME: discordlm-config-prod
+                  CHARACTER_PATH: /root/discordlm/prod/characters
+              run: |
+                  export IMAGE_TAG=${{ github.sha }}
+                  envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
 
-      - name: Copy deployment file to server
-        uses: appleboy/scp-action@master
-        with:
-          host: ${{ vars.SSH_HOST }}
-          username: ${{ vars.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          source: "k8s-deployment.yaml,k8s-config.yaml,k8s-cloudflare-secret.yaml"
-          target: "/root/discordlm/"
+            - name: Copy deployment file to server
+              uses: appleboy/scp-action@master
+              with:
+                  host: ${{ vars.SSH_HOST }}
+                  username: ${{ vars.SSH_USERNAME }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  source: "k8s-deployment.yaml,k8s-config.yaml,k8s-cloudflare-secret.yaml"
+                  target: "/root/discordlm/"
 
-      - name: Deploy to remote server
-        uses: appleboy/ssh-action@master
-        env:
-          DEPLOYMENT_NAME: discordlm-deployment-prod
-        with:
-          host: ${{ vars.SSH_HOST }}
-          username: ${{ vars.SSH_USERNAME }}
-          key: ${{ secrets.SSH_PRIVATE_KEY }}
-          script: |
-            k3s kubectl delete secret docker-registry regcred --ignore-not-found
-            k3s kubectl create secret docker-registry regcred \
-              --docker-server=ghcr.io \
-              --docker-username=${{ github.actor }} \
-              --docker-password=${{ secrets.GHCR_TOKEN }} \
-              -o yaml | k3s kubectl apply -f - --overwrite --force
-            k3s kubectl delete secret discordlm-secrets-prod --ignore-not-found
-            k3s kubectl create secret generic discordlm-secrets-prod \
-              --from-literal=BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
-              --from-literal=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
-              --from-literal=OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
-              --from-literal=GEMINI_BASE_URL=${{ vars.GEMINI_BASE_URL }} \
-              -o yaml | k3s kubectl apply -f - --overwrite
-            k3s kubectl delete configmap discordlm-config-prod --ignore-not-found
-            k3s kubectl create configmap discordlm-config-prod \
-              --from-literal=OPENAI_BASE_URL="${{ vars.OPENAI_BASE_URL }}" \
-              --from-literal=ADMIN_OVERRIDE_ID="${{ vars.ADMIN_OVERRIDE_ID }}" \
-              --from-literal=USER_ID_LIST="${{ vars.USER_ID_LIST }}" \
-              --from-literal=LIMIT_USER_IDS="${{ vars.LIMIT_USER_IDS }}" \
-              --from-literal=GEMINI_TOKEN_LIMIT="${{ vars.GEMINI_TOKEN_LIMIT }}" \
-              --from-literal=OPENAI_TOKEN_LIMIT="${{ vars.OPENAI_TOKEN_LIMIT }}" \
-              --from-literal=RATE_LIMIT_PER_MINUTE="${{ vars.RATE_LIMIT_PER_MINUTE }}" \
-              --from-literal=DEBUG="${{ vars.DEBUG }}" \
-              --from-literal=MAX_HISTORY_MESSAGES="${{ vars.MAX_HISTORY_MESSAGES }}" \
-              -o yaml | k3s kubectl apply -f -
-            k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
-            sleep 5
-            k3s kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} discordlm=ghcr.io/glompai/discordlm:${{ github.sha }}
-            k3s kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}
+            - name: Deploy to remote server
+              uses: appleboy/ssh-action@master
+              env:
+                  DEPLOYMENT_NAME: discordlm-deployment-prod
+              with:
+                  host: ${{ vars.SSH_HOST }}
+                  username: ${{ vars.SSH_USERNAME }}
+                  key: ${{ secrets.SSH_PRIVATE_KEY }}
+                  script: |
+                      k3s kubectl delete secret docker-registry regcred --ignore-not-found
+                      k3s kubectl create secret docker-registry regcred \
+                        --docker-server=ghcr.io \
+                        --docker-username=${{ github.actor }} \
+                        --docker-password=${{ secrets.GHCR_TOKEN }} \
+                        -o yaml | k3s kubectl apply -f - --overwrite --force
+                      k3s kubectl delete secret discordlm-secrets-prod --ignore-not-found
+                      k3s kubectl create secret generic discordlm-secrets-prod \
+                        --from-literal=BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
+                        --from-literal=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
+                        --from-literal=OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
+                        --from-literal=GEMINI_BASE_URL=${{ vars.GEMINI_BASE_URL }} \
+                        -o yaml | k3s kubectl apply -f - --overwrite
+                      k3s kubectl delete configmap discordlm-config-prod --ignore-not-found
+                      k3s kubectl create configmap discordlm-config-prod \
+                        --from-literal=OPENAI_BASE_URL="${{ vars.OPENAI_BASE_URL }}" \
+                        --from-literal=ADMIN_OVERRIDE_ID="${{ vars.ADMIN_OVERRIDE_ID }}" \
+                        --from-literal=USER_ID_LIST="${{ vars.USER_ID_LIST }}" \
+                        --from-literal=LIMIT_USER_IDS="${{ vars.LIMIT_USER_IDS }}" \
+                        --from-literal=GEMINI_TOKEN_LIMIT="${{ vars.GEMINI_TOKEN_LIMIT }}" \
+                        --from-literal=OPENAI_TOKEN_LIMIT="${{ vars.OPENAI_TOKEN_LIMIT }}" \
+                        --from-literal=RATE_LIMIT_PER_MINUTE="${{ vars.RATE_LIMIT_PER_MINUTE }}" \
+                        --from-literal=DEBUG="${{ vars.DEBUG }}" \
+                        --from-literal=MAX_HISTORY_MESSAGES="${{ vars.MAX_HISTORY_MESSAGES }}" \
+                        -o yaml | k3s kubectl apply -f -
+                      k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
+                      sleep 5
+                      k3s kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} discordlm=ghcr.io/glompai/discordlm:${{ github.sha }}
+                      k3s kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}
