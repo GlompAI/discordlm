@@ -127,6 +127,10 @@ export class ConfigService {
     getPremiumGuildId(): string {
         return this.getEnv("PREMIUM_GUILD_ID", false, "1304097485136072714");
     }
+
+    getDevGuildId(): string | undefined {
+        return this.getEnv("DEV_GUILD_ID", false, "");
+    }
 }
 
 export const configService = new ConfigService();

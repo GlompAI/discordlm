@@ -51,7 +51,7 @@ export class App {
 
     public async start(): Promise<void> {
         this.avatarServer.start();
-        this.cloudflareService.start();
+        const cloudflareHostname = await this.cloudflareService.start();
         this.logSecretHashes();
         this.discordService.onReady(async (client) => {
             if (client.user) {
@@ -60,9 +60,9 @@ export class App {
                 this.llmService.setBotDiscordName(client.user.username);
                 configService.botSelfId = client.user.id;
             }
-            await this.characterService.start();
             await this.registerSlashCommands();
             this.avatarServer.setReady(true);
+            await this.characterService.start(cloudflareHostname);
             await PremiumService.getInstance().init(this.discordService.client);
             this.logger.log("Bot startup complete!");
         });
@@ -135,8 +135,14 @@ export class App {
         ];
 
         try {
-            await this.discordService.client.application?.commands.set(commands);
-            this.logger.info("Successfully registered slash commands");
+            const devGuildId = configService.getDevGuildId();
+            if (devGuildId) {
+                await this.discordService.client.application?.commands.set(commands, devGuildId);
+                this.logger.info(`Successfully registered slash commands to guild ${devGuildId}`);
+            } else {
+                await this.discordService.client.application?.commands.set(commands);
+                this.logger.info("Successfully registered global slash commands");
+            }
         } catch (error) {
             this.logger.error("Failed to register slash commands:", error);
         }

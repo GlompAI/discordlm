@@ -15,10 +15,14 @@ export class CharacterService {
         this.characterManager = new CharacterManager();
     }
 
-    public async start(): Promise<void> {
-        const hostname = configService.getCloudflareHostname();
-        const avatarBaseUrl = `https://${hostname}`;
-        this.logger.log(`Using Cloudflare tunnel for avatars: ${avatarBaseUrl}`);
+    public async start(cloudflareHostname?: string): Promise<void> {
+        let avatarBaseUrl: string | undefined;
+        if (cloudflareHostname) {
+            avatarBaseUrl = `https://${cloudflareHostname}`;
+            this.logger.log(`Using Cloudflare tunnel for avatars: ${avatarBaseUrl}`);
+        } else {
+            this.logger.log("No Cloudflare tunnel running.");
+        }
 
         this.logger.log(`[DEBUG] Determined avatarBaseUrl: ${avatarBaseUrl}`);
         this.logger.log(`Loading characters from ./characters with avatar base URL: ${avatarBaseUrl}`);
