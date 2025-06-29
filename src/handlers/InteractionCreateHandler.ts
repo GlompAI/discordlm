@@ -202,8 +202,8 @@ export class InteractionCreateHandler {
             if (character) {
                 await interaction.update({
                     content: interaction.channel?.type == ChannelType.DM
-                        ? `Switched to ${character.card.name}\nYou may wish to /reset.`
-                        : `Switched to ${character.card.name}`,
+                        ? `Switched to ${characterName}\nYou may wish to /reset.`
+                        : `Switched to ${characterName}`,
                     components: [],
                 });
             }
@@ -245,16 +245,22 @@ export class InteractionCreateHandler {
                 .setAuthor({ name: character.card.name })
                 .setThumbnail(character.avatarUrl ?? null)
                 .setColor(0x5865F2)
-                .setDescription(greetings[greetingIndex]);
+                .setDescription(
+                    this.fixGreeting(greetings[greetingIndex], interaction.user.displayName, characterName),
+                );
 
             const actionRow = this.componentService.createIntroActionRow(
-                character.card.name,
+                characterName,
                 greetingIndex,
                 greetings.length,
             );
 
             await interaction.update({ embeds: [embed], components: [actionRow] });
         }
+    }
+
+    private fixGreeting(greeting: string, displayName: string, characterName: string) {
+        return greeting.replaceAll("{{user}}", displayName).replaceAll("{{char}}", characterName);
     }
 
     private async handleSwitchCommand(interaction: ChatInputCommandInteraction) {
@@ -274,17 +280,17 @@ export class InteractionCreateHandler {
             if (interaction.channel?.type === ChannelType.DM && showIntro) {
                 const greetings = [character.card.first_mes, ...(character.card.alternate_greetings || [])];
                 const embed = new EmbedBuilder()
-                    .setAuthor({ name: character.card.name })
+                    .setAuthor({ name: characterName })
                     .setThumbnail(character.avatarUrl ?? null)
                     .setColor(0x5865F2)
-                    .setDescription(greetings[0]);
+                    .setDescription(this.fixGreeting(greetings[0], interaction.user.displayName, characterName));
 
                 const actionRow = this.componentService.createIntroActionRow(character.card.name, 0, greetings.length);
                 await interaction.reply({ embeds: [embed], components: [actionRow] });
             } else {
                 const replyContent = interaction.channel?.type === ChannelType.DM
-                    ? `Switched to ${character.card.name}\nYou may wish to /reset.`
-                    : `Switched to ${character.card.name}`;
+                    ? `Switched to ${characterName}\nYou may wish to /reset.`
+                    : `Switched to ${characterName}`;
                 await interaction.reply(replyContent);
             }
         } else {
