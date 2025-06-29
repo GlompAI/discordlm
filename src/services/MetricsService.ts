@@ -1,5 +1,7 @@
 import { Guild, GuildTextBasedChannel, User } from "discord.js";
+import { ensureDir } from "https://deno.land/std@0.224.0/fs/ensure_dir.ts";
 
+await ensureDir("./logs");
 const kv = await Deno.openKv("./logs/metrics.kv");
 
 export interface IMetric {
