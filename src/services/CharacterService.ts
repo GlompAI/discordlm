@@ -17,18 +17,8 @@ export class CharacterService {
 
     public async start(): Promise<void> {
         const hostname = configService.getCloudflareHostname();
-        let avatarBaseUrl: string | undefined;
-
-        if (hostname) {
-            avatarBaseUrl = `https://${hostname}`;
-            this.logger.log(`Using Cloudflare tunnel for avatars: ${avatarBaseUrl}`);
-        } else {
-            this.logger.log(`Starting local avatar server...`);
-            this.avatarServer = new AvatarServer();
-            await this.avatarServer.start();
-            avatarBaseUrl = `http://localhost:8080`;
-            this.logger.log(`Local avatar server started with base URL: ${avatarBaseUrl}`);
-        }
+        const avatarBaseUrl = `https://${hostname}`;
+        this.logger.log(`Using Cloudflare tunnel for avatars: ${avatarBaseUrl}`);
 
         this.logger.log(`[DEBUG] Determined avatarBaseUrl: ${avatarBaseUrl}`);
         this.logger.log(`Loading characters from ./characters with avatar base URL: ${avatarBaseUrl}`);
