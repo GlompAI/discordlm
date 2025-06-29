@@ -36,9 +36,9 @@
         ]
     },
     "tasks": {
-        "start": "deno run --unstable-kv --allow-net --allow-env --allow-read --allow-write src/main.ts",
-        "dev": "deno run --unstable-kv --allow-net --allow-env --allow-read --allow-write --watch src/main.ts",
-        "prepare": "deno compile --unstable-kv --allow-net --allow-env --allow-read --allow-write --output dist/discordlm src/main.ts",
+        "start": "deno run --unstable-kv --allow-run --allow-net --allow-env --allow-read --allow-write src/main.ts",
+        "dev": "deno run --unstable-kv --allow-run --allow-net --allow-env --allow-read --allow-write --watch src/main.ts",
+        "prepare": "deno compile --unstable-kv --allow-run --allow-net --allow-env --allow-read --allow-write --output dist/discordlm src/main.ts",
         "check": "deno check --unstable-kv src/main.ts",
         "lint": "deno lint",
         "fmt": "deno fmt",
