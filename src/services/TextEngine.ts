@@ -12,6 +12,10 @@ export class TextEngine {
         this.botDiscordName = name;
     }
 
+    private fixUpUserAndChar(input: string, userName: string, charName: string) {
+        return input.replaceAll("{{user}}", userName).replaceAll("{{char}}", charName);
+    }
+
     public buildPrompt = async (
         messages: MessageView[],
         username: string = "user",
@@ -101,9 +105,22 @@ The last user to engage with you, bringing about your interaction in the first p
             systemMessages.push(ASTERISK_ROLEPLAY_PROMPT);
             systemMessages.push(CONTEXT_OF_REQUEST);
             systemMessages.push(DISCORD_FORMATTING_GUIDE);
-            if (card.personality) systemMessages.push(`<personality>\n${card.personality}\n</personality>`);
-            if (card.description) systemMessages.push(`<description>\n${card.description}\n</description>`);
-            if (card.scenario) systemMessages.push(`<scenario>\n${card.scenario}\n</scenario>`);
+            const charName = card.char_name ?? card.name;
+            if (card.personality) {
+                systemMessages.push(
+                    this.fixUpUserAndChar(`<personality>\n${card.personality}\n</personality>`, username, charName),
+                );
+            }
+            if (card.description) {
+                systemMessages.push(
+                    this.fixUpUserAndChar(`<description>\n${card.description}\n</description>`, username, charName),
+                );
+            }
+            if (card.scenario) {
+                systemMessages.push(
+                    this.fixUpUserAndChar(`<scenario>\n${card.scenario}\n</scenario>`, username, charName),
+                );
+            }
         } else {
             const SYSTEM_PROMPT = isSFW
                 ? `
