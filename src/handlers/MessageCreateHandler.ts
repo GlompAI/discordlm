@@ -48,7 +48,7 @@ export class MessageCreateHandler {
         if (message.channel.type === ChannelType.DM) {
             const premiumService = PremiumService.getInstance();
             const member = await premiumService.guild?.members.fetch({ user: message.author.id, force: true });
-            if (!member || !await premiumService.isPremium(member)) {
+            if (!member || !premiumService.isPremium(member)) {
                 const messages = await message.channel.messages.fetch({ limit: 100 });
                 const botMessages = messages.filter((m) =>
                     m.author.id === this.client.user?.id && !m.content.startsWith("Switched to ")

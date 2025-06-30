@@ -32,7 +32,7 @@ class AccessControlService {
         }
 
         const premiumService = PremiumService.getInstance();
-        if (await premiumService.isPremium(member)) {
+        if (premiumService.isPremium(member)) {
             this.logger.info(`User ${member.id} is a premium user. Access granted.`);
             return true;
         }

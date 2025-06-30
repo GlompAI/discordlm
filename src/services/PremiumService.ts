@@ -27,7 +27,7 @@ export class PremiumService {
         }
     }
 
-    public async isPremium(member: GuildMember | undefined): Promise<boolean> {
+    public isPremium(member: GuildMember | undefined): boolean {
         this.logger.info(`Checking premium for member: ${member?.displayName ?? "undefined"}`);
         if (!this.guild) {
             this.logger.error("Premium guild not found, defaulting to premium.");

@@ -122,7 +122,7 @@ export class InteractionCreateHandler {
             if (interaction.channel?.type === ChannelType.DM) {
                 const premiumService = PremiumService.getInstance();
                 const member = await premiumService.guild?.members.fetch({ user: interaction.user.id, force: true });
-                if (!member || !await premiumService.isPremium(member)) {
+                if (!member || !premiumService.isPremium(member)) {
                     await interaction.reply({
                         content: "You must be a premium user to delete messages in DMs.",
                         ephemeral: true,
