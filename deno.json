@@ -8,9 +8,6 @@
         "strict": true
     },
     "lint": {
-        "include": [
-            "src/**/**"
-        ],
         "rules": {
             "tags": [
                 "recommended"
@@ -25,6 +22,9 @@
         "singleQuote": false,
         "proseWrap": "preserve"
     },
+    "include": [
+        "src/"
+    ],
     "lock": true,
     "nodeModulesDir": "none",
     "tasks": {
@@ -45,9 +45,5 @@
         "adze": "npm:adze",
         "openai": "npm:openai@^4.52.7",
         "tiktoken": "npm:tiktoken@^1.0.14"
-    },
-    "exclude": [
-        "dist/",
-        "node_modules/"
-    ]
+    }
 }
