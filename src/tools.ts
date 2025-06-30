@@ -1,4 +1,4 @@
-import * as https from "https";
+import * as https from "node:https";
 import { FunctionDeclaration, SchemaType } from "@google/generative-ai";
 import { getJinaApiKey } from "./env.ts";
 
