@@ -8,3 +8,4 @@ export const getAdminOverrideList = () => configService.getAdminOverrideList();
 export const getRateLimitPerMinute = () => configService.getRateLimitPerMinute();
 export const getUserIdList = () => configService.getUserIdList();
 export const isWhitelistEnabled = () => configService.isWhitelistEnabled();
+export const getJinaApiKey = () => configService.getJinaApiKey();

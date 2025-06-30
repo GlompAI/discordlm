@@ -134,6 +134,7 @@ jobs:
                         --from-literal=BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
                         --from-literal=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
                         --from-literal=OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
+                        --from-literal=JINA_API_KEY=${{ secrets.JINA_API_KEY }} \
                         --from-literal=GEMINI_BASE_URL=${{ vars.GEMINI_BASE_URL }} \
                         -o yaml | k3s kubectl apply -f - --overwrite
                       k3s kubectl delete configmap discordlm-config-prod --ignore-not-found

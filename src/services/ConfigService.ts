@@ -23,6 +23,10 @@ export class ConfigService {
         return this.getEnv("GEMINI_API_KEY", false, "");
     }
 
+    getJinaApiKey(): string {
+        return this.getEnv("JINA_API_KEY", true);
+    }
+
     getGeminiBaseUrl(): string | undefined {
         return this.getEnv("GEMINI_BASE_URL", false, "https://generativelanguage.googleapis.com/v1beta");
     }

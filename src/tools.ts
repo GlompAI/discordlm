@@ -1,4 +1,6 @@
+import * as https from "https";
 import { FunctionDeclaration, SchemaType } from "@google/generative-ai";
+import { getJinaApiKey } from "./env.ts";
 
 export const tools: FunctionDeclaration[] = [
     {
@@ -31,41 +33,86 @@ export const tools: FunctionDeclaration[] = [
     },
 ];
 
-interface Topic {
-    Text: string;
-}
-
-export async function search_web(query: string): Promise<string> {
+export function search_web(query: string) {
+    const errorString = "Error searching web";
     try {
-        // Using a simple DuckDuckGo search URL, as it doesn't require an API key.
-        const response = await fetch(`https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json`);
-        const data = await response.json();
-        if (data.AbstractText) {
-            return data.AbstractText;
-        } else if (data.RelatedTopics && data.RelatedTopics.length > 0) {
-            return data.RelatedTopics.map((topic: Topic) => topic.Text).join("\n");
-        }
-        return "No results found.";
+        const encodedSearch = encodeURI(query);
+        const url = `https://s.jina.ai/?q=${encodedSearch}&hl=en`;
+        const options = {
+            headers: {
+                "Authorization": "Bearer REDACTED_JINA_API_KEY",
+                "X-Respond-With": "no-content",
+            },
+        };
+
+        let data = "";
+        https.get(url, options, (res) => {
+            res.on("data", (chunk) => {
+                data += chunk;
+            });
+        }).on("error", (err) => {
+            console.error("Error: ", err.message);
+            data = `${errorString}: ${err.message}`;
+        });
+        return data;
     } catch (e) {
         const error = e as Error;
-        return `Error searching web: ${error.message}`;
+        return `${errorString}: ${error.message}`;
     }
 }
 
 export async function retrieve_url(url: string): Promise<string> {
     try {
-        const response = await fetch(url, {
-            headers: {
-                "User-Agent":
-                    "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36",
-            },
+        return await new Promise((resolve, reject) => {
+            const https = require("node:https");
+
+            const options = {
+                hostname: "r.jina.ai",
+                path: `/${url}`,
+                headers: {
+                    "Accept": "text/event-stream",
+                    "Authorization": `Bearer ${getJinaApiKey()}`,
+                    "X-Base": "final",
+                    "X-Engine": "browser",
+                    "X-Md-Heading-Style": "setext",
+                },
+            };
+
+            const req = https.get(options, (res: any) => {
+                let rawData = "";
+                res.on("data", (chunk: any) => {
+                    rawData += chunk;
+                });
+                res.on("end", () => {
+                    const lines = rawData.trim().split("\n");
+                    const lastDataLine = lines.filter((line) => line.startsWith("data:")).pop();
+
+                    if (lastDataLine) {
+                        try {
+                            const jsonString = lastDataLine.substring(5).trim();
+                            const parsedData = JSON.parse(jsonString);
+                            if (parsedData && parsedData.content) {
+                                resolve(parsedData.content);
+                                return;
+                            }
+                        } catch (e) {
+                            // Not valid JSON, fall through to other checks
+                            console.error(e);
+                        }
+                    }
+
+                    if (rawData.includes("[DONE]")) {
+                        resolve(rawData.substring(0, rawData.indexOf("[DONE]")).trim());
+                    } else {
+                        resolve(rawData);
+                    }
+                });
+            });
+
+            req.on("error", (e: Error) => {
+                reject(e);
+            });
         });
-        const text = await response.text();
-        const titleMatch = text.match(/<title>(.*?)<\/title>/);
-        const title = titleMatch ? titleMatch[1] : "No title found";
-        // Basic HTML stripping. A more robust solution might be needed for complex pages.
-        const body = text.replace(/<[^>]*>/g, "").substring(0, 2000);
-        return `Title: ${title}\n\n${body}`;
     } catch (e) {
         const error = e as Error;
         return `Error retrieving URL: ${error.message}`;
