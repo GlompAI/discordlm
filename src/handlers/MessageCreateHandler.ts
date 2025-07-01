@@ -53,12 +53,12 @@ export class MessageCreateHandler {
                 const botMessages = messages.filter((m) =>
                     m.author.id === this.client.user?.id && !m.content.startsWith("Switched to ")
                 );
-                this.logger.info(`Demo limit reached for user: ${member?.displayName ?? member?.user.username}`);
                 if (botMessages.size >= 10) {
                     await this.sendEphemeralError(
                         message,
                         "My funds are low, please subscribe on my server for future access.",
                     );
+                    this.logger.info(`Demo limit reached for user: ${member?.displayName ?? member?.user.username}`);
                     return;
                 }
             }
