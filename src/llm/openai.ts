@@ -94,6 +94,7 @@ export class OpenAIProvider implements LLMProvider {
         const request: OpenAI.Chat.Completions.ChatCompletionCreateParams = {
             model: this.model,
             messages: apiMessages,
+            stream: false,
         };
 
         if (this.toolsSupported && prompt.tools) {
