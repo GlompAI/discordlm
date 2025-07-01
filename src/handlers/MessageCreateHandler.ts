@@ -314,7 +314,7 @@ export class MessageCreateHandler {
             const llmResponseTime = endTime - startTime;
 
             const text = result.text();
-            if (!text) {
+            if (!text || text.length == 0) {
                 adze.error("Empty response from API, but no block reason provided.");
                 await this.sendEphemeralError(
                     message,
@@ -328,11 +328,21 @@ export class MessageCreateHandler {
             const nameRegex = new RegExp(`^${escapeRegex(nameToRemove)}:\\s*`, "i");
             let reply = text.replace(nameRegex, "");
             reply = reply.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-            this.logger.info(`${logContext} Replying...`);
 
             const messageParts = smartSplit(reply);
+            if (messageParts.length == 0 || messageParts[0].trim().length == 0) {
+                adze.error("Empty response from API after reasoning, but no block reason provided.");
+                await this.sendEphemeralError(
+                    message,
+                    "Oops! It seems my response was blocked. This can happen for a variety of reasons, including if a message goes against our terms of service. You could **try deleting your last message** and rephrasing, **re-rolling** the last character message, or **use the `/reset` command** to clear our conversation and start fresh.",
+                );
+                return;
+            }
+
+            this.logger.info(`${logContext} Replying...`);
 
             for (const part of messageParts) {
+                if (part.length == 0) continue;
                 const webhookManager = this.webhookManager;
 
                 // Check if this is the Assistant character (should not use webhooks)

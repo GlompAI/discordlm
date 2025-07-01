@@ -370,16 +370,30 @@ export class LLMService {
             if (configService.getProvider() === "gemini" && this.fallbackProvider) {
                 try {
                     const result = await this.llmProvider.generate(history, character ?? undefined, isSFW);
+                    const escapeRegex = (str: string) => str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                    let characterName = character?.name;
+                    if (!characterName || characterName.length == 0) {
+                        characterName = character?.char_name;
+                        if (characterName?.length == 0) {
+                            characterName = undefined;
+                        }
+                    }
+                    const nameToRemove = characterName ?? "Assistant";
+                    const nameRegex = new RegExp(`^${escapeRegex(nameToRemove)}:\\s*`, "i");
+                    const text = result.text();
+                    let reply = text.replace(nameRegex, "");
+                    reply = reply.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
                     // Check for censorship
-                    if (!result.text()) {
-                        // This is a censorship case, do not fallback
-                        return result;
+                    if (!reply || reply.length == 0) {
+                        // This is a soft censorship case, fallback
+                        throw new Error("Censored due to borderline content.");
                     }
                     return result;
                 } catch (error) {
                     const anyError = error as any;
                     if (anyError?.finishReason === "SAFETY") {
-                        // This is a censorship case, do not fallback
+                        // This is a hard censorship case, do not fallback
+                        adze.warn("Hard censorship encountered.,");
                         throw error;
                     }
 
@@ -390,6 +404,8 @@ export class LLMService {
                         return await this.fallbackProvider.generate(history, character ?? undefined, isSFW);
                     } catch (fallbackError) {
                         // If the fallback also fails, throw the original error
+                        adze.error("Error in fallback provider");
+                        console.log(fallbackError);
                         throw error;
                     }
                 }
