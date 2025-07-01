@@ -81,7 +81,6 @@ export class InteractionCreateHandler {
         } catch (error) {
             this.logger.error("Error in onInteractionCreate:");
             console.log(error);
-            await dumpDebug(logContext, "interaction-error", error);
             if ("replied" in interaction && (interaction.replied || interaction.deferred)) {
                 await interaction.followUp({
                     content: "There was an error while executing this command!",

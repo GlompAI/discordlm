@@ -68,8 +68,6 @@ export class GeminiProvider implements LLMProvider {
         const prompt = await this.textEngine.buildPrompt(messages, username, character, isSFW, "gemini");
         const adaptedPrompt = this.adaptPrompt(prompt, character);
 
-        await dumpDebug("gemini-prompt", "prompt", adaptedPrompt);
-
         const model = this.generativeAi.getGenerativeModel({
             model: this.model,
             tools: [{ functionDeclarations: tools }],
