@@ -119,6 +119,8 @@ export class MessageCreateHandler {
                         const authorId = authorIdMatch ? authorIdMatch[1] : null;
                         if (!authorId) {
                             // Skip webhooks that aren't ours
+                            this.logger.info(`Skipping reply to webhook that is not ours... Parsed authorID ${authorId}`);
+                            console.log(authorIdMatch);
                             return;
                         }
                     }
