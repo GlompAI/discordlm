@@ -3,6 +3,7 @@
 A Discord bot that integrates with multiple LLM providers, including Google's Gemini, OpenAI-compatible APIs, and Ollama, to provide AI responses in Discord channels and direct messages.
 
 > **Recent Updates**: Added development tasks (`prepare`, `dev`, `check`, `lint`, `fmt`) and cleaned up deno.json configuration for better DX.
+> Nonsense update for CI/CD
 
 ## Features
 
