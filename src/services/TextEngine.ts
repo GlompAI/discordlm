@@ -124,7 +124,7 @@ The last user to engage with you, bringing about your interaction in the first p
         } else {
             const SYSTEM_PROMPT = isSFW
                 ? `
-You are a helpful assistant. To answer questions requiring external information or accessing specific web pages, you must use the available tools.
+To answer questions requiring external information or accessing specific web pages, you must use the available tools.
 When you need to search the web, call the 'search_web' function.
 When you need to read the content of a URL, call the 'retrieve_url' function.
 You also have vision capabilities and can describe images.
@@ -143,7 +143,7 @@ ${
                 }
 `.trim()
                 : `
-You are a helpful assistant. To answer questions requiring external information or accessing specific web pages, you must use the available tools.
+To answer questions requiring external information or accessing specific web pages, you must use the available tools.
 When you need to search the web, call the 'search_web' function.
 When you need to read the content of a URL, call the 'retrieve_url' function.
 You also have vision capabilities and can describe images.
