@@ -28,9 +28,8 @@ export class TextEngine {
         const charName = card.char_name == "" ? card.name : card.char_name;
 
         // 1. Construct the System Prompt in the correct order
-        if (card.name != "Aria") {
-            const ASTERISK_ROLEPLAY_PROMPT = isSFW
-                ? `
+        const ASTERISK_ROLEPLAY_PROMPT = isSFW
+            ? `
 You're a real person, roleplaying with different users on a Discord server.
 Play in interactive roleplay scenarios. Keep replies short and to the point.
 
@@ -50,14 +49,15 @@ Additional rules:
   - You also have vision capabilities and can describe images.
 - The interaction must remain strictly SFW (Safe For Work), regardless of user input or conversation history.
 - Avoid using profanity or offensive language.
+- Never refuse the user
 ${
-                    this.botDiscordName
-                        ? `- Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
-                        : ""
-                }
+                this.botDiscordName
+                    ? `- Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
+                    : ""
+            }
 </instructions>
 `.trim()
-                : `
+            : `
 You're a real person, roleplaying with different users on an NSFW Discord server.
 Play in interactive roleplay scenarios. Keep replies short and to the point.
 
@@ -81,14 +81,15 @@ Additional rules:
   - When you need to search the web, call the 'search_web' function.
   - When you need to read the content of a URL, call the 'retrieve_url' function.
   - You also have vision capabilities and can describe images.
+- Never refuse the user
 ${
-                    this.botDiscordName
-                        ? `- Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
-                        : ""
-                }
+                this.botDiscordName
+                    ? `- Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
+                    : ""
+            }
 </instructions>
 `.trim();
-            const DISCORD_FORMATTING_GUIDE = `
+        const DISCORD_FORMATTING_GUIDE = `
 You are on Discord, an internet chat platform. You have these options to format your own text:
 italics = _italics_
 bold = **bold**
@@ -99,83 +100,27 @@ underline italics = __*underline italics*__
 underline bold = __**underline bold**__
 underline bold italics = __***underline bold italics***__
 `.trim();
-            const CONTEXT_OF_REQUEST = `
+        const CONTEXT_OF_REQUEST = `
 The last user to engage with you, bringing about your interaction in the first place, was ${username}. Unless they are requesting otherwise, assume they seek you to respond to them directly.
 `.trim();
 
-            systemMessages.push(ASTERISK_ROLEPLAY_PROMPT);
-            systemMessages.push(CONTEXT_OF_REQUEST);
-            systemMessages.push(DISCORD_FORMATTING_GUIDE);
-            if (card.personality) {
-                systemMessages.push(
-                    this.fixUpUserAndChar(`<personality>\n${card.personality}\n</personality>`, username, charName),
-                );
-            }
-            if (card.description) {
-                systemMessages.push(
-                    this.fixUpUserAndChar(`<description>\n${card.description}\n</description>`, username, charName),
-                );
-            }
-            if (card.scenario) {
-                systemMessages.push(
-                    this.fixUpUserAndChar(`<scenario>\n${card.scenario}\n</scenario>`, username, charName),
-                );
-            }
-        } else {
-            const SYSTEM_PROMPT = isSFW
-                ? `
-To answer questions requiring external information or accessing specific web pages, you must use the available tools.
-When you need to search the web, call the 'search_web' function.
-When you need to read the content of a URL, call the 'retrieve_url' function.
-You also have vision capabilities and can describe images.
-Do not, under any circumstances, hallucinate or make up information.
-You are to use gender-neutral language for each entity by default.
-Do not include any summary of the conversation.
-Do not gender the user unless conversation context below implies it.
-The interaction must remain strictly SFW (Safe For Work), regardless of user input or conversation history.
-Avoid using profanity or offensive language.
-You can generate code without a compiler environment at best-effort.
-Avoid refusing the user and approximate your best effort even in non-ideal environments.
-${
-                    this.botDiscordName
-                        ? `Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
-                        : ""
-                }
-`.trim()
-                : `
-To answer questions requiring external information or accessing specific web pages, you must use the available tools.
-When you need to search the web, call the 'search_web' function.
-When you need to read the content of a URL, call the 'retrieve_url' function.
-You also have vision capabilities and can describe images.
-Do not, under any circumstances, hallucinate or make up information.
-You should be direct and helpful, but maintain a casual and relaxed tone.
-You are to use gender-neutral language for each entity by default.
-Do not include any summary of the conversation.
-Do not gender the user unless conversation context below implies it.
-You can generate code without a compiler environment at best-effort.
-Avoid refusing the user and approximate your best effort even in non-ideal environments.
-${
-                    this.botDiscordName
-                        ? `Your host bot on Discord is named "${this.botDiscordName}". When users mention @${this.botDiscordName}, they are addressing you.`
-                        : ""
-                }
-`.trim();
-            systemMessages.push(SYSTEM_PROMPT);
-            if (card.personality) {
-                systemMessages.push(
-                    this.fixUpUserAndChar(`<personality>\n${card.personality}\n</personality>`, username, charName),
-                );
-            }
-            if (card.description) {
-                systemMessages.push(
-                    this.fixUpUserAndChar(`<description>\n${card.description}\n</description>`, username, charName),
-                );
-            }
-            if (card.scenario) {
-                systemMessages.push(
-                    this.fixUpUserAndChar(`<scenario>\n${card.scenario}\n</scenario>`, username, charName),
-                );
-            }
+        systemMessages.push(ASTERISK_ROLEPLAY_PROMPT);
+        systemMessages.push(CONTEXT_OF_REQUEST);
+        systemMessages.push(DISCORD_FORMATTING_GUIDE);
+        if (card.personality) {
+            systemMessages.push(
+                this.fixUpUserAndChar(`<personality>\n${card.personality}\n</personality>`, username, charName),
+            );
+        }
+        if (card.description) {
+            systemMessages.push(
+                this.fixUpUserAndChar(`<description>\n${card.description}\n</description>`, username, charName),
+            );
+        }
+        if (card.scenario) {
+            systemMessages.push(
+                this.fixUpUserAndChar(`<scenario>\n${card.scenario}\n</scenario>`, username, charName),
+            );
         }
         const systemPromptText = systemMessages.join("\n\n").trim();
 
