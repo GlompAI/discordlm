@@ -58,7 +58,7 @@ export class GeminiProvider implements LLMProvider {
 
     public async generate(
         messages: MessageView[],
-        character?: CharacterCard,
+        character: CharacterCard,
         isSFW = false,
     ): Promise<LLMResponse> {
         console.log("Using GeminiProvider");

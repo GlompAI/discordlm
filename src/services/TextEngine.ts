@@ -19,15 +19,16 @@ export class TextEngine {
     public buildPrompt = async (
         messages: MessageView[],
         username: string = "user",
-        character?: CharacterCard,
+        character: CharacterCard,
         isSFW: boolean = false,
         provider: "gemini" | "openai" = "gemini",
     ): Promise<Prompt> => {
         const card = character;
         const systemMessages: string[] = [];
+        const charName = card.char_name == "" ? card.name : card.char_name;
 
         // 1. Construct the System Prompt in the correct order
-        if (card) {
+        if (card.name != "Aria") {
             const ASTERISK_ROLEPLAY_PROMPT = isSFW
                 ? `
 You're a real person, roleplaying with different users on a Discord server.
@@ -105,7 +106,6 @@ The last user to engage with you, bringing about your interaction in the first p
             systemMessages.push(ASTERISK_ROLEPLAY_PROMPT);
             systemMessages.push(CONTEXT_OF_REQUEST);
             systemMessages.push(DISCORD_FORMATTING_GUIDE);
-            const charName = card.char_name ?? card.name;
             if (card.personality) {
                 systemMessages.push(
                     this.fixUpUserAndChar(`<personality>\n${card.personality}\n</personality>`, username, charName),
@@ -161,6 +161,21 @@ ${
                 }
 `.trim();
             systemMessages.push(SYSTEM_PROMPT);
+            if (card.personality) {
+                systemMessages.push(
+                    this.fixUpUserAndChar(`<personality>\n${card.personality}\n</personality>`, username, charName),
+                );
+            }
+            if (card.description) {
+                systemMessages.push(
+                    this.fixUpUserAndChar(`<description>\n${card.description}\n</description>`, username, charName),
+                );
+            }
+            if (card.scenario) {
+                systemMessages.push(
+                    this.fixUpUserAndChar(`<scenario>\n${card.scenario}\n</scenario>`, username, charName),
+                );
+            }
         }
         const systemPromptText = systemMessages.join("\n\n").trim();
 

@@ -31,7 +31,7 @@ export class OpenAIProvider implements LLMProvider {
 
     public async generate(
         messages: MessageView[],
-        character?: CharacterCard,
+        character: CharacterCard,
         isSFW = false,
     ): Promise<LLMResponse> {
         console.log("Using OpenAIProvider");
