@@ -156,6 +156,8 @@ export class App {
         ];
 
         const secretsToLog = [
+            "GEMINI_MODEL_NAME",
+            "OPENAI_MODEL_NAME",
             "ADMIN_OVERRIDE_ID",
             "USER_ID_LIST",
             "LIMIT_USER_IDS",
@@ -166,7 +168,6 @@ export class App {
             "MAX_HISTORY_MESSAGES",
             "OPENAI_BASE_URL",
             "GEMINI_BASE_URL",
-            "GEMINI_MODEL_NAME",
             "OPENAI_BASE_URL",
         ];
 
