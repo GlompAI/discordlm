@@ -90,7 +90,7 @@ ${
 </instructions>
 `.trim();
         const DISCORD_FORMATTING_GUIDE = `
-You are on Discord, an internet chat platform. You have these options to format your own text:
+You are on Discord, an internet chat platform. Your response MUST be formatted using Discord's markdown. You have these options to format your own text:
 italics = _italics_
 bold = **bold**
 bold italics = ***bold italics***
