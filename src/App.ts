@@ -166,6 +166,7 @@ export class App {
             "MAX_HISTORY_MESSAGES",
             "OPENAI_BASE_URL",
             "GEMINI_BASE_URL",
+            "GEMINI_MODEL_NAME",
             "OPENAI_BASE_URL",
         ];
 
