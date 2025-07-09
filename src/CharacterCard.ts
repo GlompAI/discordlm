@@ -92,24 +92,18 @@ function normalizeCard(card: Partial<CharacterCard | CharacterCardV2 | Character
     const normalized: Partial<CharacterCard> = {};
 
     if ("spec" in card) {
-        if (card.spec === "chara_card_v2") {
-            const v2 = card as CharacterCardV2;
-            normalized.name = v2.data.name;
-            normalized.description = v2.data.description;
-            normalized.personality = v2.data.personality;
-            normalized.scenario = v2.data.scenario;
-            normalized.first_mes = v2.data.first_mes;
-            normalized.mes_example = v2.data.mes_example;
-            normalized.alternate_greetings = v2.data.alternate_greetings;
-        } else if (card.spec === "chara_card_v3") {
-            const v3 = card as CharacterCardV3;
-            normalized.name = v3.name;
-            normalized.description = v3.description;
-            normalized.personality = v3.personality;
-            normalized.scenario = v3.scenario;
-            normalized.first_mes = v3.first_mes;
-            normalized.mes_example = v3.mes_example;
-        }
+        const v2Data = card.spec === "chara_card_v2" ? (card as CharacterCardV2).data : undefined;
+        const v3Data = card.spec === "chara_card_v3" ? (card as CharacterCardV3) : undefined;
+
+        const coalesce = (s1: string | undefined, s2: string | undefined) => (s1?.trim() ? s1 : (s2?.trim() ? s2 : s1));
+
+        normalized.name = coalesce(v2Data?.name, v3Data?.name);
+        normalized.description = coalesce(v2Data?.description, v3Data?.description);
+        normalized.personality = coalesce(v2Data?.personality, v3Data?.personality);
+        normalized.scenario = coalesce(v2Data?.scenario, v3Data?.scenario);
+        normalized.first_mes = coalesce(v2Data?.first_mes, v3Data?.first_mes);
+        normalized.mes_example = coalesce(v2Data?.mes_example, v3Data?.mes_example);
+        normalized.alternate_greetings = v2Data?.alternate_greetings;
     } else {
         Object.assign(normalized, card);
     }
