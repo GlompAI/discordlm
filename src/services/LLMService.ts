@@ -47,7 +47,7 @@ export class LLMService {
         client: Client,
         messages: Message[],
         charId: string,
-        character: CharacterCard | null,
+        character: CharacterCard,
         _seed?: number,
         continuation: { user: string; prompt: string } | false = false,
         sanitize = false,
@@ -375,7 +375,7 @@ export class LLMService {
                     if (!characterName || characterName.length == 0) {
                         characterName = character?.char_name;
                         if (characterName?.length == 0) {
-                            characterName = undefined;
+                            characterName = "Character Name";
                         }
                     }
                     const nameToRemove = characterName ?? "Assistant";

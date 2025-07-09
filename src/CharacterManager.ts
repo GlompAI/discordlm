@@ -7,18 +7,23 @@ import {
 } from "./CharacterCard.ts";
 import adze from "adze";
 import { resolve } from "https://deno.land/std@0.224.0/path/mod.ts";
+import { normalizeCard } from "./CharacterCard.ts";
 import { configService } from "./services/ConfigService.ts";
+import Assistant from "../characters/Assistant.json" with { type: "json" };
+import { parseToV2 } from "npm:character-card-utils@2.0.3";
 
 const logger = adze.withEmoji.timestamp.seal();
 
 export class CharacterManager {
     private characters: CharacterConfig[] = [];
-    private defaultCharacter: CharacterConfig | null = null;
-    private assistantCharacter: CharacterConfig | null = null;
+    private assistantCharacter: CharacterConfig;
     private charactersDir: string = "./characters";
     private avatarBaseUrl?: string;
 
-    constructor() {}
+    constructor() {
+        const card = parseToV2(Assistant);
+        this.assistantCharacter = { card: normalizeCard(card.data), filename: "Assistant.json", avatarUrl: undefined };
+    }
 
     /**
      * Load all characters from the characters directory
@@ -39,25 +44,9 @@ export class CharacterManager {
     }
 
     /**
-     * Load the assistant character
-     */
-    async loadAssistantCharacter(charactersDir: string = "./characters"): Promise<void> {
-        try {
-            const assistantCardPath = resolve(charactersDir, "Assistant.json");
-            const card = await parseCharacterCardFromJSON(assistantCardPath);
-            if (card) {
-                this.assistantCharacter = { card, filename: "Assistant.json", avatarUrl: undefined };
-                logger.info(`Loaded assistant character: ${card.name}`);
-            }
-        } catch (error) {
-            logger.error("Failed to load assistant character:", error);
-        }
-    }
-
-    /**
      * Get the assistant character
      */
-    getAssistantCharacter(): CharacterConfig | null {
+    getAssistantCharacter(): CharacterConfig {
         return this.assistantCharacter;
     }
 
@@ -79,25 +68,11 @@ export class CharacterManager {
     }
 
     /**
-     * Set the default character
-     */
-    setDefaultCharacter(characterName: string): boolean {
-        const character = this.getCharacter(characterName);
-        if (character) {
-            this.defaultCharacter = character;
-            logger.info(`Set default character to: ${character.card.name}`);
-            return true;
-        }
-        return false;
-    }
-
-    /**
      * Reload characters from disk
      */
     async reloadCharacters(charactersDir: string = "./characters", avatarBaseUrl?: string): Promise<void> {
         const oldCount = this.characters.length;
         await this.loadCharacters(charactersDir, avatarBaseUrl);
-        await this.loadAssistantCharacter(charactersDir);
         logger.info(`Reloaded characters: ${oldCount} -> ${this.characters.length}`);
     }
 
@@ -111,12 +86,6 @@ export class CharacterManager {
             for (const path of event.paths) {
                 const filename = path.split("/").pop();
                 if (!filename || (!filename.endsWith(".png") && !filename.endsWith(".json"))) {
-                    continue;
-                }
-
-                if (filename === "Assistant.json") {
-                    logger.info(`Assistant file ${event.kind}, reloading.`);
-                    await this.loadAssistantCharacter(this.charactersDir);
                     continue;
                 }
 

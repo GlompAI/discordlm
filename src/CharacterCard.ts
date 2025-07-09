@@ -88,7 +88,7 @@ export interface CharacterConfig {
     filename: string;
 }
 
-function normalizeCard(card: Partial<CharacterCard | CharacterCardV2 | CharacterCardV3>): CharacterCard {
+export function normalizeCard(card: Partial<CharacterCard | CharacterCardV2 | CharacterCardV3>): CharacterCard {
     const normalized: Partial<CharacterCard> = {};
 
     if ("spec" in card) {
@@ -253,9 +253,9 @@ export async function parseCharacterCardFromPNG(filePath: string): Promise<Chara
 /**
  * Parse character card data from JSON file
  */
-export async function parseCharacterCardFromJSON(filePath: string): Promise<CharacterCard | null> {
+export function parseCharacterCardFromJSON(filePath: string): CharacterCard {
     try {
-        const rawData = await Deno.readFile(filePath);
+        const rawData = Deno.readFileSync(filePath);
         const fileData = new TextDecoder("utf-8").decode(rawData);
         const card = JSON.parse(fileData) as CharacterCard;
 
@@ -264,11 +264,11 @@ export async function parseCharacterCardFromJSON(filePath: string): Promise<Char
             return card;
         } else {
             console.warn(`Invalid character card in ${filePath}: missing name field`);
-            return null;
+            throw new Error("Invalid character missing name field!");
         }
     } catch (error) {
         console.error(`Error reading JSON file ${filePath}:`, error);
-        return null;
+        throw new Error("Invalid character!");
     }
 }
 

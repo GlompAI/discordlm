@@ -4,6 +4,7 @@
     "npm:@google/generative-ai@0.21": "0.21.0",
     "npm:@types/node@*": "22.15.15",
     "npm:adze@*": "2.2.5",
+    "npm:character-card-utils@2.0.3": "2.0.3",
     "npm:discord.js@^14.15.3": "14.21.0",
     "npm:fflate@*": "0.8.2",
     "npm:omggif@*": "1.0.10",
@@ -141,6 +142,12 @@
       "dependencies": [
         "es-errors",
         "function-bind"
+      ]
+    },
+    "character-card-utils@2.0.3": {
+      "integrity": "sha512-plZDF4Qjun6qfus4dkFSG7dSQEjM1zDpK4xKWE9HuidlPyzWk5H78N+eiyDP/hqN4AqO232FUywsIwzcVzI+MQ==",
+      "dependencies": [
+        "zod"
       ]
     },
     "combined-stream@1.0.8": {
@@ -372,6 +379,9 @@
     },
     "ws@8.18.2": {
       "integrity": "sha512-DMricUmwGZUVr++AEAe2uiVM7UoO9MAVZMDu05UQOaUII0lp+zOzLLU4Xqh/JvTqklB1T4uELaaPBKyjE1r4fQ=="
+    },
+    "zod@3.25.76": {
+      "integrity": "sha512-gzUt/qt81nXsFGKIFcC3YnfEAx5NkunCfnDlvuBSSFS02bcXu4Lmea0AFIUwbLWxWPx3d9p8S5QoaujKcNQxcQ=="
     }
   },
   "remote": {

@@ -27,6 +27,7 @@ import { LLMService } from "../services/LLMService.ts";
 import { Queue } from "../queue.ts";
 import { configService } from "../services/ConfigService.ts";
 import { accessControlService } from "../services/AccessControlService.ts";
+import { CharacterCard, CharacterConfig } from "../CharacterCard.ts";
 
 export class InteractionCreateHandler {
     private readonly logger = adze.withEmoji.timestamp.seal();
@@ -421,20 +422,23 @@ export class InteractionCreateHandler {
             const messages = await this.fetchMessageHistory(message.channel, message.id);
             this.logger.info(`${logContext} Fetched ${messages.length} messages for re-roll`);
 
-            let character = null;
+            let character: CharacterConfig = this.characterService.getAssistantCharacter();
             if (message.webhookId) {
-                character = this.characterService.getCharacter(message.author.username);
+                character = this.characterService.getCharacter(message.author.username) ??
+                    this.characterService.getAssistantCharacter();
                 if (!character) {
                     this.logger.warn(
                         `Could not find character for webhook message re-roll: ${message.author.username}`,
                     );
+                    character = this.characterService.getAssistantCharacter();
                 }
             } else if (message.embeds.length > 0 && (message.embeds[0].author?.name || message.embeds[0].title)) {
                 character = this.characterService.getCharacter(
                     message.embeds[0].author?.name || message.embeds[0].title!,
-                );
+                ) ?? this.characterService.getAssistantCharacter();
             } else if (interaction.channel?.type === ChannelType.DM) {
-                character = await this.characterService.inferCharacterFromHistory(interaction.channel);
+                character = await this.characterService.inferCharacterFromHistory(interaction.channel) ??
+                    this.characterService.getAssistantCharacter();
             }
             this.logger.info(`${logContext} Using character for re-roll: ${character ? character.card.name : "none"}`);
 
@@ -447,7 +451,7 @@ export class InteractionCreateHandler {
                 this.client,
                 messages,
                 configService.botSelfId!,
-                character ? character.card : null,
+                character.card,
                 Math.floor(Math.random() * 1000000),
                 false, // continuation
                 false, // sanitize
@@ -481,7 +485,10 @@ export class InteractionCreateHandler {
                 await webhookManager.editAsCharacter(message, character, finalContent, {
                     components: [this.componentService.createActionRow()],
                 });
-            } else if (webhookManager && character && message.guild) {
+            } else if (
+                webhookManager && character && message.guild &&
+                this.characterService.getAssistantCharacter() != character
+            ) {
                 await webhookManager.sendAsCharacter(
                     message.channel as TextChannel,
                     character,

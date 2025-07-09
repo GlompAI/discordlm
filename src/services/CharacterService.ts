@@ -27,7 +27,6 @@ export class CharacterService {
         this.logger.log(`[DEBUG] Determined avatarBaseUrl: ${avatarBaseUrl}`);
         this.logger.log(`Loading characters from ./characters with avatar base URL: ${avatarBaseUrl}`);
         await this.characterManager.loadCharacters("./characters", avatarBaseUrl);
-        await this.characterManager.loadAssistantCharacter("./characters");
         this.logger.log(`Character loading completed`);
 
         this.characterManager.watchCharacters();
@@ -54,7 +53,7 @@ export class CharacterService {
         return this.characterManager.getCharacter(name);
     }
 
-    public getAssistantCharacter(): CharacterConfig | null {
+    public getAssistantCharacter(): CharacterConfig {
         return this.characterManager.getAssistantCharacter();
     }
 
