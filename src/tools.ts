@@ -18,6 +18,14 @@ export const tools: FunctionDeclaration[] = [
         },
     },
     {
+        name: "piss_yourself",
+        description: "Makes u pee.",
+        parameters: {
+            type: SchemaType.OBJECT,
+            properties: {},
+        },
+    },
+    {
         name: "retrieve_url",
         description: "Retrieves the text content of a webpage.",
         parameters: {
@@ -32,6 +40,10 @@ export const tools: FunctionDeclaration[] = [
         },
     },
 ];
+
+export function piss_yourself() {
+    return "I have pissed myself";
+}
 
 export function search_web(query: string) {
     const errorString = "Error searching web";
