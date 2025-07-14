@@ -150,7 +150,8 @@ export class MessageCreateHandler {
         }
 
         let character = null;
-        const isDirectPing = message.content.includes(`<@${configService.botSelfId}>`) && !message.mentions.everyone && !message.content.includes("<@here>");
+        const isDirectPing = message.content.includes(`<@${configService.botSelfId}>`) && !message.mentions.everyone &&
+            !message.content.includes("<@here>");
 
         if (isDirectPing || repliesToAssistant) {
             this.logger.info(
