@@ -85,7 +85,7 @@ export class ConfigService {
         return this.getEnv("DEBUG", false, "false") === "true";
     }
     getAssistantName(): string {
-        return this.getEnv("ASSISTANT_NAME", false, "Aria");
+        return this.getEnv("ASSISTANT_NAME", false, "Rose");
     }
 
     getRateLimitPerMinute(): number {

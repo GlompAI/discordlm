@@ -76,7 +76,7 @@ export class CharacterService {
             if (message.webhookId) {
                 const character = this.getCharacter(message.author.username);
                 // Skip Aria to avoid selecting it from old interactions
-                if (character && character.card.name !== "Aria") {
+                if (character && character.card.name !== "Rose") {
                     return character;
                 }
             }
