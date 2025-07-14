@@ -1,6 +1,5 @@
 import { Client, Message, User } from "discord.js";
 import adze from "adze";
-import { PremiumService } from "./PremiumService.ts";
 
 interface UserRateLimit {
     userId: string;
@@ -38,11 +37,7 @@ export class RateLimitService {
         const now = Date.now();
         const userId = user.id;
         const userLimit = this.userLimits.get(userId);
-        const premiumService = PremiumService.getInstance();
-        const member = await premiumService.guild?.members.fetch(userId).catch(() => undefined);
-        const isLimitedUser = this.limitedUserIds.includes(userId) ||
-            !await PremiumService.getInstance().isPremium(member);
-        const maxRequests = isLimitedUser ? this.limitedRequestsPerMinute : this.requestsPerMinute;
+        const maxRequests = this.requestsPerMinute;
 
         if (!userLimit) {
             // First request from this user

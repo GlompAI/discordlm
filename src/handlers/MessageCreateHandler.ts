@@ -1,5 +1,4 @@
 import { ChannelType, Client, EmbedBuilder, hideLinkEmbed, hyperlink, Message, TextChannel } from "discord.js";
-import { PremiumService } from "../services/PremiumService.ts";
 import { CharacterConfig } from "../CharacterCard.ts";
 import { CharacterService } from "../services/CharacterService.ts";
 import { LLMService } from "../services/LLMService.ts";
@@ -44,26 +43,6 @@ export class MessageCreateHandler {
             return;
         }
 
-        // Check premium grant
-        if (message.channel.type === ChannelType.DM) {
-            const premiumService = PremiumService.getInstance();
-            const member = await premiumService.guild?.members.fetch({ user: message.author.id, force: true });
-            if (!member || !premiumService.isPremium(member)) {
-                const messages = await message.channel.messages.fetch({ limit: 100 });
-                const botMessages = messages.filter((m) =>
-                    m.author.id === this.client.user?.id && !m.content.startsWith("Switched to ")
-                );
-                if (botMessages.size >= 10) {
-                    await this.sendEphemeralError(
-                        message,
-                        "My funds are low, please subscribe on my server for future access.",
-                    );
-                    this.logger.info(`Demo limit reached for user: ${member?.displayName ?? member?.user.username}`);
-                    return;
-                }
-            }
-        }
-
         // Check if it's a new DM conversation and send help text
         if (message.channel.type === ChannelType.DM) {
             const messages = await message.channel.messages.fetch({ limit: 2 });
@@ -74,8 +53,7 @@ export class MessageCreateHandler {
         }
 
         if (
-            message.content === RESET_MESSAGE_CONTENT || message.interaction ||
-            message.content === "My funds are low, please subscribe on my server for future access"
+            message.content === RESET_MESSAGE_CONTENT || message.interaction
         ) {
             return;
         }
@@ -129,7 +107,9 @@ export class MessageCreateHandler {
                 } else if (
                     repliedMessage.author.id === configService.botSelfId &&
                     !repliedMessage.webhookId &&
-                    !repliedMessage.content.startsWith("Switched to ")
+                    !repliedMessage.content.startsWith("Switched to ") &&
+                    !repliedMessage.mentions.everyone &&
+                    !repliedMessage.content.includes("<@here>")
                 ) {
                     // This is a reply to an Assistant message (regular bot message, not webhook)
                     repliesToAssistant = true;
@@ -170,7 +150,7 @@ export class MessageCreateHandler {
         }
 
         let character = null;
-        const isDirectPing = message.content.includes(`<@${configService.botSelfId}>`);
+        const isDirectPing = message.content.includes(`<@${configService.botSelfId}>`) && !message.mentions.everyone && !message.content.includes("<@here>");
 
         if (isDirectPing || repliesToAssistant) {
             this.logger.info(

@@ -11,7 +11,6 @@ import { createHash } from "node:crypto";
 import { configService } from "./services/ConfigService.ts";
 import { CloudflareService } from "./services/CloudflareService.ts";
 import { AvatarServer } from "./AvatarServer.ts";
-import { PremiumService } from "./services/PremiumService.ts";
 
 export class App {
     private readonly logger = adze.withEmoji.timestamp.seal();
@@ -63,7 +62,6 @@ export class App {
             await this.registerSlashCommands();
             this.avatarServer.setReady(true);
             await this.characterService.start(cloudflareHostname);
-            await PremiumService.getInstance().init(this.discordService.client);
             this.logger.log("Bot startup complete!");
         });
 

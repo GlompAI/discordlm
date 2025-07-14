@@ -128,10 +128,6 @@ export class ConfigService {
         return this.getEnv("CLOUDFLARE_HOSTNAME", false, "");
     }
 
-    getPremiumGuildId(): string {
-        return this.getEnv("PREMIUM_GUILD_ID", false, "1304097485136072714");
-    }
-
     getDevGuildId(): string | undefined {
         return this.getEnv("DEV_GUILD_ID", false, "");
     }

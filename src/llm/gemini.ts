@@ -4,7 +4,7 @@ import { MessageView } from "../types.ts";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { configService } from "../services/ConfigService.ts";
 import { TextEngine } from "../services/TextEngine.ts";
-import { piss_yourself, retrieve_url, search_web, tools } from "../tools.ts";
+import { retrieve_url, search_web, tools } from "../tools.ts";
 import { dumpDebug } from "../debug.ts";
 
 export class GeminiProvider implements LLMProvider {
