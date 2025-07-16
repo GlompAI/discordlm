@@ -42,7 +42,7 @@ The application is exposed to the internet through a Caddy reverse proxy running
 
 ## 3. Server Environment
 
-The application is deployed to a server named `giga.pingas.org`. The server is running Ubuntu and has the following software installed:
+The application is deployed to a server named `isaac@pi.hole`. The server is running Raspbian and has the following software installed:
 
 *   **K3s**: A lightweight Kubernetes distribution.
 *   **Caddy**: A modern, easy-to-use web server that is used as a reverse proxy.
@@ -50,9 +50,8 @@ The application is deployed to a server named `giga.pingas.org`. The server is r
 
 The application's data and configuration are stored in the following locations on the server:
 
-*   **`/root/discordlm/`**: This directory contains the Kubernetes manifests for the application.
-*   **`/home/luigi/discordlm/logs/`**: This directory contains the application's logs.
-*   **`/var/lib/rancher/k3s/storage/`**: This directory contains the persistent volumes for the application.
+*   **`/home/isaac/discordlm/`**: This directory contains the Kubernetes manifests, character data, and logs for the application.
+*   **`/var/lib/rancher/k3s/storage/`**: This directory contains the persistent volumes for the application, though the production deployment currently uses `hostPath` volumes mapped to `/home/isaac/discordlm/`.
 
 ## 4. CI/CD Pipeline
 

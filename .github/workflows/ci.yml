@@ -115,7 +115,7 @@ jobs:
           DEPLOYMENT_NAME: discordlm-deployment-prod
           SECRET_NAME: discordlm-secrets-prod
           CONFIG_MAP_NAME: discordlm-config-prod
-          CHARACTER_PATH: /root/discordlm/prod/characters
+          CHARACTER_PATH: /home/isaac/discordlm/characters
         run: |
           export IMAGE_TAG=${{ github.sha }}
           export DEPLOYMENT_NAME
@@ -123,6 +123,7 @@ jobs:
           export CONFIG_MAP_NAME
           export CHARACTER_PATH
           envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
+          sed -i 's|path: /root/discordlm/logs|path: /home/isaac/discordlm/logs|g' k8s-deployment.yaml
 
       - name: Copy deployment file to server
         uses: appleboy/scp-action@master
@@ -131,7 +132,7 @@ jobs:
           username: ${{ secrets.SSH_USERNAME }}
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           source: "k8s-deployment.yaml,k8s-config.yaml"
-          target: "/root/discordlm/"
+          target: "/home/isaac/discordlm/"
 
       - name: Deploy to remote server
         uses: appleboy/ssh-action@master
@@ -170,5 +171,5 @@ jobs:
             k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
             sleep 5
             k3s kubectl delete deployment ${{ env.DEPLOYMENT_NAME }} --ignore-not-found
-            k3s kubectl apply -f /root/discordlm/k8s-deployment.yaml
+            k3s kubectl apply -f /home/isaac/discordlm/k8s-deployment.yaml
             k3s kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}
