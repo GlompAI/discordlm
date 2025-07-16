@@ -42,7 +42,7 @@ The application is exposed to the internet through a Caddy reverse proxy running
 
 ## 3. Server Environment
 
-The application is deployed to a server named `giga.pingas.org`. The server is running Ubuntu and has the following software installed:
+The application is deployed to a server named `isaac@pi.hole`. The server is running Raspbian and has the following software installed:
 
 - **K3s**: A lightweight Kubernetes distribution.
 - **Caddy**: A modern, easy-to-use web server that is used as a reverse proxy.
