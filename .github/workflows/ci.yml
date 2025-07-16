@@ -63,7 +63,7 @@ jobs:
                   DEPLOYMENT_NAME: discordlm-deployment-prod
                   SECRET_NAME: discordlm-secrets-prod
                   CONFIG_MAP_NAME: discordlm-config-prod
-                  CHARACTER_PATH: /root/discordlm/prod/characters
+                  CHARACTER_PATH: /home/isaac/discordlm/prod/characters
               run: |
                   export IMAGE_TAG=${{ github.sha }}
                   envsubst < k8s-deployment.yaml > k8s-deployment.yaml.tmp && mv k8s-deployment.yaml.tmp k8s-deployment.yaml
@@ -83,47 +83,8 @@ jobs:
                   username: ${{ vars.SSH_USERNAME }}
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   source: "k8s-deployment.yaml,k8s-config.yaml,k8s-cloudflare-secret.yaml"
-                  target: "/root/discordlm/"
+                  target: "/home/isaac/discordlm/"
 
-            - name: Deploy to remote server
-              uses: appleboy/ssh-action@master
-              env:
-                  DEPLOYMENT_NAME: discordlm-deployment-prod
-              with:
-                  host: ${{ secrets.SSH_HOST }}
-                  username: ${{ secrets.SSH_USERNAME }}
-                  key: ${{ secrets.SSH_PRIVATE_KEY }}
-                  script: |
-                      k3s kubectl delete secret docker-registry regcred --ignore-not-found
-                      k3s kubectl create secret docker-registry regcred \
-                        --docker-server=ghcr.io \
-                        --docker-username=${{ github.actor }} \
-                        --docker-password=${{ secrets.GHCR_TOKEN }} \
-                        -o yaml | k3s kubectl apply -f - --overwrite --force
-                      k3s kubectl delete secret discordlm-secrets-prod --ignore-not-found
-                      k3s kubectl create secret generic discordlm-secrets-prod \
-                        --from-literal=BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
-                        --from-literal=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
-                        --from-literal=OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
-                        --from-literal=GEMINI_BASE_URL=${{ vars.GEMINI_BASE_URL }} \
-                        -o yaml | k3s kubectl apply -f - --overwrite
-                      k3s kubectl delete configmap discordlm-config-prod --ignore-not-found
-                      k3s kubectl create configmap discordlm-config-prod \
-                        --from-literal=OPENAI_BASE_URL="${{ vars.OPENAI_BASE_URL }}" \
-                        --from-literal=ADMIN_OVERRIDE_ID="${{ vars.ADMIN_OVERRIDE_ID }}" \
-                        --from-literal=USER_ID_LIST="${{ vars.USER_ID_LIST }}" \
-                        --from-literal=LIMIT_USER_IDS="${{ vars.LIMIT_USER_IDS }}" \
-                        --from-literal=GEMINI_TOKEN_LIMIT="${{ vars.GEMINI_TOKEN_LIMIT }}" \
-                        --from-literal=OPENAI_TOKEN_LIMIT="${{ vars.OPENAI_TOKEN_LIMIT }}" \
-                        --from-literal=RATE_LIMIT_PER_MINUTE="${{ vars.RATE_LIMIT_PER_MINUTE }}" \
-                        --from-literal=DEBUG="${{ vars.DEBUG }}" \
-                        --from-literal=MAX_HISTORY_MESSAGES="${{ vars.MAX_HISTORY_MESSAGES }}" \
-                        -o yaml | k3s kubectl apply -f -
-                      k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
-                      sleep 5
-                      k3s kubectl delete deployment ${{ env.DEPLOYMENT_NAME }} --ignore-not-found
-                      k3s kubectl apply -f /home/isaac/discordlm/k8s-deployment.yaml
-                      k3s kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}
             - name: Deploy to remote server
               uses: appleboy/ssh-action@master
               env:
@@ -133,22 +94,22 @@ jobs:
                   username: ${{ vars.SSH_USERNAME }}
                   key: ${{ secrets.SSH_PRIVATE_KEY }}
                   script: |
-                      k3s kubectl delete secret docker-registry regcred --ignore-not-found
-                      k3s kubectl create secret docker-registry regcred \
+                      sudo k3s kubectl delete secret docker-registry regcred --ignore-not-found
+                      sudo k3s kubectl create secret docker-registry regcred \
                         --docker-server=ghcr.io \
                         --docker-username=${{ github.actor }} \
                         --docker-password=${{ secrets.GHCR_TOKEN }} \
-                        -o yaml | k3s kubectl apply -f - --overwrite --force
-                      k3s kubectl delete secret discordlm-secrets-prod --ignore-not-found
-                      k3s kubectl create secret generic discordlm-secrets-prod \
+                        -o yaml | sudo k3s kubectl apply -f - --overwrite --force
+                      sudo k3s kubectl delete secret discordlm-secrets-prod --ignore-not-found
+                      sudo k3s kubectl create secret generic discordlm-secrets-prod \
                         --from-literal=BOT_TOKEN=${{ secrets.BOT_TOKEN }} \
                         --from-literal=GEMINI_API_KEY=${{ secrets.GEMINI_API_KEY }} \
                         --from-literal=OPENAI_API_KEY=${{ secrets.OPENAI_API_KEY }} \
                         --from-literal=JINA_API_KEY=${{ secrets.JINA_API_KEY }} \
                         --from-literal=GEMINI_BASE_URL=${{ vars.GEMINI_BASE_URL }} \
-                        -o yaml | k3s kubectl apply -f - --overwrite
-                      k3s kubectl delete configmap discordlm-config-prod --ignore-not-found
-                      k3s kubectl create configmap discordlm-config-prod \
+                        -o yaml | sudo k3s kubectl apply -f - --overwrite
+                      sudo k3s kubectl delete configmap discordlm-config-prod --ignore-not-found
+                      sudo k3s kubectl create configmap discordlm-config-prod \
                         --from-literal=OPENAI_BASE_URL="${{ vars.OPENAI_BASE_URL }}" \
                         --from-literal=OPENAI_MODEL_NAME="${{ vars.OPENAI_MODEL_NAME }}" \
                         --from-literal=GEMINI_MODEL_NAME="${{ vars.GEMINI_MODEL_NAME }}" \
@@ -160,8 +121,8 @@ jobs:
                         --from-literal=RATE_LIMIT_PER_MINUTE="${{ vars.RATE_LIMIT_PER_MINUTE }}" \
                         --from-literal=DEBUG="${{ vars.DEBUG }}" \
                         --from-literal=MAX_HISTORY_MESSAGES="${{ vars.MAX_HISTORY_MESSAGES }}" \
-                        -o yaml | k3s kubectl apply -f -
-                      k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
+                        -o yaml | sudo k3s kubectl apply -f -
+                      sudo k3s kubectl patch serviceaccount default -p '{"imagePullSecrets": [{"name": "regcred"}]}'
                       sleep 5
-                      k3s kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} discordlm=ghcr.io/glompai/discordlm:${{ github.sha }}
-                      k3s kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}
+                      sudo k3s kubectl set image deployment/${{ env.DEPLOYMENT_NAME }} discordlm=ghcr.io/glompai/discordlm:${{ github.sha }}
+                      sudo k3s kubectl rollout status deployment/${{ env.DEPLOYMENT_NAME }}
