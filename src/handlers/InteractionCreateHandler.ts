@@ -77,7 +77,24 @@ export class InteractionCreateHandler {
             } else if (commandName === "reset") {
                 await this.handleResetCommand(interaction);
             } else if (commandName === "help") {
-                await interaction.reply({ content: getHelpText(), flags: [64] });
+                const helpText = getHelpText();
+                const embed = new EmbedBuilder()
+                    .setTitle("Bot Help")
+                    .setDescription(helpText)
+                    .setColor(0x5865F2)
+                    .addFields({
+                        name: "License",
+                        value: hyperlink(
+                            "AGPL-3.0",
+                            "https://github.com/GlompAI/discordlm/blob/main/LICENSE.md",
+                        ),
+                        inline: true,
+                    }, {
+                        name: "Upstream",
+                        value: hyperlink("GitHub", "https://github.com/GlompAI/discordlm/"),
+                        inline: true,
+                    });
+                await interaction.reply({ embeds: [embed], flags: [64] });
             }
         } catch (error) {
             this.logger.error("Error in onInteractionCreate:");

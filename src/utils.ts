@@ -28,6 +28,9 @@ Welcome to the bot! Here's a quick guide on how to interact:
 *   You can adjust this format over time and the bot will adjust.
 
 Have fun!
+
+This bot is open-source under the AGPL-3.0 license. Its terms are here: https://www.gnu.org/licenses/agpl-3.0-standalone.html
+You can find the bot's source code at https://github.com/GlompAI/discordlm/
 `.trim();
 
 export function getHelpText() {
