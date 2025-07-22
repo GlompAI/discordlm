@@ -120,7 +120,10 @@ export class InteractionCreateHandler {
         if (interaction.commandName === "switch") {
             const focusedValue = interaction.options.getFocused().toLowerCase();
             const characters = this.characterService.getCharacters();
-            const choices = characters.map((char) => ({ name: char.card.name, value: char.card.name }));
+            const choices = characters.map((char) => ({
+                name: char.card.name ?? char.card.char_name,
+                value: char.card.name ?? char.card.char_name,
+            }));
 
             const filtered = choices.filter((choice) => choice.name.toLowerCase().startsWith(focusedValue)).slice(
                 0,
