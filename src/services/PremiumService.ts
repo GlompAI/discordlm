@@ -35,8 +35,8 @@ export class PremiumService {
         }
         this.logger.info(`Premium guild found: ${this.guild.name}`);
         if (!member) {
-            this.logger.warn("Could not find member in premium guild, defaulting to premium.");
-            return true;
+            this.logger.warn("Could not find member in premium guild, defaulting to not premium.");
+            return false;
         }
         this.logger.info(`Member found: ${member.displayName}`);
         // override for vagabondtruffle

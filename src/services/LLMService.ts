@@ -16,6 +16,7 @@ export class LLMService {
     private activeGenerations = 0;
     private llmProvider: LLMProvider;
     private fallbackProvider: LLMProvider | null = null;
+    public inferenceQueueList: Array<Message> = [];
 
     constructor() {
         this.llmProvider = this.createProvider();

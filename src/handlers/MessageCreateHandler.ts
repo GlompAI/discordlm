@@ -36,6 +36,10 @@ export class MessageCreateHandler {
         );
     }
 
+    private async delay(ms: number): Promise<void> {
+        return new Promise((resolve) => setTimeout(resolve, ms));
+    }
+
     public async handle(message: Message): Promise<void> {
         if (this.isShuttingDown) return;
 
@@ -47,7 +51,10 @@ export class MessageCreateHandler {
         // Check premium grant
         if (message.channel.type === ChannelType.DM) {
             const premiumService = PremiumService.getInstance();
-            const member = await premiumService.guild?.members.fetch({ user: message.author.id, force: true });
+            const member = await premiumService.guild?.members.fetch({
+                user: message.author.id,
+                force: true,
+            });
             if (!member || !premiumService.isPremium(member)) {
                 const messages = await message.channel.messages.fetch({ limit: 100 });
                 const botMessages = messages.filter((m) =>
@@ -73,13 +80,45 @@ export class MessageCreateHandler {
             }
         }
 
+        // PluralKit integration
+        let oldMessage: Message | undefined = undefined;
+        if (message.webhookId) {
+            adze.info("Processing incoming potential PluralKit message...");
+            // Ignore if no pending generations contain this new message's text
+            const pendingCandidateFromHost = this.llmService.inferenceQueueList.find((m) =>
+                m.content.includes(message.content)
+            );
+            if (!pendingCandidateFromHost) {
+                adze.info("No proxy candidate message found.");
+                return;
+            }
+            // Wait 2 seconds for PK to potentially delete
+            await this.delay(2000);
+            // Check if a message was proxied by confirming the original proxy candidate message was deleted
+            const backlog = await message.channel.messages.fetch({ limit: 10 });
+            if (backlog.values().some((m) => m.id == pendingCandidateFromHost.id)) {
+                // We still see the message so it was not proxied
+                adze.info("Proxy candidate message found but was not deleted.");
+                return;
+            }
+            // Cancel the original generation before continuing with this one
+            const originalIndex = this.llmService.inferenceQueueList.indexOf(pendingCandidateFromHost);
+            // Rare race condition is possible, so confirm it's active just in case...
+            if (originalIndex != -1) {
+                adze.info("Proxy candidate message found! Queuing a new generation...");
+                this.llmService.inferenceQueueList.splice(originalIndex, 1);
+                oldMessage = pendingCandidateFromHost;
+            }
+        }
+
         if (
             message.content === RESET_MESSAGE_CONTENT || message.interaction ||
             message.content === "My funds are low, please subscribe on my server for future access"
         ) {
             return;
-        }
-        if (message.author.bot && (!message.webhookId || !message.content.endsWith(WEBHOOK_IDENTIFIER))) {
+        } else if (
+            !oldMessage && message.author.bot && (!message.webhookId || !message.content.endsWith(WEBHOOK_IDENTIFIER))
+        ) {
             return;
         }
         if (message.author.id === configService.botSelfId && message.content.startsWith("Switched to ")) {
@@ -94,6 +133,8 @@ export class MessageCreateHandler {
         let targetCharacterName = "";
 
         let repliesToAssistant = false;
+        const replyEmbed = message.embeds.find((embed) => embed.author?.name);
+        const repliedAuthor = replyEmbed?.author?.name;
         if (message.reference && message.reference.messageId) {
             try {
                 const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
@@ -140,13 +181,45 @@ export class MessageCreateHandler {
                 this.logger.error("Failed to fetch replied message:");
                 console.log(error);
             }
+        } else if (message.embeds.some((embed) => embed.author?.name)) {
+            try {
+                if (
+                    repliedAuthor === configService.getAssistantName() &&
+                    replyEmbed?.description?.startsWith("Switched to ")
+                ) {
+                    const match = replyEmbed.description.match(/Switched to (.*?)\n?.*/);
+                    if (match) {
+                        targetCharacterName = match[1];
+                    } else {
+                        targetCharacterName = replyEmbed.description.substring("Switched to ".length);
+                    }
+                    repliesToSwitchMessage = true;
+                    this.logger.info(`Parsed character name from reply: ${targetCharacterName}`);
+                } else if (
+                    repliedAuthor === configService.getAssistantName() &&
+                    !replyEmbed?.description?.startsWith("Switched to ")
+                ) {
+                    // This is a reply to an Assistant message (regular bot message, not webhook)
+                    repliesToAssistant = true;
+                    targetCharacterName = configService.getAssistantName();
+                    this.logger.info(`Detected reply to Assistant message`);
+                }
+            } catch (error) {
+                this.logger.error("Failed to fetch replied embed:");
+                console.log(error);
+            }
         }
 
         let mentionsCharacterByName = false;
         const characters = this.characterService.getCharacters();
         for (const char of characters) {
             const characterNameRegex = new RegExp(`@${char.card.name}\\b`, "i");
+            const characterTrueNameRegex = new RegExp(`${char.card.name}\\b`, "i");
             if (characterNameRegex.test(message.content)) {
+                mentionsCharacterByName = true;
+                targetCharacterName = char.card.name;
+                break;
+            } else if (repliedAuthor && characterTrueNameRegex.test(repliedAuthor)) {
                 mentionsCharacterByName = true;
                 targetCharacterName = char.card.name;
                 break;
@@ -197,7 +270,7 @@ export class MessageCreateHandler {
                 await message.reply({ content: getHelpText(), allowedMentions: { repliedUser: true } });
                 return;
             } else if (message.guild) {
-                const member = await message.guild.members.fetch(message.author.id);
+                const member = await message.guild.members.fetch(oldMessage?.author.id ?? message.author.id);
                 const adminOverrideList = configService.getAdminOverrideList();
                 if (!member.permissions.has("Administrator") && !adminOverrideList.includes(member.id)) {
                     sanitize = true;
@@ -223,7 +296,7 @@ export class MessageCreateHandler {
                 const isSFW = message.channel.type !== ChannelType.DM &&
                     "nsfw" in message.channel &&
                     !message.channel.nsfw;
-                await this.processMessage(message, character, sanitize, logContext, typingInterval, isSFW);
+                await this.processMessage(message, character, sanitize, logContext, typingInterval, isSFW, oldMessage);
             });
             return;
         }
@@ -231,7 +304,7 @@ export class MessageCreateHandler {
         const isSFW = message.channel.type !== ChannelType.DM &&
             "nsfw" in message.channel &&
             !message.channel.nsfw;
-        await this.processMessage(message, character, sanitize, logContext, typingInterval, isSFW);
+        await this.processMessage(message, character, sanitize, logContext, typingInterval, isSFW, oldMessage);
     }
 
     private async processMessage(
@@ -241,7 +314,9 @@ export class MessageCreateHandler {
         logContext: string,
         typingInterval?: number,
         isSFW: boolean = false,
+        oldMessage?: Message,
     ): Promise<void> {
+        this.llmService.inferenceQueueList.push(message);
         this.logger.info(`${logContext} Fetching message history...`);
 
         // Fetch messages in batches up to 1000 total
@@ -327,6 +402,12 @@ export class MessageCreateHandler {
             const endTime = performance.now();
             const llmResponseTime = endTime - startTime;
 
+            // Check if this was removed (and this, the generation was canceled)
+            if (!this.llmService.inferenceQueueList.find((q) => q.id == message.id)) {
+                adze.info(`PluralKit proxy was detected on message with former ID ${message.id}, skipping...`);
+                return;
+            }
+
             const text = result.text();
             if (!text || text.length == 0) {
                 adze.error("Empty response from API, but no block reason provided.");
@@ -381,10 +462,18 @@ export class MessageCreateHandler {
                     if (isAssistant) {
                         // Assistant in a guild should send a plain text reply
                         if (message.guild) {
-                            const url = `https://discord.com/users/${message.author.id}`;
-                            const guildMember = await message.guild.members.fetch(message.author.id);
+                            const url = `https://discord.com/users/${oldMessage?.author.id ?? message.author.id}`;
+                            let name = message.author.displayName;
+                            // If this was PluralKit, use webhook vanity string and skip user lookup
+                            if (!message.webhookId) {
+                                // Not a PluralKit user, get their guild context for name string
+                                const guildMember = await message.guild.members.fetch(message.author.id);
+                                if (guildMember.nickname) {
+                                    name = guildMember.nickname;
+                                }
+                            }
                             const link = hyperlink(
-                                `Generated by ${guildMember?.nickname ?? message.author.displayName}`,
+                                `Generated by ${name}`,
                                 hideLinkEmbed(url),
                             );
                             await message.reply({
@@ -412,8 +501,17 @@ export class MessageCreateHandler {
                         });
                     } else {
                         // Fallback for no character (should be rare)
-                        const url = `https://discord.com/users/${message.author.id}`;
-                        const link = hyperlink(`Generated by ${message.author.displayName}`, hideLinkEmbed(url));
+                        const url = `https://discord.com/users/${oldMessage?.author.id ?? message.author.id}`;
+                        let name = message.author.displayName;
+                        // If this was PluralKit, use webhook vanity string and skip user lookup
+                        if (!message.webhookId) {
+                            // Not a PluralKit user, get their guild context for name string
+                            const guildMember = await message.guild?.members.fetch(message.author.id);
+                            if (guildMember?.nickname) {
+                                name = guildMember.nickname;
+                            }
+                        }
+                        const link = hyperlink(`Generated by ${name}`, hideLinkEmbed(url));
                         await message.reply({
                             content: `${part}\n${link}`,
                             allowedMentions: { repliedUser: true },
@@ -456,6 +554,12 @@ export class MessageCreateHandler {
             }
         } finally {
             clearInterval(typingInterval);
+            // Remove generation from the task list if still present
+            const index = this.llmService.inferenceQueueList.indexOf(message);
+            if (index == -1) {
+                return;
+            }
+            this.llmService.inferenceQueueList.splice(index, 1);
         }
     }
 
