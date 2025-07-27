@@ -183,7 +183,7 @@ export class MessageCreateHandler {
                 console.log(error);
             }
         } else if (message.embeds.some((embed) => embed.author?.name)) {
-            const botName = this.client.user?.displayName;
+            const botName = `${this.client.user?.displayName} ↩️`;
             try {
                 if (
                     repliedAuthor === botName &&
@@ -216,7 +216,7 @@ export class MessageCreateHandler {
         const characters = this.characterService.getCharacters();
         for (const char of characters) {
             const characterNameRegex = new RegExp(`@${char.card.name}\\b`, "i");
-            const characterTrueNameRegex = new RegExp(`${char.card.name}\\b`, "i");
+            const characterTrueNameRegex = new RegExp(`${char.card.name} ↩️\\b`, "i");
             if (characterNameRegex.test(message.content)) {
                 mentionsCharacterByName = true;
                 targetCharacterName = char.card.name;
