@@ -1,6 +1,7 @@
 {
   "version": "5",
   "specifiers": {
+    "npm:@discordjs/formatters@0.6.1": "0.6.1",
     "npm:@google/generative-ai@0.21": "0.21.0",
     "npm:@types/node@*": "22.15.15",
     "npm:adze@*": "2.2.5",

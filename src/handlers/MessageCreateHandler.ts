@@ -13,6 +13,7 @@ import { ComponentService } from "../services/ComponentService.ts";
 import { WEBHOOK_IDENTIFIER, WebhookManager } from "../WebhookManager.ts";
 import { RateLimitService } from "../services/RateLimitService.ts";
 import { MetricsService } from "../services/MetricsService.ts";
+import { userMention } from "npm:@discordjs/formatters@0.6.1";
 
 export class MessageCreateHandler {
     private readonly logger = adze.withEmoji.timestamp.seal();
@@ -182,9 +183,10 @@ export class MessageCreateHandler {
                 console.log(error);
             }
         } else if (message.embeds.some((embed) => embed.author?.name)) {
+            const botName = this.client.user?.displayName;
             try {
                 if (
-                    repliedAuthor === configService.getAssistantName() &&
+                    repliedAuthor === botName &&
                     replyEmbed?.description?.startsWith("Switched to ")
                 ) {
                     const match = replyEmbed.description.match(/Switched to (.*?)\n?.*/);
@@ -196,7 +198,7 @@ export class MessageCreateHandler {
                     repliesToSwitchMessage = true;
                     this.logger.info(`Parsed character name from reply: ${targetCharacterName}`);
                 } else if (
-                    repliedAuthor === configService.getAssistantName() &&
+                    repliedAuthor === botName &&
                     !replyEmbed?.description?.startsWith("Switched to ")
                 ) {
                     // This is a reply to an Assistant message (regular bot message, not webhook)
