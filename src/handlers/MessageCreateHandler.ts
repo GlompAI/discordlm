@@ -4,16 +4,14 @@ import { CharacterConfig } from "../CharacterCard.ts";
 import { CharacterService } from "../services/CharacterService.ts";
 import { LLMService } from "../services/LLMService.ts";
 import { configService } from "../services/ConfigService.ts";
-import { smartSplit } from "../utils.ts";
+import { getHelpText, smartSplit } from "../utils.ts";
 import adze from "adze";
-import { getHelpText } from "../utils.ts";
 import { RESET_MESSAGE_CONTENT } from "../main.ts";
 import { Queue } from "../queue.ts";
 import { ComponentService } from "../services/ComponentService.ts";
 import { WEBHOOK_IDENTIFIER, WebhookManager } from "../WebhookManager.ts";
 import { RateLimitService } from "../services/RateLimitService.ts";
 import { MetricsService } from "../services/MetricsService.ts";
-import { userMention } from "npm:@discordjs/formatters@0.6.1";
 
 export class MessageCreateHandler {
     private readonly logger = adze.withEmoji.timestamp.seal();
@@ -134,11 +132,35 @@ export class MessageCreateHandler {
         let targetCharacterName = "";
 
         let repliesToAssistant = false;
-        const replyEmbed = message.embeds.find((embed) => embed.author?.name);
-        const repliedAuthor = replyEmbed?.author?.name;
+        let repliedMessage: Message | undefined = undefined;
+        const replyEmbed = message.embeds.find((embed) => embed);
         if (message.reference && message.reference.messageId) {
+            repliedMessage = await message.channel.messages.cache.get(message.reference.messageId);
+        } else if (replyEmbed?.description) {
+            this.logger.info("Searching an embed for a PluralKit replied message by ID....");
+            const pluralKitReplyMatch = replyEmbed.description.match(/\[Reply to:]\((.*)\)\*\*/);
+            if (pluralKitReplyMatch) {
+                this.logger.info("Found a PluralKit replied message by ID.");
+                const match = pluralKitReplyMatch[1].match(
+                    /https:\/\/discord\.com\/channels\/\d+\/\d+\/(\d+)/g,
+                );
+                if (match) {
+                    try {
+                        this.logger.info("Fetching a PluralKit replied message by ID.");
+                        repliedMessage = message.channel.messages.cache.get(match[1]);
+                        this.logger.info("Fetched PluralKit replied message by ID.");
+                    } catch (e) {
+                        this.logger.error("Failed to fetch PluralKit replied message by ID!");
+                        console.error(e);
+                    }
+                } else {
+                    this.logger.warn("Did not find a PluralKit replied message by ID!");
+                    console.log(pluralKitReplyMatch);
+                }
+            }
+        }
+        if (repliedMessage) {
             try {
-                const repliedMessage = await message.channel.messages.fetch(message.reference.messageId);
                 if (
                     repliedMessage.author.id === configService.botSelfId &&
                     repliedMessage.content.startsWith("Switched to ")
@@ -182,46 +204,13 @@ export class MessageCreateHandler {
                 this.logger.error("Failed to fetch replied message:");
                 console.log(error);
             }
-        } else if (message.embeds.some((embed) => embed.author?.name)) {
-            const botName = `${this.client.user?.displayName} ↩️`;
-            try {
-                if (
-                    repliedAuthor === botName &&
-                    replyEmbed?.description?.startsWith("Switched to ")
-                ) {
-                    const match = replyEmbed.description.match(/Switched to (.*?)\n?.*/);
-                    if (match) {
-                        targetCharacterName = match[1];
-                    } else {
-                        targetCharacterName = replyEmbed.description.substring("Switched to ".length);
-                    }
-                    repliesToSwitchMessage = true;
-                    this.logger.info(`Parsed character name from reply: ${targetCharacterName}`);
-                } else if (
-                    repliedAuthor === botName &&
-                    !replyEmbed?.description?.startsWith("Switched to ")
-                ) {
-                    // This is a reply to an Assistant message (regular bot message, not webhook)
-                    repliesToAssistant = true;
-                    targetCharacterName = configService.getAssistantName();
-                    this.logger.info(`Detected reply to Assistant message`);
-                }
-            } catch (error) {
-                this.logger.error("Failed to fetch replied embed:");
-                console.log(error);
-            }
         }
 
         let mentionsCharacterByName = false;
         const characters = this.characterService.getCharacters();
         for (const char of characters) {
             const characterNameRegex = new RegExp(`@${char.card.name}\\b`, "i");
-            const characterTrueNameRegex = new RegExp(`${char.card.name} ↩️\\b`, "i");
             if (characterNameRegex.test(message.content)) {
-                mentionsCharacterByName = true;
-                targetCharacterName = char.card.name;
-                break;
-            } else if (repliedAuthor && characterTrueNameRegex.test(repliedAuthor)) {
                 mentionsCharacterByName = true;
                 targetCharacterName = char.card.name;
                 break;

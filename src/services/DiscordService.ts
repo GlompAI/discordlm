@@ -16,7 +16,7 @@ export class DiscordService {
                 GatewayIntentBits.GuildMessageReactions,
                 GatewayIntentBits.DirectMessageReactions,
             ],
-            partials: [Partials.Channel, Partials.Message, Partials.Reaction, Partials.User],
+            partials: [Partials.Channel, Partials.Message, Partials.Reaction, Partials.User, Partials.GuildMember],
         });
     }
 
